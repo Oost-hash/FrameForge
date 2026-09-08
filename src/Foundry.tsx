@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo, useCallback, memo, startTransition, useRe
 import { invoke } from "@tauri-apps/api/core";
 import { ImgCacheDirContext } from "./ImgCacheDir";
 import { HelpTip } from "./HelpTip";
-import type { InventoryItem, ViewMode } from "./App";
-import { ViewToggle } from "./App";
+import type { InventoryItem } from "./App";
+import type { ViewMode } from "./ViewToggle";
+import { ViewToggle } from "./ViewToggle";
 import sentientIcon from "./assets/SentientFactionIcon.webp";
 import formaIcon from "./assets/forma-icon.png";
 
@@ -228,17 +229,24 @@ function ItemImg({ imageName, category, size = 40 }: { imageName?: string; categ
   const baseUrl = useContext(ImgCacheDirContext);
   const [localFailed, setLocalFailed] = useState(false);
   const [cdnFailed,   setCdnFailed]   = useState(false);
+  const ref = useRef<HTMLImageElement>(null);
   const style = { width: size, height: size, flexShrink: 0 };
+
+  useEffect(() => {
+    if (ref.current?.complete) ref.current.classList.add("img-loaded");
+  }, []);
+
   if (!imageName || cdnFailed)
-    return <span className="item-img-fallback" style={{ ...style, fontSize: size * 0.35 }}>{category[0].toUpperCase()}</span>;
+    return <span className="img-fallback" style={{ ...style, fontSize: size * 0.35 }}>{category[0].toUpperCase()}</span>;
   const useLocal = Boolean(baseUrl) && !localFailed;
   const src = useLocal
     ? `${baseUrl}/${imageName}`
     : `https://cdn.warframestat.us/img/${imageName}`;
   return (
-    <img className="item-img" style={style} src={src}
+    <img ref={ref} className="img" style={style} src={src}
       alt="" loading="lazy"
-      onError={() => useLocal ? setLocalFailed(true) : setCdnFailed(true)} />
+      onError={() => useLocal ? setLocalFailed(true) : setCdnFailed(true)}
+      onLoad={() => ref.current?.classList.add("img-loaded")} />
   );
 }
 

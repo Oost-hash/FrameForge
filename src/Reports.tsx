@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useContext, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { cdnUrl, useImgLadder } from "./ImgCacheDir";
+import { ImgCacheDirContext } from "./ImgCacheDir";
 import "./Reports.css";
 
 interface WfmTopItem {
@@ -271,11 +271,20 @@ function Legend({ items }: { items: { label: string; color: string; value: numbe
 // ── Main component ───────────────────────────────────────────────────────────
 
 function ItemImg({ imageName, size = 28 }: { imageName?: string; size?: number }) {
-  const { src, onError } = useImgLadder([cdnUrl(imageName)]);
-  const s: React.CSSProperties = { width: size, height: size, objectFit: "contain", flexShrink: 0, borderRadius: 3 };
-  if (!src)
-    return <span style={{ ...s, background: "rgba(255,255,255,.06)", border: "1px solid #30363d", display: "inline-block" }} />;
-  return <img key={src} style={s} src={src} alt="" loading="lazy" onError={onError} />;
+  const baseUrl = useContext(ImgCacheDirContext);
+  const [localFailed, setLocalFailed] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const ref = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    if (ref.current?.complete) ref.current.classList.add("img-loaded");
+  }, []);
+
+  if (!imageName || failed)
+    return <span className="img-fallback" style={{ width: size, height: size }} />;
+  const useLocal = Boolean(baseUrl) && !localFailed;
+  const src = useLocal ? `${baseUrl}/${imageName}` : `https://cdn.warframestat.us/img/${imageName}`;
+  return <img ref={ref} className="img" style={{ width: size, height: size }} src={src} alt="" loading="lazy" onError={() => useLocal ? setLocalFailed(true) : setFailed(true)} onLoad={() => ref.current?.classList.add("img-loaded")} />;
 }
 
 interface Props {

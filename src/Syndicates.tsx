@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useContext, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { cdnUrl, useImgLadder } from "./ImgCacheDir";
+import { ImgCacheDirContext } from "./ImgCacheDir";
 import "./Syndicates.css";
 import type { InventoryItem } from "./App";
 
@@ -103,22 +103,33 @@ const GROUP_LABELS: Record<SynGroup, string> = {
 // ── Image component ───────────────────────────────────────────────────────────
 
 function SynItemImg({ imageName, category }: { imageName?: string; category: string }) {
-  const { src, onError } = useImgLadder([cdnUrl(imageName)]);
-  if (!src) {
+  const baseUrl = useContext(ImgCacheDirContext);
+  const [localFailed, setLocalFailed] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const ref = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    if (ref.current?.complete) ref.current.classList.add("img-loaded");
+  }, []);
+
+  if (!imageName || failed) {
     return (
-      <div className="syn-item-img-fallback">
+      <div className="img-fallback">
         {category[0]?.toUpperCase() ?? "?"}
       </div>
     );
   }
+  const useLocal = Boolean(baseUrl) && !localFailed;
+  const src = useLocal ? `${baseUrl}/${imageName}` : `https://cdn.warframestat.us/img/${imageName}`;
   return (
     <img
-      key={src}
-      className="syn-item-img"
+      ref={ref}
+      className="img"
       src={src}
       alt=""
       loading="lazy"
-      onError={onError}
+      onError={() => useLocal ? setLocalFailed(true) : setFailed(true)}
+      onLoad={() => ref.current?.classList.add("img-loaded")}
     />
   );
 }

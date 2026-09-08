@@ -751,6 +751,11 @@ fn get_current_quantities(state: State<AppState>) -> HashMap<String, i64> {
 }
 
 #[tauri::command]
+fn get_player_name(state: State<AppState>) -> Option<String> {
+    state.local_player_name.lock().ok().and_then(|name| name.clone())
+}
+
+#[tauri::command]
 fn get_current_crafting(state: State<AppState>) -> Vec<CraftingJob> {
     state.current_crafting.lock().unwrap_or_else(|e| e.into_inner()).clone()
 }
@@ -4587,6 +4592,22 @@ async fn start_monitor(app: tauri::AppHandle, state: State<'_, AppState>) -> Res
         // immediately on restart without waiting for the first full scan pass.
         let startup_cache = load_inventory_state_cache(&inventory_state_cache_path);
 
+        // Previous mod state for rank-specific change detection.
+        // Pre-seed from startup cache so the first scan detects rank changes
+        // since the last session instead of requiring two full scans.
+        let mut prev_mods: HashMap<String, memory_scanner::ModCount> = startup_cache.items.iter()
+            .filter(|(_, v)| v.mod_ranks.is_some())
+            .map(|(path, v)| {
+                let by_rank: HashMap<u8, i64> = v.mod_ranks.as_ref()
+                    .map(|ranks| ranks.iter()
+                        .filter_map(|(r, &c)| r.parse::<u8>().ok().map(|rank| (rank, c)))
+                        .collect())
+                    .unwrap_or_default();
+                let total = by_rank.values().sum();
+                (path.clone(), memory_scanner::ModCount { total, by_rank })
+            })
+            .collect();
+
         // Pre-populate known with cached resource quantities so that per-cycle hint
         // emits never replace the frontend display with a partial inventory.
         // is_stackable overrides is_unique_path: Kubrow Eggs, Kavat Genetic Codes,
@@ -4951,7 +4972,7 @@ async fn start_monitor(app: tauri::AppHandle, state: State<'_, AppState>) -> Res
                         let item_name = path_to_name.get(key.as_str())
                             .cloned()
                             .unwrap_or_else(|| key.split('/').last().unwrap_or("?").to_string());
-                        let _ = db::add_quantity_change(&conn, key, &item_name, old_qty, new_qty);
+                        let _ = db::add_quantity_change(&conn, key, &item_name, old_qty, new_qty, None);
                         changes.push(QuantityChange {
                             id: 0,
                             unique_name: key.clone(),
@@ -4960,9 +4981,49 @@ async fn start_monitor(app: tauri::AppHandle, state: State<'_, AppState>) -> Res
                             new_qty,
                             delta: new_qty - old_qty,
                             timestamp: ts,
+                            rank: None,
                         });
                     }
                 }
+
+                // Rank-specific change detection for mods/arcanes.
+                // Compare current by_rank with previous to find which specific rank changed.
+                if !prev_mods.is_empty() {
+                    let ts = chrono::Utc::now().timestamp();
+                    let all_paths: std::collections::HashSet<&String> =
+                        prev_mods.keys().chain(known_mods.keys()).collect();
+                    for path in all_paths {
+                        if ignored_paths.contains(path.as_str()) { continue; }
+                        let prev = prev_mods.get(path);
+                        let current = known_mods.get(path);
+                        let all_ranks: std::collections::HashSet<u8> = prev.into_iter()
+                            .flat_map(|mods| mods.by_rank.keys())
+                            .chain(current.into_iter().flat_map(|mods| mods.by_rank.keys()))
+                            .cloned()
+                            .collect();
+                        for rank in all_ranks {
+                            let old_count = prev.map(|p| *p.by_rank.get(&rank).unwrap_or(&0)).unwrap_or(0);
+                            let new_count = current.map(|mods| *mods.by_rank.get(&rank).unwrap_or(&0)).unwrap_or(0);
+                            if old_count == new_count { continue; }
+                            let item_name = path_to_name.get(path.as_str())
+                                .cloned()
+                                .unwrap_or_else(|| path.split('/').last().unwrap_or("?").to_string());
+                            let _ = db::add_quantity_change(&conn, path, &item_name, old_count, new_count, Some(rank));
+                            changes.push(QuantityChange {
+                                id: 0,
+                                unique_name: path.clone(),
+                                item_name,
+                                old_qty: old_count,
+                                new_qty: new_count,
+                                delta: new_count - old_count,
+                                timestamp: ts,
+                                rank: Some(rank),
+                            });
+                        }
+                    }
+                }
+                // Update prev_mods for next iteration
+                prev_mods = known_mods.clone();
 
                 let crafting: Vec<CraftingJob> = blob.pending_recipes.iter().map(|r| {
                     let name = display_names.iter().zip(unique_names.iter())
@@ -5203,6 +5264,12 @@ async fn start_monitor(app: tauri::AppHandle, state: State<'_, AppState>) -> Res
                 // Searching only the first 64 KB misses the current session when the log
                 // has grown large from previous runs.
                 if let Ok(mut f) = std::fs::File::open(&log_path) {
+                    let mut first = Vec::with_capacity(64 * 1024);
+                    let _ = (&mut f).take(64 * 1024).read_to_end(&mut first);
+                    if let Ok(text) = std::str::from_utf8(&first) {
+                        parse_logged_in_name(text, &shared_squad_names2, &ee_ocr_app);
+                    }
+
                     let file_len = f.seek(SeekFrom::End(0)).unwrap_or(0);
                     let read_from = file_len.saturating_sub(1_048_576); // last 1 MB
                     let _ = f.seek(SeekFrom::Start(read_from));
@@ -8010,14 +8077,11 @@ async fn prewarm_image_cache(state: tauri::State<'_, AppState>) -> Result<(), St
     use std::collections::HashSet;
     use std::sync::Arc;
     let items: Vec<_> = state.wfcd_items.lock().unwrap_or_else(|e| e.into_inner()).clone();
-    let recipe_names: HashSet<String> = state.recipes.lock()
-        .unwrap_or_else(|e| e.into_inner()).keys().cloned().collect();
     let cache_dir = Arc::new(state.img_cache_dir.clone());
 
     tokio::task::spawn_blocking(move || {
         use std::io::Read;
         let names: Vec<String> = items.iter()
-            .filter(|i| recipe_names.contains(&i.unique_name))
             .filter_map(|i| i.image_name.clone())
             .collect::<HashSet<_>>()
             .into_iter()
@@ -8027,15 +8091,21 @@ async fn prewarm_image_cache(state: tauri::State<'_, AppState>) -> Result<(), St
         if names.is_empty() { return; }
         debug!(count = names.len(), "prewarming images in background");
 
+        let agent = ureq::AgentBuilder::new()
+            .timeout(std::time::Duration::from_secs(10))
+            .build();
+
         for chunk in names.chunks(8) {
             let handles: Vec<_> = chunk.iter().map(|name| {
                 let dir = Arc::clone(&cache_dir);
                 let name = name.clone();
+                let agent = agent.clone();
                 std::thread::spawn(move || {
                     let url = format!("https://cdn.warframestat.us/img/{}", name);
-                    if let Ok(resp) = ureq::get(&url).call() {
+                    if let Ok(resp) = agent.get(&url).call() {
                         let mut buf = Vec::new();
-                        if resp.into_reader().read_to_end(&mut buf).is_ok() {
+                        // Limit to 5 MB to prevent memory exhaustion from malformed responses
+                        if resp.into_reader().take(5 * 1024 * 1024).read_to_end(&mut buf).is_ok() {
                             let _ = std::fs::write(dir.join(&name), buf);
                         }
                     }
@@ -9860,6 +9930,7 @@ pub fn run() {
             get_all_items,
             get_items_by_paths,
             get_current_quantities,
+            get_player_name,
             get_item_list_status,
             fetch_item_list,
             get_change_log,

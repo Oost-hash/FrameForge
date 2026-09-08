@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useContext } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { cdnUrl, useImgLadder } from "./ImgCacheDir";
+import { ImgCacheDirContext } from "./ImgCacheDir";
 import "./Weapons.css";
 import type { InventoryItem } from "./App";
 
@@ -52,18 +52,29 @@ function effectiveCap(item: WeaponItem): number {
 // ── Image ─────────────────────────────────────────────────────────────────────
 
 function WeaponImg({ imageName, name }: { imageName?: string; name: string }) {
-  const { src, onError } = useImgLadder([cdnUrl(imageName)]);
-  if (!src) {
-    return <div className="wpn-img-fallback">{name[0]?.toUpperCase() ?? "?"}</div>;
+  const baseUrl = useContext(ImgCacheDirContext);
+  const [localFailed, setLocalFailed] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const ref = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    if (ref.current?.complete) ref.current.classList.add("img-loaded");
+  }, []);
+
+  if (!imageName || failed) {
+    return <div className="img-fallback">{name[0]?.toUpperCase() ?? "?"}</div>;
   }
+  const useLocal = Boolean(baseUrl) && !localFailed;
+  const src = useLocal ? `${baseUrl}/${imageName}` : `https://cdn.warframestat.us/img/${imageName}`;
   return (
     <img
-      key={src}
-      className="wpn-img"
+      ref={ref}
+      className="img"
       src={src}
       alt=""
       loading="lazy"
-      onError={onError}
+      onError={() => useLocal ? setLocalFailed(true) : setFailed(true)}
+      onLoad={() => ref.current?.classList.add("img-loaded")}
     />
   );
 }
