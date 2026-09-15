@@ -405,7 +405,12 @@ export default function App() {
 
   useEffect(() => {
     if (settingsLoadedRef.current) saveAllSettings();
-  }, [tracked, favorites, timerFavorites, fissureWatches, fissureNotifications, modularWidth, memoryScannerEnabled, companionApiEnabled, blobLogEnabled, apiLogEnabled, autoDiagEnabled, modularSectionOrder, modularPopout, filterPresets]); // eslint-disable-line
+  }, [tracked, favorites, timerFavorites, fissureWatches, fissureNotifications, memoryScannerEnabled, companionApiEnabled, blobLogEnabled, apiLogEnabled, autoDiagEnabled, modularSectionOrder, modularPopout, filterPresets]); // eslint-disable-line
+
+  const commitModularWidth = useCallback((width: number) => {
+    const patch: SettingsPatch = { modularWidth: width };
+    invoke(TAURI_COMMANDS.SAVE_SETTINGS, { json: JSON.stringify(patch) }).catch(() => {});
+  }, []);
 
   // ── Derived data ───────────────────────────────────────────────────────────
 
@@ -911,6 +916,7 @@ export default function App() {
           catalog={catalog}
           width={modularWidth}
           onWidthChange={setModularWidth}
+          onWidthCommit={commitModularWidth}
           sectionOrder={modularSectionOrder}
           onSectionOrderChange={setModularSectionOrder}
         />}
