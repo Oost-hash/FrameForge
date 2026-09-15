@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import ItemImg from "../ItemImg";
 import { TAURI_COMMANDS } from "../constants/tauri";
 import type { WfmTopItem } from "../types/market";
@@ -18,6 +19,12 @@ interface ItemStat {
   item_name: string;
   quantity: number;
   total_plat: number;
+}
+
+interface WfmTopProgress {
+  completed: number;
+  total: number;
+  refreshing: boolean;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -39,6 +46,12 @@ function inferCategory(name: string): string {
   if (/ set$/.test(n))      return "Set";
   if (/\bmod\b/.test(n))    return "Mod";
   return "Other";
+}
+
+function displayItemName(name: string): string {
+  const rank = [...name].filter(char => /[\uE000-\uF8FF]/u.test(char)).length;
+  const clean = name.replace(/[\uE000-\uF8FF\p{Cc}]/gu, "").trim();
+  return rank > 0 ? `${clean} (R${rank})` : clean;
 }
 
 function groupBySessions(trades: Trade[]): TradeSession[] {
@@ -250,18 +263,31 @@ export default function Reports({ dateRange, onDateRangeChange, clockFormat, sys
   const [topItems, setTopItems]     = useState<WfmTopItem[]>([]);
   const [topLoading, setTopLoading] = useState(true);
   const [topError, setTopError]     = useState<string | null>(null);
+  const [topProgress, setTopProgress] = useState<WfmTopProgress | null>(null);
   const [view, setView]             = useState<"analytics" | "log">("analytics");
 
   useEffect(() => {
     invoke<Trade[]>("get_trades")
-      .then(t => { setTrades(t); setLoading(false); })
+      .then(t => { setTrades(t.map(trade => ({ ...trade, item_name: displayItemName(trade.item_name) }))); setLoading(false); })
       .catch((e) => { console.error("[Reports] get_trades failed:", e); setTradesError(String(e)); setLoading(false); });
 
-    // Fetch top WFM items in background — first load takes ~15s (rate-limited),
-    // subsequent opens within 3 hours are instant from cache.
+    const unlistenProgress = listen<WfmTopProgress>("wfm-top-progress", ({ payload }) => {
+      setTopProgress(payload);
+    });
+    const unlistenUpdated = listen<WfmTopItem[]>("wfm-top-updated", ({ payload }) => {
+      setTopItems(payload);
+      setTopLoading(false);
+      setTopError(null);
+      setTopProgress(null);
+    });
+
     invoke<WfmTopItem[]>(TAURI_COMMANDS.GET_WFM_TOP_ITEMS)
       .then(items => { setTopItems(items); setTopLoading(false); })
       .catch((e) => { console.error("[Reports] get_wfm_top_items failed:", e); setTopError(String(e)); setTopLoading(false); });
+    return () => {
+      unlistenProgress.then(fn => fn());
+      unlistenUpdated.then(fn => fn());
+    };
   }, []);
 
   const filtered = useMemo(() => {
@@ -353,6 +379,9 @@ export default function Reports({ dateRange, onDateRangeChange, clockFormat, sys
     value: item.total_value_7d,
     color: Object.values(CATEGORY_COLORS)[i % Object.values(CATEGORY_COLORS).length],
   }));
+  const topProgressPercent = topProgress && topProgress.total > 0
+    ? Math.round((topProgress.completed / topProgress.total) * 100)
+    : 0;
 
   if (loading) return <div className="rpt-root"><div className="rpt-loading">Loading…</div></div>;
 
@@ -366,7 +395,16 @@ export default function Reports({ dateRange, onDateRangeChange, clockFormat, sys
           {topLoading ? (
             <div className="rpt-top-loading">
               <span className="rpt-top-spinner" />
-              Fetching market data… (first load takes ~15s, then cached for 3h)
+              <div>
+                <div>Downloading 7-day statistics from Warframe.Market…</div>
+                <div className="rpt-top-source">The first complete ranking can take a few minutes; it refreshes automatically every 3 hours.</div>
+                {topProgress && (
+                  <div className="rpt-top-progress" aria-label="Market ranking progress">
+                    <span style={{ width: `${topProgressPercent}%` }} />
+                    <em>{topProgress.completed}/{topProgress.total} items</em>
+                  </div>
+                )}
+              </div>
             </div>
           ) : topError ? (
             <div className="rpt-top-loading" style={{ color: "var(--red)" }}>
@@ -376,6 +414,12 @@ export default function Reports({ dateRange, onDateRangeChange, clockFormat, sys
           ) : topItems.length === 0 ? (
             <div className="rpt-top-loading" style={{ color: "var(--muted)" }}>No market data available</div>
           ) : (
+            <>
+            {topProgress?.refreshing && (
+              <div className="rpt-top-refreshing">
+                Updating from Warframe.Market: {topProgress.completed}/{topProgress.total} items ({topProgressPercent}%). Showing the previous ranking until the scan finishes.
+              </div>
+            )}
             <div className="rpt-top-wrap">
               <table className="rpt-table">
                 <thead>
@@ -403,6 +447,7 @@ export default function Reports({ dateRange, onDateRangeChange, clockFormat, sys
                 <Legend items={topItemsChartForWfm} />
               </div>
             </div>
+            </>
           )}
         </div>
 
