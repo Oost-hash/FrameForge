@@ -848,13 +848,15 @@ fn get_item_list_status(state: State<AppState>) -> serde_json::Value {
 #[tauri::command]
 async fn fetch_item_list(state: State<'_, AppState>, force: Option<bool>) -> Result<usize, String> {
     let force = force.unwrap_or(false);
-    let result = tauri::async_runtime::spawn_blocking(move || wfcd::fetch_items(None, force))
+    let fetched = tauri::async_runtime::spawn_blocking(move || wfcd::fetch_items(None, force))
         .await
-        .map_err(|e| e.to_string())?
-        .and_then(|fetched| match fetched {
-            cache::Fetched::New(r, _) => Ok(r),
-            cache::Fetched::NotModified => Err("catalogue unchanged".to_string()),
-        })?;
+        .map_err(|e| e.to_string())??;
+    let result = match fetched {
+        cache::Fetched::New(result, _) => result,
+        cache::Fetched::NotModified => {
+            return Ok(state.wfcd_items.lock().map_err(|e| e.to_string())?.len());
+        }
+    };
 
     let count = result.items.len();
 
@@ -9737,6 +9739,7 @@ pub fn run() {
             ] {
                 let _ = std::fs::remove_file(path);
             }
+            wfcd::clear_cached_etags();
             let _ = merge_settings(&settings_path, |map| {
                 map.insert("lastVersion".to_string(), serde_json::Value::String(CURRENT_VERSION.to_string()));
             });
