@@ -1,7 +1,6 @@
-import { useState, useEffect, useMemo, useContext, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { ImgCacheDirContext } from "../ImgCacheDir";
-import { warframeStatImageUrl } from "../constants/urls";
+import ItemImg from "../ItemImg";
 import { TAURI_COMMANDS } from "../constants/tauri";
 import type { WfmTopItem } from "../types/market";
 import type { Trade, TradeSession } from "../types/trades";
@@ -237,25 +236,6 @@ function Legend({ items }: { items: { label: string; color: string; value: numbe
   );
 }
 
-// ── Main component ───────────────────────────────────────────────────────────
-
-function ItemImg({ imageName, size = 28 }: { imageName?: string; size?: number }) {
-  const baseUrl = useContext(ImgCacheDirContext);
-  const [localFailed, setLocalFailed] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const ref = useRef<HTMLImageElement>(null);
-
-  useEffect(() => {
-    if (ref.current?.complete) ref.current.classList.add("img-loaded");
-  }, []);
-
-  if (!imageName || failed)
-    return <span className="img-fallback" style={{ width: size, height: size }} />;
-  const useLocal = Boolean(baseUrl) && !localFailed;
-  const src = useLocal ? `${baseUrl}/${imageName}` : warframeStatImageUrl(imageName);
-  return <img ref={ref} className="img" style={{ width: size, height: size }} src={src} alt="" loading="lazy" onError={() => useLocal ? setLocalFailed(true) : setFailed(true)} onLoad={() => ref.current?.classList.add("img-loaded")} />;
-}
-
 interface Props {
   dateRange: number | "all";
   onDateRangeChange: (r: number | "all") => void;
@@ -406,7 +386,7 @@ export default function Reports({ dateRange, onDateRangeChange, clockFormat, sys
                     <tr key={item.url_name}>
                       <td>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <ItemImg imageName={item.image_name} size={24} />
+                          <ItemImg imageName={item.image_name} size={24} fallbackText="" />
                           <span className="rpt-dot" style={{ background: topItemsChartForWfm[i]?.color }} />
                           {item.name}
                         </div>

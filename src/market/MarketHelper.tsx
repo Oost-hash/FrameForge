@@ -1,12 +1,11 @@
-import { useState, useEffect, useMemo, useRef, memo, useContext, type Dispatch, type SetStateAction } from "react";
+import { useState, useEffect, useMemo, useRef, memo, type Dispatch, type SetStateAction } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { ImgCacheDirContext } from "../ImgCacheDir";
+import ItemImg from "../ItemImg";
 import { listen } from "@tauri-apps/api/event";
 import { HelpTip } from "../shared/HelpTip";
 import FilterPresets from "../shared/FilterPresets";
 import WfmTrading from "./WfmTrading";
 import ItemMarketPopup from "./ItemMarketPopup";
-import { warframeStatImageUrl } from "../constants/urls";
 import { matchesSearchTerms, splitSearchTerms } from "../lib/search";
 import { TAURI_COMMANDS } from "../constants/tauri";
 import { useCatalog } from "../hooks/useCatalog";
@@ -79,21 +78,6 @@ function flattenRecipeCounts(comps: RecipeComponent[], multiplier: number, out: 
   }
 }
 
-function ItemImg({ imageName, size = 32 }: { imageName?: string; size?: number }) {
-  const baseUrl = useContext(ImgCacheDirContext);
-  const [localFailed, setLocalFailed] = useState(false);
-  const [cdnFailed,   setCdnFailed]   = useState(false);
-  const s = { width: size, height: size, objectFit: "contain" as const, flexShrink: 0, borderRadius: 4 };
-  if (!imageName || cdnFailed)
-    return <span style={{ ...s, background: "rgba(255,255,255,.06)", border: "1px solid #30363d", display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * .3, color: "#8b949e" }}>P</span>;
-  const useLocal = Boolean(baseUrl) && !localFailed;
-  const src = useLocal
-    ? `${baseUrl}/${imageName}`
-    : warframeStatImageUrl(imageName);
-  return <img style={s} src={src} alt="" loading="lazy"
-    onError={() => useLocal ? setLocalFailed(true) : setCdnFailed(true)} />;
-}
-
 // ─── Set card ─────────────────────────────────────────────────────────────────
 
 interface SetPart { item: CatalogItem; qty: number; required_count: number; sellMedian?: number; loading: boolean; urlName: string; }
@@ -117,7 +101,7 @@ function SetCard({ setKey, parts, parentItem, setPrice, setPriceLoading, pricesF
     <div className={`market-card${isComplete ? " market-card-complete" : ""}`}>
       <div className={`market-card-left${onCardClick ? " market-card-clickable" : ""}`} onClick={onCardClick} title={onCardClick ? "View orders & prices" : undefined}>
         <div style={{ position: "relative", display: "inline-block" }}>
-          <ItemImg imageName={parentItem?.image_name} size={64} />
+          <ItemImg imageName={parentItem?.image_name} size={64} fallbackText="P" />
           {isCrafting && (
             <span style={{ position: "absolute", top: -4, right: -6, fontSize: 13 }} title="Building in Foundry">⚒</span>
           )}
@@ -763,7 +747,7 @@ function ModsTab({ catalog: allCatalog, inventory, wfmLookup, prices, modCopiesM
                 {isArcane ? "Arcane" : "Mod"}
               </span>
               <div className="mod-card-img">
-                <ItemImg imageName={item.image_name ?? undefined} size={56} />
+                <ItemImg imageName={item.image_name ?? undefined} size={56} fallbackText="P" />
               </div>
               <div className="mod-card-name">{item.name}</div>
               <div className="mod-card-footer">
