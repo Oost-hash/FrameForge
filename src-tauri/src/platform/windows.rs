@@ -83,28 +83,54 @@ pub fn find_warframe_pid() -> Option<u32> {
             PROCESSENTRY32, TH32CS_SNAPPROCESS,
         },
     };
-    unsafe {
-        let snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-        if snapshot == INVALID_HANDLE_VALUE { return None; }
+    // CreateToolhelp32Snapshot can fail sporadically while processes are
+    // spawning/exiting (e.g. during Warframe startup via the launcher). Only a
+    // failed snapshot is worth retrying; a successful enumeration without a
+    // match genuinely means "not found".
+    for _ in 0..3 {
+        let found = unsafe {
+            let snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+            if snapshot == INVALID_HANDLE_VALUE {
+                None::<Option<u32>>
+            } else {
+                let mut entry: PROCESSENTRY32 = mem::zeroed();
+                entry.dwSize = mem::size_of::<PROCESSENTRY32>() as u32;
 
-        let mut entry: PROCESSENTRY32 = mem::zeroed();
-        entry.dwSize = mem::size_of::<PROCESSENTRY32>() as u32;
-
-        let mut found = None;
-        if Process32First(snapshot, &mut entry) != 0 {
-            loop {
-                let name_len = entry.szExeFile.iter().position(|&b| b == 0).unwrap_or(260);
-                let name = String::from_utf8_lossy(&entry.szExeFile[..name_len]).to_lowercase();
-                if name.starts_with("warframe") && !name.contains("launcher") && !name.contains("companion") {
-                    found = Some(entry.th32ProcessID);
-                    break;
+                let mut found = None;
+                if Process32First(snapshot, &mut entry) != 0 {
+                    loop {
+                        let name_len = entry.szExeFile.iter().position(|&b| b == 0).unwrap_or(260);
+                        let name = String::from_utf8_lossy(&entry.szExeFile[..name_len]).to_lowercase();
+                        if is_game_process(&name) {
+                            found = Some(entry.th32ProcessID);
+                            break;
+                        }
+                        if Process32Next(snapshot, &mut entry) == 0 { break; }
+                    }
                 }
-                if Process32Next(snapshot, &mut entry) == 0 { break; }
+                CloseHandle(snapshot);
+                Some(found)
             }
+        };
+        match found {
+            // Snapshot succeeded (with or without a match): definitive result.
+            Some(pid) => return pid,
+            // Snapshot failed: wait briefly and retry.
+            None => std::thread::sleep(std::time::Duration::from_millis(50)),
         }
-        CloseHandle(snapshot);
-        found
     }
+    None
+}
+
+/// True for the actual game process; launcher/helper processes excluded.
+fn is_game_process(name: &str) -> bool {
+    name.starts_with("warframe")
+        && !name.contains("launcher")
+        && !name.contains("companion")
+        && !name.contains("crash")
+        && !name.contains("downloader")
+        && !name.contains("installer")
+        && !name.contains("updater")
 }
 
 // ─── Process Handle ──────────────────────────────────────────────────────────

@@ -121,6 +121,10 @@ pub(crate) fn spawn_blob_capture_thread(
         let mut last_pid_check: Option<std::time::Instant> = None;
         let mut last_pid: Option<u32> = None;
         let mut cached_game_running = false;
+        // Hysteresis against flapping: mark "running" on a single hit, only
+        // mark "not running" after 2 consecutive misses (2x 5 s). A poke_scan
+        // (forced) bypasses the hysteresis for an immediate result.
+        let mut consecutive_misses: u32 = 0;
         // When game is not running, suppress redundant inventory-update emits.
         // Only emit on the status-change tick and then at most once every 30 s as a heartbeat.
         let mut prev_game_running = false;
@@ -167,7 +171,18 @@ pub(crate) fn spawn_blob_capture_thread(
                 .is_none_or(|t: std::time::Instant| t.elapsed().as_secs() >= 5);
             if needs_pid_check {
                 let current_pid = memory_scanner::find_warframe_pid_pub();
-                cached_game_running = current_pid.is_some();
+                if current_pid.is_some() {
+                    consecutive_misses = 0;
+                    cached_game_running = true;
+                } else if forced {
+                    consecutive_misses = 0;
+                    cached_game_running = false;
+                } else {
+                    consecutive_misses += 1;
+                    if consecutive_misses >= 2 {
+                        cached_game_running = false;
+                    }
+                }
                 if current_pid != last_pid {
                     if current_pid.is_some() {
                         info!(?last_pid, ?current_pid, "Warframe PID changed, clearing blob region cache");
@@ -178,6 +193,35 @@ pub(crate) fn spawn_blob_capture_thread(
                 last_pid_check = Some(std::time::Instant::now());
             }
             let game_running = cached_game_running;
+            // Detection is decoupled from blob success: as soon as the PID exists
+            // the UI knows the game is running — even while the memory scan is
+            // still in flight or failing. Without this the chip stayed on
+            // "No Game" until a blob parse succeeded, which explains the
+            // sporadic recognition.
+            if game_running && !prev_game_running {
+                let mut emit_qty = known.clone();
+                for k in &confirmed_unique { emit_qty.entry(k.clone()).or_insert(1); }
+                for (p, mc) in &known_mods { emit_qty.entry(p.clone()).or_insert(mc.total); }
+                let crafting = monitor::build_crafting_jobs(
+                    &current_recipes.iter()
+                        .map(|r| (r.unique_name.clone(), r.completion_ms))
+                        .collect::<Vec<_>>(),
+                    &display_names, &unique_names,
+                );
+                let _ = app.emit("inventory-update", InventoryUpdate {
+                    quantities: emit_qty, crafting,
+                    mastery_rank: current_mastery_rank,
+                    mastery_data: HashMap::new(),
+                    changes: vec![], warframe_running: true, scanned_at: now,
+                    consumed_suits: current_consumed_suits.clone(),
+                    mods: known_mods.clone(),
+                    socketed_shards: current_socketed_shards.clone(),
+                    forma_counts: current_forma_counts.clone(),
+                    is_full_pass: false,
+                    player_name: app.state::<AppState>().local_player_name
+                        .lock().ok().and_then(|g| g.clone()),
+                });
+            }
             if game_running {
                 // ── Blob capture: unconditional scan every 10 seconds ─────────
                 let should_capture = last_blob_time
