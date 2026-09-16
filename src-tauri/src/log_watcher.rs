@@ -867,7 +867,7 @@ pub(crate) async fn capture_reward_items(
     let frame = std::sync::Arc::clone(&app.state::<AppState>().last_ocr_frame);
     tauri::async_runtime::spawn_blocking(move || {
         let (pixels, width, capture_height, game_height, capture_info) =
-            ocr::capture_warframe_reward_area()?;
+            crate::ocr::capture_warframe_reward_area()?;
         // Keep the source frame for diagnostics without another GPU readback.
         if let Ok(mut cached) = frame.lock() {
             *cached = Some((pixels.clone(), width, capture_height));
@@ -899,7 +899,7 @@ pub(crate) fn schedule_reward_diagnostic_capture(
         tauri::async_runtime::spawn(async move {
             tokio::time::sleep(std::time::Duration::from_millis(4000)).await;
             tauri::async_runtime::spawn_blocking(move || {
-                if let Some((pixels, width, height)) = ocr::capture_desktop_for_diag() {
+                if let Some((pixels, width, height)) = crate::ocr::capture_desktop_for_diag() {
                     let _ = write_bmp(&folder.join("screenshot.bmp"), &pixels, width, height);
                 }
             })

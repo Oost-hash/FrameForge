@@ -212,20 +212,8 @@ pub(crate) fn log_relic_fe(msg: String) {
 /// Warframe's continuous HWND_TOPMOST reassertion.
 #[tauri::command]
 pub(crate) fn set_overlay_topmost() {
-    #[cfg(target_os = "windows")]
-    unsafe {
-        use windows_sys::Win32::UI::WindowsAndMessaging::{
-            FindWindowW, SetWindowPos,
-            SWP_NOMOVE, SWP_NOSIZE, SWP_NOACTIVATE,
-            HWND_TOPMOST,
-        };
-        let title: Vec<u16> = "FrameForge Overlay\0".encode_utf16().collect();
-        let hwnd = FindWindowW(std::ptr::null(), title.as_ptr());
-        if hwnd != 0 {
-            SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0,
-                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-        }
-    }
+    use crate::platform::{WindowManager, Platform};
+    Platform::set_overlay_topmost();
 }
 
 /// Diagnostic: position a test window ON TOP OF WARFRAME (finds Warframe's HWND
@@ -239,25 +227,10 @@ pub(crate) fn inject_overlay_diagnostic(app: tauri::AppHandle) -> String {
     use tauri::{Manager, PhysicalPosition, PhysicalSize, WebviewWindowBuilder, WebviewUrl};
 
     // Find Warframe's client area to anchor the diagnostic window to the right monitor.
-    #[cfg(target_os = "windows")]
-    let (wf_x, wf_y, wf_w, wf_h) = unsafe {
-        use windows_sys::Win32::Foundation::{POINT, RECT};
-        use windows_sys::Win32::UI::WindowsAndMessaging::{FindWindowW, GetClientRect};
-        use windows_sys::Win32::Graphics::Gdi::ClientToScreen;
-        let title: Vec<u16> = "Warframe\0".encode_utf16().collect();
-        let hwnd = FindWindowW(std::ptr::null(), title.as_ptr());
-        if hwnd != 0 {
-            let mut r = RECT { left: 0, top: 0, right: 0, bottom: 0 };
-            GetClientRect(hwnd, &mut r);
-            let mut pt = POINT { x: 0, y: 0 };
-            ClientToScreen(hwnd, &mut pt);
-            (pt.x, pt.y, (r.right - r.left), (r.bottom - r.top))
-        } else {
-            (0, 0, 1920i32, 1080i32)
-        }
-    };
-    #[cfg(not(target_os = "windows"))]
-    let (wf_x, wf_y, wf_w, wf_h) = (0i32, 0i32, 1920i32, 1080i32);
+    use crate::platform::{WindowManager, Platform};
+    let rect = Platform::get_warframe_window_rect()
+        .unwrap_or([0, 0, 1920, 1080]);
+    let (wf_x, wf_y, wf_w, wf_h) = (rect[0], rect[1], rect[2], rect[3]);
 
     // Place diagnostic at the vertical centre of the Warframe client area, full width.
     let diag_x = wf_x;
@@ -559,26 +532,8 @@ pub(crate) async fn capture_diagnostics(state: State<'_, AppState>) -> Result<St
 /// both exclude the window title bar and borders in windowed mode.
 #[tauri::command]
 pub(crate) fn get_warframe_window_rect() -> Result<[i32; 4], String> {
-    #[cfg(not(target_os = "windows"))]
-    { return Err("Windows only".into()); }
-    #[cfg(target_os = "windows")]
-    {
-        use windows_sys::Win32::Foundation::{POINT, RECT};
-        use windows_sys::Win32::UI::WindowsAndMessaging::{FindWindowW, GetClientRect};
-        use windows_sys::Win32::Graphics::Gdi::ClientToScreen;
-
-        let title: Vec<u16> = "Warframe\0".encode_utf16().collect();
-        let hwnd = unsafe { FindWindowW(std::ptr::null(), title.as_ptr()) };
-        if hwnd == 0 { return Err("Warframe window not found".into()); }
-
-        // Client rect is always (0,0,w,h) — convert origin to screen coords
-        let mut r = RECT { left: 0, top: 0, right: 0, bottom: 0 };
-        unsafe { GetClientRect(hwnd, &mut r) };
-        let mut origin = POINT { x: 0, y: 0 };
-        unsafe { ClientToScreen(hwnd, &mut origin) };
-
-        Ok([origin.x, origin.y, r.right - r.left, r.bottom - r.top])
-    }
+    use crate::platform::{WindowManager, Platform};
+    Platform::get_warframe_window_rect()
 }
 
 // ── Memory Relic Debug ─────────────────────────────────────────────────────
@@ -616,7 +571,6 @@ pub(crate) fn start_memory_relic_debug() -> Result<String, String> {
     std::fs::write(&log_path, header.as_bytes()).map_err(|e| e.to_string())?;
     let lp = log_path.clone();
     std::thread::spawn(move || {
-        #[cfg(target_os = "windows")]
         mem_relic_debug_loop(&lp);
         MEM_RELIC_DEBUG_RUNNING.store(false, Ordering::SeqCst);
     });
@@ -632,20 +586,7 @@ pub(crate) fn stop_memory_relic_debug() {
 fn mem_relic_debug_loop(log_path: &std::path::Path) {
     use std::collections::HashMap;
     use std::io::{Read, Seek, SeekFrom};
-    use windows_sys::Win32::{
-        Foundation::CloseHandle,
-        System::{
-            Diagnostics::ToolHelp::{
-                CreateToolhelp32Snapshot, Process32FirstW, Process32NextW,
-                PROCESSENTRY32W, TH32CS_SNAPPROCESS,
-            },
-            Memory::{
-                VirtualQueryEx, MEMORY_BASIC_INFORMATION, MEM_COMMIT,
-                PAGE_GUARD, PAGE_NOACCESS,
-            },
-            Threading::{OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_VM_READ},
-        },
-    };
+    use crate::platform::{Platform, ProcessAccess};
 
     // Pattern tuple: (name, bytes, ctx_before, ctx_after, min_addr, max_region_size)
     // max_region_size=0 means no limit. Use a small cap (e.g. 4 MB) for heap-heap patterns
@@ -702,43 +643,38 @@ fn mem_relic_debug_loop(log_path: &std::path::Path) {
     // Skips regions > 128 KB to avoid the FULL_ACCOUNT blob and other large allocs.
     // Returns (region_base, match_addr, context_bytes).
     fn scan_lotus_in_heap(pid: u32) -> Vec<(u64, u64, Vec<u8>)> {
-        const HEAP_MIN: u64 = 0x0000_0001_0000_0000;
-        const HEAP_MAX: u64 = 0x0000_0300_0000_0000;
-        const REGION_MAX: u64 = 128 * 1024;
+        const HEAP_MIN: usize = 0x0000_0001_0000_0000;
+        const HEAP_MAX: usize = 0x0000_0300_0000_0000;
+        const REGION_MAX: usize = 128 * 1024;
         const CTX: usize = 192;
         const STRIDE: usize = 256; // skip forward after each match (de-noise)
         let pat: &[u8] = b"/Lotus/";
         let mut results = Vec::new();
-        unsafe {
-            let proc = windows_sys::Win32::System::Threading::OpenProcess(
-                windows_sys::Win32::System::Threading::PROCESS_VM_READ
-                | windows_sys::Win32::System::Threading::PROCESS_QUERY_INFORMATION,
-                0, pid);
-            if proc == 0 { return results; }
-            let mut addr: u64 = HEAP_MIN;
-            loop {
-                if addr >= HEAP_MAX { break; }
-                let mut mbi: windows_sys::Win32::System::Memory::MEMORY_BASIC_INFORMATION
-                    = std::mem::zeroed();
-                let ret = windows_sys::Win32::System::Memory::VirtualQueryEx(
-                    proc, addr as *const _,
-                    &mut mbi, std::mem::size_of::<windows_sys::Win32::System::Memory::MEMORY_BASIC_INFORMATION>());
-                if ret == 0 { break; }
-                let region_base = mbi.BaseAddress as u64;
-                let region_size = mbi.RegionSize as u64;
-                addr = region_base.saturating_add(region_size);
-                if mbi.State != windows_sys::Win32::System::Memory::MEM_COMMIT { continue; }
-                if mbi.Protect & (windows_sys::Win32::System::Memory::PAGE_GUARD
-                                | windows_sys::Win32::System::Memory::PAGE_NOACCESS) != 0 { continue; }
-                if region_size > REGION_MAX { continue; }
-                if !(HEAP_MIN..HEAP_MAX).contains(&region_base) { continue; }
-                let mut buf = vec![0u8; region_size as usize];
-                let mut read = 0usize;
-                let ok = windows_sys::Win32::System::Diagnostics::Debug::ReadProcessMemory(
-                    proc, region_base as *const _,
-                    buf.as_mut_ptr() as *mut _, buf.len(), &mut read);
-                if ok == 0 || read == 0 { continue; }
-                buf.truncate(read);
+
+        let handle = match Platform::open_process(pid) {
+            Some(h) => h,
+            None => return results,
+        };
+
+        let mut addr = HEAP_MIN;
+        loop {
+            if addr >= HEAP_MAX { break; }
+            let regions = handle.enumerate_regions_from(addr);
+            if regions.is_empty() { break; }
+
+            for region in &regions {
+                addr = region.base_address + region.region_size;
+                if !region.is_committed || !region.is_readable { continue; }
+                if region.region_size > REGION_MAX { continue; }
+                if !(HEAP_MIN..HEAP_MAX).contains(&region.base_address) { continue; }
+
+                let (_, buf) = match handle.read_memory(region.base_address, region.region_size) {
+                    Some(r) => r,
+                    None => continue,
+                };
+                if buf.is_empty() { continue; }
+
+                let region_base = region.base_address as u64;
                 let mut search_from = 0usize;
                 while let Some(pos) = buf[search_from..].windows(pat.len())
                     .position(|w| w == pat)
@@ -751,57 +687,36 @@ fn mem_relic_debug_loop(log_path: &std::path::Path) {
                     search_from = pos + STRIDE;
                 }
             }
-            windows_sys::Win32::Foundation::CloseHandle(proc);
         }
         results
     }
 
     fn find_warframe_pid() -> Option<u32> {
-        unsafe {
-            let snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-            if snap == -1isize { return None; }
-            let mut entry: PROCESSENTRY32W = std::mem::zeroed();
-            entry.dwSize = std::mem::size_of::<PROCESSENTRY32W>() as u32;
-            if Process32FirstW(snap, &mut entry) == 0 {
-                CloseHandle(snap); return None;
-            }
-            loop {
-                let name: Vec<u16> = entry.szExeFile.iter()
-                    .copied().take_while(|&c| c != 0).collect();
-                if let Ok(s) = String::from_utf16(&name) {
-                    if s.eq_ignore_ascii_case("Warframe.x64.exe") {
-                        let pid = entry.th32ProcessID;
-                        CloseHandle(snap);
-                        return Some(pid);
-                    }
-                }
-                if Process32NextW(snap, &mut entry) == 0 { break; }
-            }
-            CloseHandle(snap);
-        }
-        None
+        Platform::find_warframe_pid()
     }
 
     fn scan_process(pid: u32, patterns: &[MemoryPattern])
         -> Vec<(String, u64, u64, u64, Vec<u8>)>  // (pat_name, region_base, region_size, match_addr, context)
     {
         let mut results = Vec::new();
-        unsafe {
-            let proc = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, pid);
-            if proc == 0 { return results; }
-            let mut addr: u64 = 0;
-            loop {
-                let mut mbi: MEMORY_BASIC_INFORMATION = std::mem::zeroed();
-                let ret = VirtualQueryEx(proc, addr as *const _, &mut mbi,
-                    std::mem::size_of::<MEMORY_BASIC_INFORMATION>());
-                if ret == 0 { break; }
-                let region_base = mbi.BaseAddress as u64;
-                let region_size = mbi.RegionSize as u64;
-                addr = region_base.saturating_add(region_size);
 
-                if mbi.State != MEM_COMMIT { continue; }
-                if mbi.Protect & (PAGE_GUARD | PAGE_NOACCESS) != 0 { continue; }
-                if region_size > 128 * 1024 * 1024 { continue; }
+        let handle = match Platform::open_process(pid) {
+            Some(h) => h,
+            None => return results,
+        };
+
+        let mut addr: usize = 0;
+        loop {
+            let regions = handle.enumerate_regions_from(addr);
+            if regions.is_empty() { break; }
+
+            for region in &regions {
+                addr = region.base_address + region.region_size;
+                if !region.is_committed || !region.is_readable { continue; }
+                if region.region_size > 128 * 1024 * 1024 { continue; }
+
+                let region_base = region.base_address as u64;
+                let region_size = region.region_size as u64;
 
                 // Only read the region if at least one pattern applies to it.
                 let any_match = patterns.iter().any(|&(_, _, _, _, min_addr, max_sz)| {
@@ -809,13 +724,11 @@ fn mem_relic_debug_loop(log_path: &std::path::Path) {
                 });
                 if !any_match { continue; }
 
-                let mut buf = vec![0u8; region_size as usize];
-                let mut read = 0usize;
-                let ok = windows_sys::Win32::System::Diagnostics::Debug::ReadProcessMemory(
-                    proc, region_base as *const _, buf.as_mut_ptr() as *mut _, buf.len(), &mut read,
-                );
-                if ok == 0 || read == 0 { continue; }
-                buf.truncate(read);
+                let (_, buf) = match handle.read_memory(region.base_address, region.region_size) {
+                    Some(r) => r,
+                    None => continue,
+                };
+                if buf.is_empty() { continue; }
 
                 for &(name, pat, ctx_before, ctx_after, min_addr, max_region_size) in patterns {
                     if region_base < min_addr { continue; }
@@ -834,7 +747,6 @@ fn mem_relic_debug_loop(log_path: &std::path::Path) {
                     }
                 }
             }
-            CloseHandle(proc);
         }
         results
     }
@@ -1107,3 +1019,6 @@ fn mem_relic_debug_loop(log_path: &std::path::Path) {
 
     append(log_path, "\n[STOPPED]\n");
 }
+
+#[cfg(not(target_os = "windows"))]
+fn mem_relic_debug_loop(_log_path: &std::path::Path) {}

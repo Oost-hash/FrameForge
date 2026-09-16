@@ -14,13 +14,9 @@ use crate::paths;
 #[tauri::command]
 pub(crate) async fn factory_reset(app: tauri::AppHandle, _state: State<'_, AppState>) -> Result<(), String> {
     // Delete WFM credential silently (ignore errors — may not exist)
-    #[cfg(target_os = "windows")]
     {
-        use windows_sys::Win32::Security::Credentials::{CredDeleteW, CRED_TYPE_GENERIC};
-        use std::ffi::OsStr;
-        use std::os::windows::ffi::OsStrExt;
-        let target: Vec<u16> = OsStr::new("FrameForge_WFM").encode_wide().chain(Some(0)).collect();
-        unsafe { CredDeleteW(target.as_ptr(), CRED_TYPE_GENERIC, 0); }
+        use crate::platform::{CredentialStore, Platform};
+        let _ = Platform::delete_credentials("FrameForge_WFM");
     }
 
     let config_dir = paths::config_dir();

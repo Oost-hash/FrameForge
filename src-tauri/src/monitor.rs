@@ -78,33 +78,17 @@ pub(crate) fn get_monitor_status(state: State<AppState>) -> bool {
 ///
 /// The full scan caches the static-string address; later scans use the narrow,
 /// writable-only range around it to avoid scanning read-only .rodata repeatedly.
-#[cfg(target_os = "windows")]
 pub(crate) fn scan_heap_for_trigger(
     pid: u32,
     pat: &[u8],
     cached_bare: Option<u64>,
 ) -> (bool, String, Option<u64>) {
-    use windows_sys::Win32::{
-        Foundation::CloseHandle,
-        System::{
-            Diagnostics::Debug::ReadProcessMemory,
-            Memory::{
-                VirtualQueryEx, MEMORY_BASIC_INFORMATION, MEM_COMMIT, PAGE_EXECUTE_READWRITE,
-                PAGE_EXECUTE_WRITECOPY, PAGE_GUARD, PAGE_NOACCESS, PAGE_READWRITE,
-                PAGE_WRITECOPY,
-            },
-            Threading::{OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_VM_READ},
-        },
-    };
+    use crate::platform::{Platform, ProcessAccess};
+
     const FULL_MIN: u64 = 0x0000_0001_0000_0000; // 4 GB
     const FULL_MAX: u64 = 0x0000_8000_0000_0000; // 512 TB (covers DLL image range)
     const NARROW_R: u64 = 128 * 1024 * 1024; // +/-128 MB around bare_hit
     const REGION_MAX: usize = 32 * 1024 * 1024; // skip regions > 32 MB
-    // Any writable protection (heap/stack/data). Excludes PAGE_READONLY (.rodata).
-    const WRITABLE: u32 = PAGE_READWRITE
-        | PAGE_EXECUTE_READWRITE
-        | PAGE_WRITECOPY
-        | PAGE_EXECUTE_WRITECOPY;
 
     let bare_pat = &pat[..pat.len().saturating_sub(1)];
     let (scan_min, scan_max, rw_only) = match cached_bare {
@@ -112,56 +96,44 @@ pub(crate) fn scan_heap_for_trigger(
         None => (FULL_MIN, FULL_MAX, false),
     };
 
+    let handle = match Platform::open_process(pid) {
+        Some(h) => h,
+        None => return (false, format!("OpenProcess failed pid={}", pid), cached_bare),
+    };
+
     let mut found = false;
     let mut regions_read = 0u32;
     let mut bare_hit: Option<u64> = None;
+    let mut addr = scan_min as usize;
     let t = std::time::Instant::now();
-    unsafe {
-        let proc = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, pid);
-        if proc == 0 {
-            return (false, format!("OpenProcess failed pid={}", pid), cached_bare);
-        }
-        let mut addr = scan_min;
-        loop {
-            if addr >= scan_max {
-                break;
-            }
-            let mut mbi: MEMORY_BASIC_INFORMATION = std::mem::zeroed();
-            let ret = VirtualQueryEx(
-                proc,
-                addr as *const _,
-                &mut mbi,
-                std::mem::size_of::<MEMORY_BASIC_INFORMATION>(),
-            );
-            if ret == 0 {
-                break;
-            }
-            let base = mbi.BaseAddress as u64;
-            let size = mbi.RegionSize;
-            addr = base.saturating_add(size as u64);
-            if base < scan_min || base >= scan_max || mbi.State != MEM_COMMIT {
+
+    loop {
+        if addr >= scan_max as usize { break; }
+
+        let regions = handle.enumerate_regions_from(addr);
+        if regions.is_empty() { break; }
+
+        for region in &regions {
+            let base = region.base_address;
+            let size = region.region_size;
+            addr = base + size;
+
+            if base < scan_min as usize || base >= scan_max as usize || !region.is_committed || !region.is_readable {
                 continue;
             }
-            if mbi.Protect & (PAGE_GUARD | PAGE_NOACCESS) != 0 {
-                continue;
-            }
-            if rw_only && mbi.Protect & WRITABLE == 0 {
-                continue;
-            }
-            if size > REGION_MAX {
-                continue;
-            }
-            let mut buf = vec![0u8; size];
-            let mut n = 0usize;
-            let ok = ReadProcessMemory(proc, base as *const _, buf.as_mut_ptr() as *mut _, buf.len(), &mut n);
-            if ok == 0 || n == 0 {
-                continue;
-            }
-            buf.truncate(n);
+            if rw_only && !region.is_writable { continue; }
+            if size > REGION_MAX { continue; }
+
+            let (_, buf) = match handle.read_memory(base, size) {
+                Some(r) => r,
+                None => continue,
+            };
+            if buf.is_empty() { continue; }
+
             regions_read += 1;
             if bare_hit.is_none() {
                 if let Some(off) = buf.windows(bare_pat.len()).position(|w| w == bare_pat) {
-                    bare_hit = Some(base + off as u64);
+                    bare_hit = Some(base as u64 + off as u64);
                 }
             }
             if buf.windows(pat.len()).any(|w| w == pat) {
@@ -169,8 +141,9 @@ pub(crate) fn scan_heap_for_trigger(
                 break;
             }
         }
-        CloseHandle(proc);
+        if found { break; }
     }
+
     let mode = if cached_bare.is_some() { "narrow" } else { "full" };
     let diag = format!(
         "{} scan in {}ms: {} regions, bare={}, live={}",
@@ -181,15 +154,6 @@ pub(crate) fn scan_heap_for_trigger(
         found
     );
     (found, diag, if cached_bare.is_none() { bare_hit } else { cached_bare })
-}
-
-#[cfg(not(target_os = "windows"))]
-pub(crate) fn scan_heap_for_trigger(
-    _pid: u32,
-    _pat: &[u8],
-    cached_bare: Option<u64>,
-) -> (bool, String, Option<u64>) {
-    (false, "non-windows".to_string(), cached_bare)
 }
 
 /// Start the memory-based relic reward trigger alongside the EE.log watcher.
@@ -290,15 +254,7 @@ pub(crate) fn start_legacy_reward_worker(
         // Initialize COM (required for Windows OCR / WinRT APIs).
         // std::thread::spawn creates a raw OS thread with no COM apartment;
         // WinRT calls silently fail without this, returning empty strings.
-        #[cfg(target_os = "windows")]
-        unsafe {
-            windows_sys::Win32::System::Com::CoInitializeEx(
-                std::ptr::null(),
-                windows_sys::Win32::System::Com::COINIT_MULTITHREADED
-                    .try_into()
-                    .unwrap(),
-            );
-        }
+        <crate::platform::Platform as crate::platform::ComInit>::initialize_com();
 
         while monitor_active.load(Ordering::SeqCst) {
             let _relic_screen = false;

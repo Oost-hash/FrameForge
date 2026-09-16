@@ -20,58 +20,36 @@ pub(crate) async fn scan_warframe_credentials() -> Result<(String, String, Strin
 }
 
 fn scan_warframe_credentials_sync() -> Result<(String, String, String), String> {
-    #[cfg(not(target_os = "windows"))]
-    { return Err("Only supported on Windows".into()); }
-    #[cfg(target_os = "windows")]
-    use windows_sys::Win32::{
-        Foundation::CloseHandle,
-        System::{
-            Diagnostics::Debug::ReadProcessMemory,
-            Memory::{VirtualQueryEx, MEMORY_BASIC_INFORMATION, MEM_COMMIT, PAGE_GUARD, PAGE_NOACCESS},
-            Threading::{OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_VM_READ},
-        },
-    };
-    use std::ffi::c_void;
-    use std::mem;
+    use crate::platform::{Platform, ProcessAccess};
 
     let pid = memory_scanner::find_warframe_pid_pub()
         .ok_or("Warframe is not running")?;
 
-    unsafe {
-        let process = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, pid);
-        if process == 0 { return Err("Cannot open Warframe process".into()); }
+    let handle = Platform::open_process(pid)
+        .ok_or("Cannot open Warframe process")?;
 
-        let mut address: usize = 0x10000;
-        let mbi_size = mem::size_of::<MEMORY_BASIC_INFORMATION>();
+    let mut address: usize = 0x10000;
 
-        loop {
-            let mut mbi: MEMORY_BASIC_INFORMATION = mem::zeroed();
-            if VirtualQueryEx(process, address as *const c_void, &mut mbi, mbi_size) == 0 { break; }
-            let region_end = (mbi.BaseAddress as usize).saturating_add(mbi.RegionSize);
-            if region_end <= address { break; }
-            address = region_end;
+    loop {
+        let regions = handle.enumerate_regions_from(address);
+        if regions.is_empty() { break; }
 
-            if mbi.State != MEM_COMMIT { continue; }
-            let p = mbi.Protect;
-            if p & PAGE_NOACCESS != 0 || p & PAGE_GUARD != 0 { continue; }
-            if p == 0x10 || p == 0x20 { continue; }
-            if mbi.RegionSize > 128 * 1024 * 1024 { continue; }
+        for region in &regions {
+            address = region.base_address + region.region_size;
+            if !region.is_committed || !region.is_readable || region.is_executable { continue; }
+            if region.region_size > 128 * 1024 * 1024 { continue; }
 
-            let mut buffer = vec![0u8; mbi.RegionSize];
-            let mut bytes_read: usize = 0;
-            let ok = ReadProcessMemory(
-                process, mbi.BaseAddress as *const c_void,
-                buffer.as_mut_ptr() as *mut c_void, mbi.RegionSize, &mut bytes_read,
-            );
-            if ok == 0 || bytes_read == 0 { continue; }
+            let (_, buffer) = match handle.read_memory(region.base_address, region.region_size) {
+                Some(r) => r,
+                None => continue,
+            };
+            if buffer.is_empty() { continue; }
 
-            if let Some((id, nonce)) = memory_scanner::scan_auth_credentials(&buffer[..bytes_read]) {
-                let steam_id = memory_scanner::scan_steam_id(&buffer[..bytes_read]).unwrap_or_default();
-                CloseHandle(process);
+            if let Some((id, nonce)) = memory_scanner::scan_auth_credentials(&buffer) {
+                let steam_id = memory_scanner::scan_steam_id(&buffer).unwrap_or_default();
                 return Ok((id, nonce, steam_id));
             }
         }
-        CloseHandle(process);
     }
     Err("Credentials not found in memory. Make sure you are in the orbiter (not loading screen) and Warframe has been running for a few minutes.".into())
 
@@ -81,50 +59,33 @@ fn scan_warframe_credentials_sync() -> Result<(String, String, String), String> 
 #[tauri::command]
 pub(crate) async fn scan_warframe_api_urls() -> Result<Vec<String>, String> {
     tauri::async_runtime::spawn_blocking(|| {
-        use windows_sys::Win32::{
-            Foundation::CloseHandle,
-            System::{
-                Diagnostics::Debug::ReadProcessMemory,
-                Memory::{VirtualQueryEx, MEMORY_BASIC_INFORMATION, MEM_COMMIT, PAGE_GUARD, PAGE_NOACCESS},
-                Threading::{OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_VM_READ},
-            },
-        };
-        use std::ffi::c_void;
-        use std::mem;
+        use crate::platform::{Platform, ProcessAccess};
 
         let pid = memory_scanner::find_warframe_pid_pub()
-            .ok_or("Warframe not running".to_string())?;
+            .ok_or("Warframe is not running".to_string())?;
+
+        let handle = Platform::open_process(pid)
+            .ok_or("Cannot open process".to_string())?;
 
         let mut found = Vec::new();
-        unsafe {
-            let process = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, pid);
-            if process == 0 { return Err("Cannot open process".into()); }
+        let mut address: usize = 0x10000;
 
-            let mut address: usize = 0x10000;
-            let mbi_size = mem::size_of::<MEMORY_BASIC_INFORMATION>();
+        loop {
+            let regions = handle.enumerate_regions_from(address);
+            if regions.is_empty() { break; }
 
-            loop {
-                let mut mbi: MEMORY_BASIC_INFORMATION = mem::zeroed();
-                if VirtualQueryEx(process, address as *const c_void, &mut mbi, mbi_size) == 0 { break; }
-                let region_end = (mbi.BaseAddress as usize).saturating_add(mbi.RegionSize);
-                if region_end <= address { break; }
-                address = region_end;
+            for region in &regions {
+                address = region.base_address + region.region_size;
+                if !region.is_committed || !region.is_readable || region.is_executable { continue; }
+                if region.region_size > 64 * 1024 * 1024 { continue; }
 
-                if mbi.State != MEM_COMMIT { continue; }
-                let p = mbi.Protect;
-                if p & PAGE_NOACCESS != 0 || p & PAGE_GUARD != 0 { continue; }
-                if p == 0x10 || p == 0x20 { continue; }
-                if mbi.RegionSize > 64 * 1024 * 1024 { continue; }
+                let (_, buffer) = match handle.read_memory(region.base_address, region.region_size) {
+                    Some(r) => r,
+                    None => continue,
+                };
+                if buffer.is_empty() { continue; }
 
-                let mut buffer = vec![0u8; mbi.RegionSize];
-                let mut bytes_read: usize = 0;
-                let ok = ReadProcessMemory(
-                    process, mbi.BaseAddress as *const c_void,
-                    buffer.as_mut_ptr() as *mut c_void, mbi.RegionSize, &mut bytes_read,
-                );
-                if ok == 0 || bytes_read == 0 { continue; }
-
-                let data = &buffer[..bytes_read];
+                let data = &buffer;
                 // Search for various Warframe API patterns
                 let needles: &[&[u8]] = &[
                     b"/API/PHP/", b"inventory.php", b"login.php",
@@ -151,7 +112,7 @@ pub(crate) async fn scan_warframe_api_urls() -> Result<Vec<String>, String> {
                 }
                 if found.len() >= 20 { break; }
             }
-            CloseHandle(process);
+            if found.len() >= 20 { break; }
         }
         Ok(found)
     }).await.map_err(|e| e.to_string())?

@@ -882,16 +882,8 @@ pub(crate) fn riven_screen_visible() -> bool {
 /// Read the riven validity flag byte. Returns None if Warframe is not running.
 /// Returns Some(true) = screen open, Some(false) = screen closed.
 /// Fails open (Some(true)) on read errors so the overlay is never falsely dismissed.
-#[cfg(target_os = "windows")]
 fn read_riven_flag_byte() -> Option<bool> {
-    use windows_sys::Win32::{
-        Foundation::CloseHandle,
-        System::{
-            Diagnostics::Debug::ReadProcessMemory,
-            Threading::{OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_VM_READ},
-        },
-    };
-    use std::ffi::c_void;
+    use crate::platform::{Platform, ProcessAccess};
 
     let pid = memory_scanner::find_warframe_pid_pub()?;
 
@@ -910,23 +902,19 @@ fn read_riven_flag_byte() -> Option<bool> {
     };
     drop(cached);
 
-    let handle = unsafe { OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, pid) };
-    if handle == 0 { return Some(true); }
-
-    let mut byte: u8 = 0;
-    let mut read = 0usize;
-    let ok = unsafe {
-        ReadProcessMemory(handle, flag_va as *const c_void,
-            &mut byte as *mut u8 as *mut c_void, 1, &mut read)
+    let handle = match Platform::open_process(pid) {
+        Some(h) => h,
+        None => return Some(true), // open failed — fail open
     };
-    unsafe { CloseHandle(handle); }
 
-    if ok == 0 || read == 0 { return Some(true); } // read failed — fail open
-    Some(byte != 0)
+    let (_, buf) = match handle.read_memory(flag_va, 1) {
+        Some(r) => r,
+        None => return Some(true), // read failed — fail open
+    };
+
+    if buf.is_empty() { return Some(true); }
+    Some(buf[0] != 0)
 }
-
-#[cfg(not(target_os = "windows"))]
-fn read_riven_flag_byte() -> Option<bool> { None }
 
 /// Background thread: polls the riven validity flag every 200 ms and emits
 /// riven-screen-open-mem / riven-screen-close-mem on state transitions.

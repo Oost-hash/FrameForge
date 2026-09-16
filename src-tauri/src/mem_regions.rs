@@ -20,6 +20,20 @@
 pub trait RegionSource {
     fn next_region(&mut self) -> Option<(usize, Vec<u8>)>;
     fn read_at(&self, addr: usize) -> Option<(usize, Vec<u8>)>;
+    fn stats(&self) -> (usize, f64, f64) { (0, 0.0, 0.0) }
+}
+
+/// Open a region source for the given process. Returns None on unsupported platforms.
+pub fn open_region_source(pid: u32, min_region: usize, read_cap: usize) -> Option<Box<dyn RegionSource>> {
+    #[cfg(target_os = "windows")]
+    {
+        WindowsRegionSource::open(pid, min_region, read_cap).map(|s| Box::new(s) as Box<dyn RegionSource>)
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = (pid, min_region, read_cap);
+        None
+    }
 }
 
 #[cfg(test)]
@@ -95,15 +109,6 @@ impl WindowsRegionSource {
             query_time: Default::default(),
             read_time: Default::default(),
         })
-    }
-
-    /// `(regions_skipped, vquery_ms, read_ms)` accumulated since `open`.
-    pub fn stats(&self) -> (usize, f64, f64) {
-        (
-            self.skipped.get(),
-            self.query_time.get().as_secs_f64() * 1000.0,
-            self.read_time.get().as_secs_f64() * 1000.0,
-        )
     }
 
     /// Queries the region containing `addr`. `None` when the query fails or
@@ -238,6 +243,14 @@ impl RegionSource for WindowsRegionSource {
         // returned bytes begin with the blob's opening `{"`.
         let bytes = self.read(addr, next_addr - addr).unwrap_or_default();
         Some((next_addr, bytes))
+    }
+
+    fn stats(&self) -> (usize, f64, f64) {
+        (
+            self.skipped.get(),
+            self.query_time.get().as_secs_f64() * 1000.0,
+            self.read_time.get().as_secs_f64() * 1000.0,
+        )
     }
 }
 
