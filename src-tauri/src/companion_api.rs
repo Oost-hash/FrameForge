@@ -26,12 +26,12 @@ fn scan_warframe_credentials_sync() -> Result<(String, String, String), String> 
         .ok_or("Warframe is not running")?;
 
     let handle = Platform::open_process(pid)
-        .ok_or("Cannot open Warframe process")?;
+        .map_err(|e| format!("Cannot open Warframe process: {}", e))?;
 
     let mut address: usize = 0x10000;
 
     loop {
-        let regions = handle.enumerate_regions_from(address);
+        let regions: Vec<_> = handle.regions_from(address).collect();
         if regions.is_empty() { break; }
 
         for region in &regions {
@@ -39,7 +39,7 @@ fn scan_warframe_credentials_sync() -> Result<(String, String, String), String> 
             if !region.is_committed || !region.is_readable || region.is_executable { continue; }
             if region.region_size > 128 * 1024 * 1024 { continue; }
 
-            let (_, buffer) = match handle.read_memory(region.base_address, region.region_size) {
+            let buffer = match handle.read(region.base_address, region.region_size) {
                 Some(r) => r,
                 None => continue,
             };
@@ -65,13 +65,13 @@ pub(crate) async fn scan_warframe_api_urls() -> Result<Vec<String>, String> {
             .ok_or("Warframe is not running".to_string())?;
 
         let handle = Platform::open_process(pid)
-            .ok_or("Cannot open process".to_string())?;
+            .map_err(|e| format!("Cannot open process: {}", e))?;
 
         let mut found = Vec::new();
         let mut address: usize = 0x10000;
 
         loop {
-            let regions = handle.enumerate_regions_from(address);
+            let regions: Vec<_> = handle.regions_from(address).collect();
             if regions.is_empty() { break; }
 
             for region in &regions {
@@ -79,7 +79,7 @@ pub(crate) async fn scan_warframe_api_urls() -> Result<Vec<String>, String> {
                 if !region.is_committed || !region.is_readable || region.is_executable { continue; }
                 if region.region_size > 64 * 1024 * 1024 { continue; }
 
-                let (_, buffer) = match handle.read_memory(region.base_address, region.region_size) {
+                let buffer = match handle.read(region.base_address, region.region_size) {
                     Some(r) => r,
                     None => continue,
                 };

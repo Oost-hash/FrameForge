@@ -97,8 +97,8 @@ pub(crate) fn scan_heap_for_trigger(
     };
 
     let handle = match Platform::open_process(pid) {
-        Some(h) => h,
-        None => return (false, format!("OpenProcess failed pid={}", pid), cached_bare),
+        Ok(h) => h,
+        Err(e) => return (false, format!("OpenProcess failed pid={}: {}", pid, e), cached_bare),
     };
 
     let mut found = false;
@@ -110,7 +110,7 @@ pub(crate) fn scan_heap_for_trigger(
     loop {
         if addr >= scan_max as usize { break; }
 
-        let regions = handle.enumerate_regions_from(addr);
+        let regions: Vec<_> = handle.regions_from(addr).collect();
         if regions.is_empty() { break; }
 
         for region in &regions {
@@ -124,7 +124,7 @@ pub(crate) fn scan_heap_for_trigger(
             if rw_only && !region.is_writable { continue; }
             if size > REGION_MAX { continue; }
 
-            let (_, buf) = match handle.read_memory(base, size) {
+            let buf = match handle.read(base, size) {
                 Some(r) => r,
                 None => continue,
             };

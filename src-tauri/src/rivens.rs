@@ -903,11 +903,11 @@ fn read_riven_flag_byte() -> Option<bool> {
     drop(cached);
 
     let handle = match Platform::open_process(pid) {
-        Some(h) => h,
-        None => return Some(true), // open failed — fail open
+        Ok(h) => h,
+        Err(_) => return Some(true), // open failed — fail open
     };
 
-    let (_, buf) = match handle.read_memory(flag_va, 1) {
+    let buf = match handle.read(flag_va, 1) {
         Some(r) => r,
         None => return Some(true), // read failed — fail open
     };

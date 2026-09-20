@@ -653,14 +653,14 @@ fn mem_relic_debug_loop(log_path: &std::path::Path) {
         let mut results = Vec::new();
 
         let handle = match Platform::open_process(pid) {
-            Some(h) => h,
-            None => return results,
+            Ok(h) => h,
+            Err(_) => return results,
         };
 
         let mut addr = HEAP_MIN;
         loop {
             if addr >= HEAP_MAX { break; }
-            let regions = handle.enumerate_regions_from(addr);
+            let regions: Vec<_> = handle.regions_from(addr).collect();
             if regions.is_empty() { break; }
 
             for region in &regions {
@@ -669,7 +669,7 @@ fn mem_relic_debug_loop(log_path: &std::path::Path) {
                 if region.region_size > REGION_MAX { continue; }
                 if !(HEAP_MIN..HEAP_MAX).contains(&region.base_address) { continue; }
 
-                let (_, buf) = match handle.read_memory(region.base_address, region.region_size) {
+                let buf = match handle.read(region.base_address, region.region_size) {
                     Some(r) => r,
                     None => continue,
                 };
@@ -702,13 +702,13 @@ fn mem_relic_debug_loop(log_path: &std::path::Path) {
         let mut results = Vec::new();
 
         let handle = match Platform::open_process(pid) {
-            Some(h) => h,
-            None => return results,
+            Ok(h) => h,
+            Err(_) => return results,
         };
 
         let mut addr: usize = 0;
         loop {
-            let regions = handle.enumerate_regions_from(addr);
+            let regions: Vec<_> = handle.regions_from(addr).collect();
             if regions.is_empty() { break; }
 
             for region in &regions {
@@ -725,7 +725,7 @@ fn mem_relic_debug_loop(log_path: &std::path::Path) {
                 });
                 if !any_match { continue; }
 
-                let (_, buf) = match handle.read_memory(region.base_address, region.region_size) {
+                let buf = match handle.read(region.base_address, region.region_size) {
                     Some(r) => r,
                     None => continue,
                 };

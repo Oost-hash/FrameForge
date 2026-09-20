@@ -308,8 +308,8 @@ pub fn dump_inventory_regions(max_hits: usize) -> Vec<String> {
     };
 
     let handle = match Platform::open_process(pid) {
-        Some(h) => h,
-        None => return vec!["OpenProcess failed".to_string()],
+        Ok(h) => h,
+        Err(e) => return vec![format!("OpenProcess failed: {}", e)],
     };
 
     let mut results: Vec<String> = Vec::new();
@@ -320,7 +320,7 @@ pub fn dump_inventory_regions(max_hits: usize) -> Vec<String> {
     const CHUNK_SIZE: usize = 64 * 1024 * 1024;
 
     'outer: while std::time::Instant::now() < deadline && results.len() < max_hits {
-        let regions = handle.enumerate_regions_from(addr);
+        let regions: Vec<_> = handle.regions_from(addr).collect();
         if regions.is_empty() { break; }
 
         for region in &regions {
@@ -343,7 +343,7 @@ pub fn dump_inventory_regions(max_hits: usize) -> Vec<String> {
                 let read_size    = CHUNK_SIZE.min(region.region_size - chunk_offset);
                 let chunk_addr   = region.base_address + chunk_offset;
 
-                let (_, buf) = match handle.read_memory(chunk_addr, read_size) {
+                let buf = match handle.read(chunk_addr, read_size) {
                     Some(r) => r,
                     None => continue 'chunk,
                 };
@@ -883,6 +883,13 @@ pub fn parse_full_account_blob(raw: &[u8]) -> Option<BlobInventory> {
 /// genuinely gone (~2 min at the 10 s scan interval).
 pub const MAX_MISSING_STREAK: u32 = 12;
 
+/// Top-level JSON sections that appear and disappear from memory depending on
+/// game state (e.g. after a vendor interaction or inventory sync). These should
+/// never trigger a truncated-capture rejection because their absence is normal.
+const VOLATILE_SECTIONS: &[&str] = &[
+    "RecentVendorPurchases",
+];
+
 /// Per-account memory of which top-level sections a complete blob contains.
 ///
 /// The monitor applies each accepted blob as a full replacement, so a blob that
@@ -912,6 +919,7 @@ impl SectionBaseline {
         let current: std::collections::BTreeSet<&str> = sections.iter().map(String::as_str).collect();
         let missing: Vec<String> = self.known.iter()
             .filter(|k| !current.contains(k.as_str()))
+            .filter(|k| !VOLATILE_SECTIONS.contains(&k.as_str()))
             .cloned()
             .collect();
 
@@ -924,10 +932,14 @@ impl SectionBaseline {
         }
 
         self.missing_streak = 0;
-        let changed = self.known.len() != current.len()
-            || self.known.iter().any(|k| !current.contains(k.as_str()));
+        // Filter volatile sections from the baseline so they are never tracked.
+        let new_known: std::collections::BTreeSet<String> = sections.iter()
+            .filter(|k| !VOLATILE_SECTIONS.contains(&k.as_str()))
+            .cloned()
+            .collect();
+        let changed = self.known != new_known;
         if changed {
-            self.known = sections.iter().cloned().collect();
+            self.known = new_known;
         }
         Ok(changed)
     }
@@ -1015,12 +1027,12 @@ pub fn capture_all_blobs(blob_dir: &std::path::Path, ts: &str, blob_tx: std::syn
     }
 
     let saved = stitch_blobs(&mut *src, blob_dir, ts, blob_tx, save);
-    let (regions_skipped, vquery_ms, read_ms) = src.stats();
+    let stats = src.stats();
     debug!(
         target: "frameforge::blob_capture",
-        regions_skipped,
-        vquery_ms,
-        read_ms,
+        regions_skipped = stats.regions_skipped,
+        vquery_ms = stats.enumerate_ms,
+        read_ms = stats.read_ms,
         "source stats"
     );
     saved
@@ -1033,7 +1045,7 @@ fn try_cached_blob(
     cached_addr: usize,
     blob_tx: &std::sync::mpsc::Sender<BlobInventory>,
 ) -> bool {
-    let (mut next_addr, first_bytes) = match src.read_at(cached_addr) {
+    let (mut next_addr, first_bytes) = match src.read_at(cached_addr, MAX_SCAN) {
         Some(r) => r,
         None => {
             debug!(addr = format_args!("0x{cached_addr:012x}"), "fast-path miss — region gone");
@@ -1056,7 +1068,8 @@ fn try_cached_blob(
 
     let mut stitched = first_bytes;
     while stitched.len() < MAX_SCAN && find_blob_end(&stitched).is_none() {
-        match src.read_at(next_addr) {
+        let remaining = MAX_SCAN - stitched.len();
+        match src.read_at(next_addr, remaining) {
             Some((end, bytes)) => {
                 next_addr = end;
                 if bytes.is_empty() { break; }
@@ -1185,7 +1198,7 @@ fn stitch_blobs(
                         found_result = true;
                     }
                     None => {
-                        warn!(scan_id = scan.id, "end marker found but JSON parse failed — dropped");
+                        warn!(scan_id = scan.id, addr = format_args!("0x{:012x}", scan.seed_addr), "end marker found but JSON parse failed — dropped");
                     }
                 }
                 false // remove completed (or failed) scan
@@ -1302,7 +1315,7 @@ fn stitch_blobs(
                         found_result = true;
                     }
                     None => {
-                        warn!(scan_id = id, "immediate end found but parse failed — dropping");
+                        warn!(scan_id = id, addr = format_args!("0x{seed_addr:012x}"), "immediate end found but parse failed — dropped");
                     }
                 }
             } else {
@@ -1347,14 +1360,15 @@ pub fn raw_scan_pass(out: &mut impl std::io::Write) -> Result<usize, String> {
     const TIMEOUT:  u64   = 600; // 10 minutes — full coverage over full scan
 
     let pid = find_warframe_pid().ok_or("Warframe not running")?;
-    let handle = Platform::open_process(pid).ok_or("OpenProcess failed")?;
+    let handle = Platform::open_process(pid)
+        .map_err(|e| format!("OpenProcess failed: {}", e))?;
 
     let mut addr: usize = 0x10000;
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(TIMEOUT);
     let mut count = 0usize;
 
     while std::time::Instant::now() < deadline {
-        let regions = handle.enumerate_regions_from(addr);
+        let regions: Vec<_> = handle.regions_from(addr).collect();
         if regions.is_empty() { break; }
 
         for region in &regions {
@@ -1370,7 +1384,7 @@ pub fn raw_scan_pass(out: &mut impl std::io::Write) -> Result<usize, String> {
                 let read_size  = CHUNK.min(region.region_size - off);
                 let chunk_base = region.base_address + off;
 
-                let (_, buf) = match handle.read_memory(chunk_base, read_size) {
+                let buf = match handle.read(chunk_base, read_size) {
                     Some(r) => r,
                     None => continue,
                 };
@@ -1447,14 +1461,14 @@ fn find_pattern_d2(data: &[u8], base_va: usize) -> Option<usize> {
 pub fn find_riven_validity_va(pid: u32) -> Option<usize> {
     use crate::platform::{Platform, ProcessAccess};
 
-    let handle = Platform::open_process(pid)?;
+    let handle = Platform::open_process(pid).ok()?;
 
     let mut result: Option<usize> = None;
     let mut addr: usize = 0x10000;
     let start_time = std::time::Instant::now();
 
     while start_time.elapsed().as_secs() < 60 && result.is_none() {
-        let regions = handle.enumerate_regions_from(addr);
+        let regions: Vec<_> = handle.regions_from(addr).collect();
         if regions.is_empty() { break; }
 
         for region in &regions {
@@ -1464,10 +1478,11 @@ pub fn find_riven_validity_va(pid: u32) -> Option<usize> {
             addr = region.base_address + region.region_size;
 
             // Only scan committed, executable, memory-mapped PE image regions.
-            if !region.is_committed || !region.is_executable || !region.is_image { continue; }
+            use crate::platform::RegionBacking;
+            if !region.is_committed || !region.is_executable || region.backing != RegionBacking::File { continue; }
             if region.region_size < 13 || region.region_size > 64 * 1024 * 1024 { continue; }
 
-            let (_, buf) = match handle.read_memory(region.base_address, region.region_size) {
+            let buf = match handle.read(region.base_address, region.region_size) {
                 Some(r) => r,
                 None => continue,
             };
