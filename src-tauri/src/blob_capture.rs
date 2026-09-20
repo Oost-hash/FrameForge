@@ -70,6 +70,14 @@ pub(crate) fn spawn_blob_capture_thread(
         };
         let _ = conn.execute_batch("PRAGMA journal_mode=WAL;");
 
+        let section_baseline_path = inventory_state_cache_path.with_file_name("section_baseline.json");
+        let mut section_baseline = memory_scanner::SectionBaseline::from_keys(
+            std::fs::read(&section_baseline_path).ok()
+                .and_then(|b| serde_json::from_slice::<Vec<String>>(&b).ok())
+                .unwrap_or_default(),
+        );
+        let mut last_applied_hash: Option<u64> = None;
+
         let startup = monitor::init_monitor_startup_state(
             &shared_quantities, &shared_mods, &inventory_state_cache_path,
         );
@@ -141,6 +149,8 @@ pub(crate) fn spawn_blob_capture_thread(
                     unique_stable.clear();
                     confirmed_unique.clear();
                     known_mods.clear();
+                    last_applied_hash = None;
+                    section_baseline = memory_scanner::SectionBaseline::default();
                 }
             }
 
@@ -148,7 +158,29 @@ pub(crate) fn spawn_blob_capture_thread(
 
             // Process any incoming blob (non-blocking)
             while let Ok(blob) = blob_rx.try_recv() {
-                process_blob(
+                match section_baseline.evaluate(&blob.sections) {
+                    Err(missing) => {
+                        warn!(?missing, "blob rejected: sections present in last good blob are missing - truncated capture");
+                        continue;
+                    }
+                    Ok(true) => {
+                        if let Ok(json) = serde_json::to_string(&section_baseline.keys()) {
+                            let _ = atomic_write(&section_baseline_path, json.as_bytes());
+                        }
+                    }
+                    Ok(false) => {}
+                }
+
+                if blob.content_hash != 0 && Some(blob.content_hash) == last_applied_hash {
+                    debug!("blob unchanged since last apply - skipping");
+                    let _ = app.emit("blob-status", BlobStatusPayload {
+                        stage: "done".into(),
+                        detail: "No changes".into(),
+                    });
+                    continue;
+                }
+
+                if process_blob(
                     &blob, &app, &conn, &inventory_state_cache_path,
                     &path_to_name, &path_to_category, &path_to_ducat, &path_to_vaulted,
                     &path_to_tradable, &path_to_masterable, &relic_drops_snapshot,
@@ -161,7 +193,9 @@ pub(crate) fn spawn_blob_capture_thread(
                     &mut current_recipes, &mut current_consumed_suits,
                     &mut current_socketed_shards, &mut current_forma_counts,
                     &mut last_snapshot_date, now,
-                );
+                ) {
+                    last_applied_hash = Some(blob.content_hash);
+                }
             }
 
             // Re-enumerate processes at most every 5 s (CreateToolhelp32Snapshot overhead).
@@ -334,7 +368,7 @@ fn process_blob(
     current_forma_counts: &mut HashMap<String, u32>,
     last_snapshot_date: &mut String,
     now: i64,
-) {
+) -> bool {
     let existing_wfm: HashMap<String, u32> =
         load_inventory_state_cache(&inventory_state_cache_path.to_path_buf())
             .items.into_iter()
@@ -367,7 +401,7 @@ fn process_blob(
     let prev_unique_count = confirmed_unique.len();
     if blob.unique_items.is_empty() && prev_unique_count > 0 {
         warn!("blob rejected at commit: 0 unique items vs {} previously — incomplete blob", prev_unique_count);
-        return;
+        return false;
     }
 
     // Blob is authoritative — full replacement, not a merge.
@@ -473,4 +507,5 @@ fn process_blob(
             }
         }
     }
+    true
 }

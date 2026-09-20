@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use tauri::{Manager, State};
+use tauri::{Emitter, Manager, State};
+use tracing::info;
 
 use crate::app_state::AppState;
 use crate::cache::atomic_write;
@@ -619,6 +620,10 @@ pub(crate) async fn fetch_item_list(state: State<'_, AppState>, force: Option<bo
         }
     };
 
+    apply_catalogue(&state, result)
+}
+
+fn apply_catalogue(state: &AppState, result: wfcd::FetchResult) -> Result<usize, String> {
     let count = result.items.len();
 
     // Persist items cache
@@ -993,32 +998,17 @@ fn dedup_known_aliases(mut items: Vec<WfcdItem>) -> Vec<WfcdItem> {
 }
 
 pub fn refresh_catalogue(app: &tauri::AppHandle, force: bool) -> Result<(), String> {
-    let fetched = wfcd::fetch_items(None, force)?;
+    let state = app.state::<AppState>();
+    // A valid ETag is not enough when version invalidation removed the local cache.
+    let cache_missing = !state.items_cache_path.exists();
+    let fetched = wfcd::fetch_items(None, force || cache_missing)?;
     let result = match fetched {
         cache::Fetched::New(r, _) => r,
         cache::Fetched::NotModified => return Ok(()),
     };
-    let state = app.state::<AppState>();
-    let patched: Vec<wfcd::WfcdItem> = result.items.into_iter().map(|mut i| {
-        i.name = patch_item_name(&i.unique_name, &i.name);
-        i.category = patch_item_category(&i.name, &i.category, &i.unique_name);
-        i
-    }).collect();
-    let deduped = dedup_known_aliases(patched);
-    *state.wfcd_items.lock().unwrap_or_else(|e| e.into_inner()) = deduped;
-    *state.recipes.lock().unwrap_or_else(|e| e.into_inner()) = result.recipes;
-    *state.relic_drops.lock().unwrap_or_else(|e| e.into_inner()) = result.relic_drops;
-    *state.relic_rewards.lock().unwrap_or_else(|e| e.into_inner()) = result.relic_rewards;
-    *state.blueprint_to_result.lock().unwrap_or_else(|e| e.into_inner()) = result.blueprint_names;
-    if !result.weapon_dispositions.is_empty() {
-        *state.weapon_dispositions.lock().unwrap_or_else(|e| e.into_inner()) = result.weapon_dispositions;
-    }
-    if !result.wiki_reward_names.is_empty() {
-        *state.wiki_reward_names.lock().unwrap_or_else(|e| e.into_inner()) = result.wiki_reward_names;
-    }
-    if !result.syndicate_catalog.is_empty() {
-        *state.syndicate_catalog.lock().unwrap_or_else(|e| e.into_inner()) = result.syndicate_catalog;
-    }
+    let count = apply_catalogue(&state, result)?;
+    info!(items = count, "catalogue refreshed in background");
+    let _ = app.emit("catalogue-updated", count);
     Ok(())
 }
 
