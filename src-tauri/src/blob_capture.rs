@@ -173,10 +173,6 @@ pub(crate) fn spawn_blob_capture_thread(
 
                 if blob.content_hash != 0 && Some(blob.content_hash) == last_applied_hash {
                     debug!("blob unchanged since last apply - skipping");
-                    let _ = app.emit("blob-status", BlobStatusPayload {
-                        stage: "done".into(),
-                        detail: "No changes".into(),
-                    });
                     continue;
                 }
 
