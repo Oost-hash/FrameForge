@@ -1016,7 +1016,19 @@ pub fn capture_all_blobs(blob_dir: &std::path::Path, ts: &str, blob_tx: std::syn
     const MIN_REGION: usize = 64_000;
 
     let pid = match find_warframe_pid_pub() { Some(p) => p, None => return 0 };
-    let mut src = match mem_regions::open_region_source(pid, MIN_REGION, MAX_READ) {
+    let mut src = match mem_regions::open_region_source(
+        pid,
+        MIN_REGION,
+        MAX_READ,
+        MAX_SCAN,
+        None, // no deadline — one-shot caller
+        Some(Box::new(|r| {
+            // Skip executable pages (code, JIT) and file-backed mappings
+            // (PE image sections whose string constants false-trigger the
+            // anchor check). Only anonymous heap/stack memory is useful.
+            !r.is_executable && r.backing != crate::platform::RegionBacking::File
+        })),
+    ) {
         Some(s) => s,
         None => return 0,
     };
@@ -1045,10 +1057,20 @@ fn try_cached_blob(
     cached_addr: usize,
     blob_tx: &std::sync::mpsc::Sender<BlobInventory>,
 ) -> bool {
+    // Quick check: is the cached address still mapped? Avoids a costly read_at
+    // on a region that has been unmapped since the last scan.
+    match src.region_at(cached_addr) {
+        Some(r) if r.is_committed && r.is_readable => {}
+        _ => {
+            debug!(addr = format_args!("0x{cached_addr:012x}"), "fast-path miss — region gone or unmapped");
+            return false;
+        }
+    }
+
     let (mut next_addr, first_bytes) = match src.read_at(cached_addr, MAX_SCAN) {
         Some(r) => r,
         None => {
-            debug!(addr = format_args!("0x{cached_addr:012x}"), "fast-path miss — region gone");
+            debug!(addr = format_args!("0x{cached_addr:012x}"), "fast-path miss — read failed");
             return false;
         }
     };
