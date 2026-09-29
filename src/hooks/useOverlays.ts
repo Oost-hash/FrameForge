@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 import { overlayScale } from "../lib/uiScale";
 import {
   ensureRivenWindow,
@@ -34,7 +34,6 @@ export function useOverlays(
     const runRivenCheck = async () => {
       setRivenLastTriggerMs(Date.now());
       incrementRivenRollCount();
-      const { emit } = await import("@tauri-apps/api/event");
 
       let rect: WarframeWindowRect = [0, 0, 0, 800];
       try { rect = await invoke<WarframeWindowRect>("get_warframe_window_rect"); } catch {}
