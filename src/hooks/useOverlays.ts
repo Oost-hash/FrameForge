@@ -209,6 +209,9 @@ export function useOverlays(
         for (const item of p.offeredItems)  await save("traded-out", item.name, item.qty, 0);
         for (const item of p.receivedItems) await save("traded-in",  item.name, item.qty, 0);
       }
+
+      // All rows are in SQLite now — tell Statistics to refetch.
+      await emit(TAURI_EVENTS.TRADES_UPDATED).catch(() => {});
     });
     return () => { unlisten.then(fn => fn()); };
   }, []);
