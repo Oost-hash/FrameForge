@@ -368,9 +368,7 @@ export function useInventoryData(): UseInventoryDataReturn {
     invoke("prewarm_image_cache").catch(() => {});
   }, []);
 
-  // ── Background catalogue refresh ────────────────────────────────────────────
-  // The Rust side rebuilds the catalogue on its own (first run after an upgrade,
-  // daily refresh). Reload what the UI holds so no manual "Refresh item list" is needed.
+  // Reload catalogue state after the startup or manual refresh rebuilds it.
   useEffect(() => {
     const unlisten = listen<number>(TAURI_EVENTS.CATALOGUE_UPDATED, async () => {
       try {

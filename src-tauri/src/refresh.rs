@@ -49,11 +49,6 @@ const TASKS: &[Task] = &[
         run: crate::pricing::refresh_bulk_prices_task,
     },
     Task {
-        name: "catalogue",
-        interval: Duration::from_secs(24 * 3600),
-        run: crate::catalogue::refresh_catalogue,
-    },
-    Task {
         name: "drop-data",
         interval: Duration::from_secs(24 * 3600),
         run: crate::wfcd::refresh_drop_data,

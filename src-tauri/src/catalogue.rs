@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use tauri::{Emitter, Manager, State};
-use tracing::info;
+use tauri::{Emitter, State};
 
 use crate::app_state::AppState;
 use crate::events;
@@ -608,7 +607,11 @@ pub(crate) fn get_item_list_status(state: State<AppState>) -> serde_json::Value 
 }
 
 #[tauri::command]
-pub(crate) async fn fetch_item_list(state: State<'_, AppState>, force: Option<bool>) -> Result<usize, String> {
+pub(crate) async fn fetch_item_list(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    force: Option<bool>,
+) -> Result<usize, String> {
     // An ETag can outlive a deleted or invalid local catalogue. In that state a
     // conditional request returns Not Modified and leaves the 15-item fallback
     // active until the user manually forces a refresh.
@@ -625,7 +628,9 @@ pub(crate) async fn fetch_item_list(state: State<'_, AppState>, force: Option<bo
         }
     };
 
-    apply_catalogue(&state, result)
+    let count = apply_catalogue(&state, result)?;
+    let _ = app.emit(events::CATALOGUE_UPDATED, count);
+    Ok(count)
 }
 
 fn apply_catalogue(state: &AppState, result: wfcd::FetchResult) -> Result<usize, String> {
@@ -996,21 +1001,6 @@ fn dedup_known_aliases(mut items: Vec<WfcdItem>) -> Vec<WfcdItem> {
         }
     }
     items
-}
-
-pub fn refresh_catalogue(app: &tauri::AppHandle, force: bool) -> Result<(), String> {
-    let state = app.state::<AppState>();
-    // A valid ETag is not enough when version invalidation removed the local cache.
-    let cache_missing = !state.items_cache_path.exists();
-    let fetched = wfcd::fetch_items(None, force || cache_missing)?;
-    let result = match fetched {
-        cache::Fetched::New(r, _) => r,
-        cache::Fetched::NotModified => return Ok(()),
-    };
-    let count = apply_catalogue(&state, result)?;
-    info!(items = count, "catalogue refreshed in background");
-    let _ = app.emit(events::CATALOGUE_UPDATED, count);
-    Ok(())
 }
 
 // ── Debug unmatched paths ─────────────────────────────────────────────────────
