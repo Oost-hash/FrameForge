@@ -609,7 +609,12 @@ pub(crate) fn get_item_list_status(state: State<AppState>) -> serde_json::Value 
 
 #[tauri::command]
 pub(crate) async fn fetch_item_list(state: State<'_, AppState>, force: Option<bool>) -> Result<usize, String> {
-    let force = force.unwrap_or(false);
+    // An ETag can outlive a deleted or invalid local catalogue. In that state a
+    // conditional request returns Not Modified and leaves the 15-item fallback
+    // active until the user manually forces a refresh.
+    let has_fallback_only = state.wfcd_items.lock().map_err(|e| e.to_string())?.len() <= 15;
+    let has_no_recipes = state.recipes.lock().map_err(|e| e.to_string())?.is_empty();
+    let force = force.unwrap_or(false) || has_fallback_only || has_no_recipes;
     let fetched = tauri::async_runtime::spawn_blocking(move || wfcd::fetch_items(None, force))
         .await
         .map_err(|e| e.to_string())??;
