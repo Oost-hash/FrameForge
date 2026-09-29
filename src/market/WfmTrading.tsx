@@ -759,7 +759,8 @@ function MessagesPanel({ username: _username, wfmItems, onListingChange }: {
         source: "wfm",
         notes: "",
       };
-      invoke(TAURI_COMMANDS.ADD_TRADE, args).catch(() => {});
+      invoke(TAURI_COMMANDS.ADD_TRADE, { params: args })
+        .catch((e) => console.error("[trade-log] add_trade failed:", e));
     }
     setWhispers(prev => prev.filter(w => w.from !== from));
   };

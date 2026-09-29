@@ -192,7 +192,8 @@ export function useOverlays(
           tradeType:  p.tradeType,
           timestamp:  p.timestamp,
         };
-        return invoke(TAURI_COMMANDS.ADD_TRADE, args).catch(() => {});
+        return invoke(TAURI_COMMANDS.ADD_TRADE, { params: args })
+          .catch((e) => console.error("[trade-log] add_trade failed:", e));
       };
 
       if (p.tradeType === "sale") {
