@@ -19,7 +19,7 @@ interface ListingChangeEntry {
   platinum: number;
   oldQty: number;
   newQty: number;
-  revertInfo: NonNullable<WfmWhisper["revertInfo"]>;
+  revertInfo?: NonNullable<WfmWhisper["revertInfo"]>;
   reverting?: boolean;
   reverted?: boolean;
 }
@@ -32,6 +32,7 @@ interface Props {
   onNewWhisper: () => void;
   onLoginChange: (username: string | null) => void;
   auctionRefreshKey?: number;
+  recordSales: boolean;
 }
 
 function fmt(n: number) { return n.toLocaleString(); }
@@ -574,7 +575,7 @@ function ListingsPanel({ username: _username, itemIdMap, wfmItems, imageMap, auc
                 <span className="wfm-changelog-player"> · {entry.withPlayer}</span>
               </span>
               <span className="wfm-changelog-time">{new Date(entry.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-              {!entry.reverted && onUndo && (
+              {!entry.reverted && entry.revertInfo && onUndo && (
                 <button
                   className="wfm-btn-sm wfm-btn-revert"
                   disabled={entry.reverting}
@@ -594,9 +595,10 @@ function ListingsPanel({ username: _username, itemIdMap, wfmItems, imageMap, auc
 
 // ── Messages panel ────────────────────────────────────────────────────────────
 
-function MessagesPanel({ username: _username, wfmItems, onListingChange }: {
+function MessagesPanel({ username: _username, wfmItems, recordSales, onListingChange }: {
   username: string;
   wfmItems: WfmItem[];
+  recordSales: boolean;
   onListingChange?: (entry: Omit<ListingChangeEntry, "id" | "reverting" | "reverted">) => void;
 }) {
   const [whispers, setWhispers] = useState<WfmWhisper[]>([]);
@@ -607,10 +609,15 @@ function MessagesPanel({ username: _username, wfmItems, onListingChange }: {
   const whispersRef             = useRef<WfmWhisper[]>([]);
   // Keep a stable ref so the trade-completed handler always sees current itemIdMap
   const itemIdMapRef            = useRef<Map<string, string>>(new Map());
+  const recordSalesRef          = useRef(recordSales);
 
   useEffect(() => {
     itemIdMapRef.current = new Map(wfmItems.map(i => [i.id, i.item_name]));
   }, [wfmItems]);
+
+  useEffect(() => {
+    recordSalesRef.current = recordSales;
+  }, [recordSales]);
 
   useEffect(() => {
     whispersRef.current = whispers;
@@ -664,7 +671,7 @@ function MessagesPanel({ username: _username, wfmItems, onListingChange }: {
         return updated;
       });
 
-      // Phase 2: update WFM listings and attach revert info (async, only for sales)
+      // Phase 2: update WFM listings and attach revert info when the change is reversible.
       if (tradeType === "sale") {
         (async () => {
           try {
@@ -677,6 +684,7 @@ function MessagesPanel({ username: _username, wfmItems, onListingChange }: {
               const closedQty   = Math.min(originalQty, soldQty);
               const newQty      = originalQty - closedQty;
               const itemId      = (match as unknown as Record<string, unknown>).itemId as string | undefined ?? "";
+              const recordSale  = recordSalesRef.current;
 
               const revertInfo: NonNullable<WfmWhisper["revertInfo"]> = {
                 orderId: match.id,
@@ -685,12 +693,24 @@ function MessagesPanel({ username: _username, wfmItems, onListingChange }: {
                 originalQty,
                 newQty,
                 visible: match.visible,
+                modRank: match.rank,
               };
 
-              await invokeWfm("wfm_close_order", {
-                orderId: match.id,
-                quantity: closedQty,
-              } satisfies WfmCloseOrderArgs);
+              if (recordSale) {
+                await invokeWfm("wfm_close_order", {
+                  orderId: match.id,
+                  quantity: closedQty,
+                } satisfies WfmCloseOrderArgs);
+              } else if (newQty > 0) {
+                await invokeWfm("wfm_update_order", {
+                  orderId: match.id,
+                  platinum: match.platinum,
+                  quantity: newQty,
+                  visible: match.visible,
+                } satisfies WfmUpdateOrderArgs);
+              } else {
+                await invokeWfm("wfm_delete_order", { orderId: match.id });
+              }
 
               onListingChange?.({
                 timestamp: Date.now(),
@@ -700,10 +720,10 @@ function MessagesPanel({ username: _username, wfmItems, onListingChange }: {
                 platinum: match.platinum,
                 oldQty: originalQty,
                 newQty,
-                revertInfo,
+                revertInfo: recordSale ? undefined : revertInfo,
               });
 
-              setWhispers(prev => {
+              if (!recordSale) setWhispers(prev => {
                 const idx = prev.findIndex(
                   w => w.completedAt && w.from === (matchedFrom ?? withPlayer) && !w.revertInfo
                 );
@@ -789,7 +809,7 @@ function MessagesPanel({ username: _username, wfmItems, onListingChange }: {
 
   const revertOrder = async (w: WfmWhisper, idx: number) => {
     if (!w.revertInfo) return;
-    const { orderId, itemId, platinum, originalQty, newQty, visible } = w.revertInfo;
+    const { orderId, itemId, platinum, originalQty, newQty, visible, modRank } = w.revertInfo;
     setReverting(idx);
     try {
       if (newQty > 0) {
@@ -797,7 +817,7 @@ function MessagesPanel({ username: _username, wfmItems, onListingChange }: {
         await invokeWfm("wfm_update_order", { orderId, platinum, quantity: originalQty, visible } satisfies WfmUpdateOrderArgs);
       } else {
         // We deleted the listing → re-create it
-        await invokeWfm(TAURI_COMMANDS.WFM_CREATE_ORDER, { itemId, orderType: "sell", platinum, quantity: originalQty, visible } satisfies WfmCreateOrderArgs);
+        await invokeWfm(TAURI_COMMANDS.WFM_CREATE_ORDER, { itemId, orderType: "sell", platinum, quantity: originalQty, visible, modRank } satisfies WfmCreateOrderArgs);
       }
       // Clear revertInfo after a successful revert so the button disappears
       setWhispers(prev => {
@@ -878,7 +898,7 @@ function MessagesPanel({ username: _username, wfmItems, onListingChange }: {
 
 // ── Main export ───────────────────────────────────────────────────────────────
 
-export default function WfmTrading({ wfmLookup: _wfmLookup, wfmItems, imageMap, inventory: _inventory, onNewWhisper, onLoginChange, auctionRefreshKey }: Props) {
+export default function WfmTrading({ wfmLookup: _wfmLookup, wfmItems, imageMap, inventory: _inventory, onNewWhisper, onLoginChange, auctionRefreshKey, recordSales }: Props) {
   const [tab, setTab]           = useState<"listings" | "messages">("listings");
   const [username, setUsername]         = useState<string | null>(null);
   const [checking, setChecking]         = useState(true);
@@ -899,13 +919,14 @@ export default function WfmTrading({ wfmLookup: _wfmLookup, wfmItems, imageMap, 
   }, []);
 
   const handleUndo = useCallback(async (entry: ListingChangeEntry) => {
+    if (!entry.revertInfo) return;
     setListingChangelog(prev => prev.map(e => e.id === entry.id ? { ...e, reverting: true } : e));
     try {
-      const { orderId, itemId, platinum, originalQty, newQty, visible } = entry.revertInfo;
+      const { orderId, itemId, platinum, originalQty, newQty, visible, modRank } = entry.revertInfo;
       if (newQty > 0) {
         await invokeWfm("wfm_update_order", { orderId, platinum, quantity: originalQty, visible } satisfies WfmUpdateOrderArgs);
       } else {
-        await invokeWfm(TAURI_COMMANDS.WFM_CREATE_ORDER, { itemId, orderType: "sell", platinum, quantity: originalQty, visible } satisfies WfmCreateOrderArgs);
+        await invokeWfm(TAURI_COMMANDS.WFM_CREATE_ORDER, { itemId, orderType: "sell", platinum, quantity: originalQty, visible, modRank } satisfies WfmCreateOrderArgs);
       }
       setListingChangelog(prev => prev.map(e => e.id === entry.id ? { ...e, reverted: true, reverting: false } : e));
     } catch (err) {
@@ -1061,7 +1082,7 @@ export default function WfmTrading({ wfmLookup: _wfmLookup, wfmItems, imageMap, 
         <ListingsPanel username={username} itemIdMap={new Map(wfmItems.map(i => [i.id, i.item_name]))} wfmItems={wfmItems} imageMap={imageMap} auctionRefreshKey={auctionRefreshKey} changelog={listingChangelog} onUndo={handleUndo} />
       </div>
       <div style={{ display: tab === "messages" ? "contents" : "none" }}>
-        <MessagesPanel username={username} wfmItems={wfmItems} onListingChange={handleListingChange} />
+        <MessagesPanel username={username} wfmItems={wfmItems} recordSales={recordSales} onListingChange={handleListingChange} />
       </div>
     </div>
   );
