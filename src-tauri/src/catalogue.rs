@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use tauri::{Emitter, State};
+use tauri::{Emitter, Manager, State};
+use tracing::info;
 
 use crate::app_state::AppState;
 use crate::events;
@@ -1001,6 +1002,24 @@ fn dedup_known_aliases(mut items: Vec<WfcdItem>) -> Vec<WfcdItem> {
         }
     }
     items
+}
+
+/// Daily pass for long-running sessions. The launch probe belongs to the
+/// frontend (`fetch_item_list` at mount), so `refresh::spawn` holds this task
+/// back for one full interval instead of running it at the launch tick.
+pub fn refresh_catalogue(app: &tauri::AppHandle, force: bool) -> Result<(), String> {
+    let state = app.state::<AppState>();
+    // A valid ETag is not enough when version invalidation removed the local cache.
+    let cache_missing = !state.items_cache_path.exists();
+    let fetched = wfcd::fetch_items(None, force || cache_missing)?;
+    let result = match fetched {
+        cache::Fetched::New(r, _) => r,
+        cache::Fetched::NotModified => return Ok(()),
+    };
+    let count = apply_catalogue(&state, result)?;
+    info!(items = count, "catalogue refreshed in background");
+    let _ = app.emit(events::CATALOGUE_UPDATED, count);
+    Ok(())
 }
 
 // ── Debug unmatched paths ─────────────────────────────────────────────────────
