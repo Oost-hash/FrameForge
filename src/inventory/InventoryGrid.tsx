@@ -28,7 +28,7 @@ const EMPTY_MSG = "px-6 py-10 text-center leading-[1.6] text-muted";
 const INV_CARD_BASE =
   "relative flex w-full min-w-0 cursor-default flex-col items-center gap-[5px] self-stretch rounded-[9px] border border-border bg-surface px-2.5 pt-2.5 pb-3 transition-[border-color] duration-[120ms] hover:border-[rgba(56,139,253,0.5)]";
 const INV_CARD_BASE_EM =
-  "relative flex w-full min-w-0 cursor-default flex-col items-center gap-[.385em] self-stretch rounded-[9px] border border-border bg-surface text-[length:var(--inventory-card-base-size,13px)] transition-[border-color] duration-[120ms] hover:border-[rgba(56,139,253,0.5)]";
+  "relative flex w-full min-w-0 cursor-default flex-col gap-[.385em] self-stretch rounded-[9px] border border-border bg-surface text-[length:var(--inventory-card-base-size,13px)] transition-[border-color] duration-[120ms] hover:border-[rgba(56,139,253,0.5)]";
 const INV_CARD_PAD_EM = "px-[.769em] pt-[.769em] pb-[.923em]";
 const INV_CARD_PAD_EM_TEXT = "px-[.769em] pt-[3em] pb-[.923em]";
 const INV_CARD_PAD_MOD = "px-[.923em] pt-[2.154em] pb-[.923em]";
@@ -51,6 +51,15 @@ const INV_CARD_NAME =
   "line-clamp-2 w-full overflow-hidden text-center text-[1em] font-medium leading-[1.35]";
 const INV_CARD_CAT =
   "mt-[-1px] w-full overflow-hidden text-ellipsis whitespace-nowrap text-center text-[.769em] font-semibold uppercase tracking-[0.04em] text-[rgba(139,148,158,0.6)]";
+const INV_CARD_NAME_MOD =
+  "line-clamp-2 w-full overflow-hidden text-left text-[1em] font-medium leading-[1.35]";
+const INV_CARD_CAT_MOD =
+  "mt-[-1px] w-full overflow-hidden text-ellipsis whitespace-nowrap text-left text-[.769em] font-semibold uppercase tracking-[0.04em] text-[rgba(139,148,158,0.6)]";
+const INV_CARD_IMG_WRAP_MOD =
+  "inv-card-img-wrap relative flex h-[var(--inventory-mod-image-size,48px)] w-[var(--inventory-mod-image-size,48px)] shrink-0 items-center justify-center";
+const INV_MOD_TOTAL =
+  "inv-card-qty mod-total flex w-full items-center justify-between gap-[.313em] border-t border-border mt-[.462em] pt-[.385em] text-[1em] font-bold tabular-nums text-foreground";
+const INV_ITEM_UPDATED = "item-updated text-[.846em] text-muted whitespace-nowrap";
 const INV_CARD_SIDE =
   "absolute top-[.462em] right-[.538em] z-[2] flex flex-col items-end gap-[.308em]";
 const INV_CARD_SIDE_ROW =
@@ -87,6 +96,20 @@ function invWikiRowClass(view: ViewMode): string {
   return view === "list"
     ? "inv-wiki-row shrink-0 cursor-pointer border border-[rgba(56,139,253,0.3)] bg-transparent px-[7px] py-[4px] text-[.769em] font-bold leading-[1.3] text-[#6ea8fe] transition-all duration-100 hover:bg-[rgba(56,139,253,0.2)] hover:text-[#a8c8ff]"
     : "inv-wiki-row shrink-0 cursor-pointer border border-[rgba(56,139,253,0.3)] bg-transparent px-[5px] py-[2px] text-[.769em] font-bold leading-[1.3] text-[#6ea8fe] transition-all duration-100 hover:bg-[rgba(56,139,253,0.2)] hover:text-[#a8c8ff]";
+}
+
+function invCardQtyClass(isZero: boolean): string {
+  return `inv-card-qty flex items-center gap-[.313em] text-[1.231em] font-bold tabular-nums ${isZero ? "text-muted" : "text-foreground"}`;
+}
+
+function invItemDeltaClass(view: ViewMode, d: number): string {
+  const size = view === "list" || view === "list-compact"
+    ? "text-[.857em] px-[6px] py-[1px]"
+    : "text-[.75em] px-[.375em] py-[.063em]";
+  const tone = d > 0
+    ? "text-success bg-[rgba(63,185,80,0.12)]"
+    : "text-danger bg-[rgba(248,81,73,0.12)]";
+  return `item-delta ${deltaClass(d)} shrink-0 rounded-[4px] font-semibold ${size} ${tone}`;
 }
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -210,7 +233,7 @@ const InvModCard = memo(function InvModCard({ unique_name, name, category, image
   const hasPositive = rankDeltas != null && rankDeltas.some(d => d.delta > 0);
   const hasNegative = rankDeltas != null && rankDeltas.some(d => d.delta < 0);
   const mixedChange = isRecent && hasPositive && hasNegative;
-  const baseClass = `inv-card${isRecent ? (mixedChange ? " inv-card-mixed" : (recentDelta != null && recentDelta > 0 ? " inv-card-gained" : " inv-card-lost")) : ""}`;
+  const baseClass = `inv-card${isRecent ? (mixedChange ? " inv-card-mixed border-l-2 border-l-[#e0973e] bg-[rgba(224,151,62,0.04)]!" : (recentDelta != null && recentDelta > 0 ? " inv-card-gained border-l-2 border-l-success bg-[rgba(63,185,80,0.04)]!" : " inv-card-lost border-l-2 border-l-danger bg-[rgba(248,81,73,0.04)]!")) : ""}`;
 
   if (view === "icons") {
     return (
@@ -240,7 +263,7 @@ const InvModCard = memo(function InvModCard({ unique_name, name, category, image
     );
   }
   return (
-    <div key={unique_name} className={`${baseClass} inv-card-mod ${INV_CARD_BASE_EM} ${view === "text-cards" ? INV_CARD_PAD_MOD_TEXT : INV_CARD_PAD_MOD}`}>
+    <div key={unique_name} className={`${baseClass} inv-card-mod ${INV_CARD_BASE_EM} items-start ${view === "text-cards" ? INV_CARD_PAD_MOD_TEXT : INV_CARD_PAD_MOD}`}>
       <button
         className={[INV_FAV_STAR, isFavorite ? INV_FAV_STAR_ON : INV_FAV_STAR_OFF].join(" ")}
         title={isFavorite ? "Remove from Modular Window" : "Add to Modular Window"}
@@ -248,22 +271,22 @@ const InvModCard = memo(function InvModCard({ unique_name, name, category, image
         onClick={e => { e.stopPropagation(); onToggleFavorite(unique_name); }}
       >{isFavorite ? "★" : "☆"}</button>
       {view !== "text-cards" && (
-        <div className={`inv-card-img-wrap ${INV_CARD_IMG_WRAP}`}>
+        <div className={INV_CARD_IMG_WRAP_MOD}>
           <ItemImg imageName={image_name ?? undefined} category={category} size={48} />
         </div>
       )}
-      <div className={`inv-card-name ${INV_CARD_NAME}`}>{name}</div>
-      <div className={INV_CARD_CAT}>{category}</div>
-      <div className="mod-rank-table">
+      <div className={`inv-card-name ${INV_CARD_NAME_MOD}`}>{name}</div>
+      <div className={INV_CARD_CAT_MOD}>{category}</div>
+      <div className="mod-rank-table grid w-full grid-cols-[1fr_auto] gap-[.231em_.615em] mt-[.538em]">
         {ranks.map(r => {
           const rankDelta = rankDeltas?.find(rd => rd.rank === r.rank);
           return (
-            <div key={r.rank} className={`mod-rank-row${r.count === 0 ? " mod-rank-zero" : ""}`}>
-              <span className="mod-rank-label">R{r.rank}</span>
-              <span className="mod-rank-value">
-                <span className="mod-rank-count">{r.count}</span>
+            <div key={r.rank} className={`mod-rank-row contents${r.count === 0 ? " mod-rank-zero" : ""}`}>
+              <span className={r.count === 0 ? "mod-rank-label text-[.846em] font-semibold tabular-nums text-[rgba(139,148,158,0.3)]" : "mod-rank-label text-[.846em] font-semibold tabular-nums text-muted"}>R{r.rank}</span>
+              <span className="mod-rank-value flex items-center justify-end gap-[.308em]">
+                <span className={r.count === 0 ? "mod-rank-count text-[.846em] font-bold tabular-nums text-right text-[rgba(139,148,158,0.3)]" : "mod-rank-count text-[.846em] font-bold tabular-nums text-right text-foreground"}>{r.count}</span>
                 {isRecent && rankDelta && (
-                  <span className={`mod-rank-delta ${rankDelta.delta > 0 ? "log-positive" : "log-negative"}`}>
+                  <span className={`mod-rank-delta ${rankDelta.delta > 0 ? "log-positive text-success bg-[rgba(63,185,80,0.12)]" : "log-negative text-danger bg-[rgba(248,81,73,0.12)]"} text-[.846em] font-semibold px-[.231em] rounded-[2px]`}>
                     {rankDelta.delta > 0 ? `+${rankDelta.delta}` : rankDelta.delta}
                   </span>
                 )}
@@ -272,7 +295,7 @@ const InvModCard = memo(function InvModCard({ unique_name, name, category, image
           );
         })}
       </div>
-      <div className="inv-card-qty mod-total">{fmt(total)}</div>
+      <div className={INV_MOD_TOTAL}>{fmt(total)}</div>
       <CardSide name={name} plat={plat} ducats={ducats} horizontal={view === "text-cards"} />
     </div>
   );
@@ -319,7 +342,7 @@ const InvCard = memo(function InvCard({
   const isMastered = masteryRank != null && masteryRank >= 30;
   const showRank = masteryRank != null && masteryRank > 0;
   const recentLabel = secAgo !== null ? (Math.floor(secAgo / 60) === 0 ? "· now" : `· ${Math.floor(secAgo / 60)}m`) : null;
-  const baseClass = `inv-card${isZero ? " inv-card-zero" : ""}${isRecent ? (recentDelta != null && recentDelta > 0 ? " inv-card-gained" : " inv-card-lost") : ""}`;
+  const baseClass = `inv-card${isZero ? " inv-card-zero opacity-[0.35]" : ""}${isRecent ? (recentDelta != null && recentDelta > 0 ? " inv-card-gained border-l-2 border-l-success bg-[rgba(63,185,80,0.04)]!" : " inv-card-lost border-l-2 border-l-danger bg-[rgba(248,81,73,0.04)]!") : ""}`;
 
   if (view === "icons") {
     return (
@@ -347,20 +370,20 @@ const InvCard = memo(function InvCard({
         )}
         <div className={INV_ROW_NAME}>
           {name}
-          {isRecent && <span className="item-updated">{recentLabel}</span>}
+          {isRecent && <span className={INV_ITEM_UPDATED}>{recentLabel}</span>}
         </div>
         <ValueChips plat={plat} ducats={ducats} className={INV_ROW_VALUES} />
         <div className={INV_ROW_CAT}>{category}</div>
         <div className={INV_ROW_QTY}>
           {fmt(qty)}
-          {isRecent && recentDelta != null && <span className={`item-delta ${deltaClass(recentDelta)}`}>{deltaText(recentDelta)}</span>}
+          {isRecent && recentDelta != null && <span className={invItemDeltaClass(view, recentDelta)}>{deltaText(recentDelta)}</span>}
         </div>
         <WikiButton name={name} className={invWikiRowClass(view)} />
       </div>
     );
   }
   return (
-    <div className={`${baseClass} ${INV_CARD_BASE_EM} ${view === "text-cards" ? INV_CARD_PAD_EM_TEXT : INV_CARD_PAD_EM}`}>
+    <div className={`${baseClass} ${INV_CARD_BASE_EM} items-center ${view === "text-cards" ? INV_CARD_PAD_EM_TEXT : INV_CARD_PAD_EM}`}>
       <button
         className={[INV_FAV_STAR, isFavorite ? INV_FAV_STAR_ON : INV_FAV_STAR_OFF].join(" ")}
         title={isFavorite ? "Remove from Modular Window" : "Add to Modular Window"}
@@ -382,13 +405,13 @@ const InvCard = memo(function InvCard({
       )}
       <div className={`inv-card-name ${INV_CARD_NAME}`}>
         {name}
-        {isRecent && <span className="item-updated">{recentLabel}</span>}
+        {isRecent && <span className={INV_ITEM_UPDATED}>{recentLabel}</span>}
       </div>
       <div className={INV_CARD_CAT}>{category}</div>
-      <div className={`inv-card-qty ${isZero ? "inv-card-qty-zero" : ""}`}>
+      <div className={invCardQtyClass(isZero)}>
         {fmt(qty)}
         {isRecent && recentDelta != null && (
-          <span className={`item-delta ${deltaClass(recentDelta)}`}>{deltaText(recentDelta)}</span>
+          <span className={invItemDeltaClass(view, recentDelta)}>{deltaText(recentDelta)}</span>
         )}
       </div>
       <CardSide name={name} plat={plat} ducats={ducats} horizontal={view === "text-cards"} />
