@@ -117,6 +117,22 @@ const MK_QTY_ZERO   = "text-danger bg-[rgba(248,81,73,.12)]";
 const MK_QTY_ONE    = "text-foreground bg-[rgba(255,255,255,.06)]";
 const MK_QTY_DUPE   = "text-[#f0c040] bg-[rgba(240,192,64,.15)]";
 const MK_TOTALS     = "mt-auto px-[8px] text-[9px] text-muted bg-[rgba(255,255,255,.02)] flex items-center gap-[3px] border-t border-[rgba(48,54,61,.3)] min-h-[20px] shrink-0";
+const MODS_GRID     = "flex-1 overflow-y-auto grid grid-cols-[repeat(auto-fill,minmax(108px,1fr))] gap-[6px] p-[8px] min-h-0 content-start";
+const MOD_CARD      = "relative flex flex-col items-center gap-[4px] pt-[8px] px-[6px] pb-[6px] bg-[rgba(255,255,255,.03)] border border-border rounded-[7px] cursor-pointer transition-[background,border-color] duration-[120ms] text-center hover:bg-[rgba(255,255,255,.07)] hover:border-accent";
+const MOD_UNOWNED   = "opacity-50 hover:opacity-100";
+const MOD_CAT       = "absolute top-[4px] left-[4px] text-[9px] font-bold py-[1px] px-[4px] rounded-[3px] whitespace-nowrap leading-[1.4]";
+const MOD_CAT_MOD   = `${MOD_CAT} bg-[rgba(88,166,255,.18)] text-[#58a6ff]`;
+const MOD_CAT_ARC   = `${MOD_CAT} bg-[rgba(188,140,255,.18)] text-[#bc8cff]`;
+const MOD_IMG       = "flex items-center justify-center w-[56px] h-[56px] mt-[4px] shrink-0";
+const MOD_NAME      = "text-[11px] text-foreground leading-[1.3] line-clamp-2 w-full";
+const MOD_FOOTER    = "flex items-center gap-[3px] flex-wrap justify-center w-full mt-[2px]";
+const MOD_RANK_NONE = "text-[10px] font-bold text-muted bg-transparent py-[1px] px-[4px] rounded-[3px]";
+const MOD_CHIPS     = "flex flex-wrap gap-[2px] justify-center";
+const MOD_CHIP      = "text-[10px] font-bold text-[#d4a843] bg-[rgba(212,168,67,.12)] py-[1px] px-[5px] rounded-[3px] cursor-pointer transition-[background] duration-[150ms] hover:bg-[rgba(212,168,67,.3)]";
+const MOD_PLAT      = "flex items-center gap-[2px] text-[10px] text-accent whitespace-nowrap";
+const MOD_PLAT_NA   = "flex items-center gap-[2px] text-[9px] text-muted whitespace-nowrap";
+const MODS_PAG      = "flex items-center gap-[10px] justify-center p-[8px] border-t border-border shrink-0";
+const MODS_INFO     = "text-[12px] text-muted";
 
 // ─── Set card ─────────────────────────────────────────────────────────────────
 
@@ -767,7 +783,7 @@ function ModsTab({ catalog: allCatalog, inventory, wfmLookup, prices, modCopiesM
         <span style={{ color: "var(--muted)" }}>{filtered.length.toLocaleString()} shown</span>
       </div>
 
-      <div className="mods-grid">
+      <div className={MODS_GRID}>
         {pageItems.map(item => {
           const urlName  = wfmLookup.get(normalizeForWfm(item.name)) ?? normalizeForWfm(item.name);
           const price    = prices.get(urlName)?.sell_median;
@@ -781,23 +797,23 @@ function ModsTab({ catalog: allCatalog, inventory, wfmLookup, prices, modCopiesM
           return (
             <div
               key={item.unique_name}
-              className={`mod-card ${qty === 0 ? "mod-card-unowned" : ""}`}
+              className={`${MOD_CARD}${qty === 0 ? ` ${MOD_UNOWNED}` : ""}`}
               onClick={() => onOpenPopup(urlName, item.name, item.image_name ?? undefined)}
             >
-              <span className={`mod-cat-badge ${isArcane ? "mod-cat-arcane" : "mod-cat-mod"}`}>
+              <span className={isArcane ? MOD_CAT_ARC : MOD_CAT_MOD}>
                 {isArcane ? "Arcane" : "Mod"}
               </span>
-              <div className="mod-card-img">
+              <div className={MOD_IMG}>
                 <ItemImg imageName={item.image_name ?? undefined} size={56} fallbackText="P" />
               </div>
-              <div className="mod-card-name">{item.name}</div>
-              <div className="mod-card-footer">
+              <div className={MOD_NAME}>{item.name}</div>
+              <div className={MOD_FOOTER}>
                 {rankedCopies.length > 0 ? (
-                  <div className="mod-rank-chips">
+                  <div className={MOD_CHIPS}>
                     {rankedCopies.map(c => (
                       <span
                         key={c.rank ?? "null"}
-                        className="mod-rank-chip"
+                        className={MOD_CHIP}
                         title={`Open market for rank ${c.rank ?? "?"}`}
                         onClick={e => {
                           e.stopPropagation();
@@ -809,11 +825,11 @@ function ModsTab({ catalog: allCatalog, inventory, wfmLookup, prices, modCopiesM
                     ))}
                   </div>
                 ) : (
-                  <span className="mod-rank-badge mod-rank-none">—</span>
+                  <span className={MOD_RANK_NONE}>—</span>
                 )}
                 {price != null
-                  ? <span className="mod-plat-cell"><PlatIcon size={10} />{fmtPt(price)}</span>
-                  : <span className={`mod-plat-cell ${MK_PRICE_NA}`}>—</span>}
+                  ? <span className={MOD_PLAT}><PlatIcon size={10} />{fmtPt(price)}</span>
+                  : <span className={MOD_PLAT_NA}>—</span>}
               </div>
             </div>
           );
@@ -824,9 +840,9 @@ function ModsTab({ catalog: allCatalog, inventory, wfmLookup, prices, modCopiesM
       </div>
 
       {totalPages > 1 && (
-        <div className="mods-pagination">
+        <div className={MODS_PAG}>
           <button className="fchip" disabled={page === 0} onClick={() => setPage(p => p - 1)}>‹ Prev</button>
-          <span className="mods-page-info">Page {page + 1} of {totalPages} · {filtered.length} items</span>
+          <span className={MODS_INFO}>Page {page + 1} of {totalPages} · {filtered.length} items</span>
           <button className="fchip" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>Next ›</button>
         </div>
       )}
