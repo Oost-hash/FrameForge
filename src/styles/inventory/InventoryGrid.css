@@ -1,21 +1,3 @@
-/* ── Inventory grid ─────────────────────────────────────────────────────────── */
-
-.item-grid {
-  flex: 1;
-  overflow-y: auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(var(--inventory-card-min-width, 168px), 100%), 1fr));
-  gap: 12px;
-  padding: 16px 10px;
-  width: 100%;
-  max-width: var(--inventory-grid-max-width);
-  margin-inline: auto;
-  align-content: start;
-  /* Mod cards can have more rank rows; fill their shared grid row to keep gutters stable. */
-  align-items: stretch;
-  justify-items: stretch;
-}
-
 /* ── Card base ─────────────────────────────────────────────────────────────── */
 
 .inv-card {
@@ -182,10 +164,6 @@
 }
 .inv-card-mod .mod-total::before { content: "Total"; font-size: .846em; font-weight: 600; color: var(--muted); }
 
-/* ── Empty state ───────────────────────────────────────────────────────────── */
-
-.empty-msg { padding: 40px 24px; color: var(--muted); text-align: center; line-height: 1.6; }
-
 /* ── Delta + recent indicators ─────────────────────────────────────────────── */
 
 .item-updated    { font-size: .846em; color: var(--muted); white-space: nowrap; }
@@ -198,12 +176,6 @@
 /* ── Inventory view modes ──────────────────────────────────────────────────── */
 
 /* icons */
-.item-grid.item-grid-icons {
-  grid-template-columns: repeat(auto-fill, 76px);
-  gap: 6px;
-  max-width: none;
-  margin-inline: 0;
-}
 .item-grid-icons .inv-card-icon-only {
   width: 76px; height: 76px; padding: 6px;
   display: flex; align-items: center; justify-content: center;
@@ -222,14 +194,6 @@
 }
 
 /* list + list-compact */
-.item-grid.item-grid-list,
-.item-grid.item-grid-list-compact {
-  display: flex; flex-direction: column; gap: 1px; padding: 4px 0;
-  font-size: var(--inventory-list-base-size, 13px);
-  grid-template-columns: none;
-  max-width: none;
-  margin-inline: 0;
-}
 .inv-card-row {
   display: flex; flex-direction: row; align-items: center;
   gap: 8px; padding: .308em 12px; border-radius: 0;
@@ -283,13 +247,6 @@
 }
 
 /* ── Loading skeleton ──────────────────────────────────────────────────────── */
-
-.inventory-skeleton {
-  min-height: 120px;
-  background: linear-gradient(90deg, var(--surface) 25%, rgba(255,255,255,.04) 50%, var(--surface) 75%);
-  background-size: 200% 100%;
-  animation: skeleton-shimmer 1.5s ease-in-out infinite;
-}
 
 @keyframes skeleton-shimmer {
   0% { background-position: 200% 0; }

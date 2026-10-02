@@ -5,6 +5,26 @@ import { fmt, deltaClass, deltaText } from "../utils";
 import { openWiki } from "../lib/wiki";
 import "../styles/inventory/InventoryGrid.css";
 
+// ─── Presentatie (InventoryGrid.css) ─────────────────────────────────────────
+
+const ITEM_GRID_CLASS: Record<ViewMode, string> = {
+  cards:
+    "item-grid item-grid-cards flex-1 overflow-y-auto grid w-full content-start items-stretch justify-items-stretch px-2.5 py-4 max-w-[var(--inventory-grid-max-width)] mx-auto grid-cols-[repeat(auto-fit,minmax(min(var(--inventory-card-min-width,168px),100%),1fr))] gap-3",
+  icons:
+    "item-grid item-grid-icons flex-1 overflow-y-auto grid w-full content-start items-stretch justify-items-stretch px-2.5 py-4 max-w-none mx-0 grid-cols-[repeat(auto-fill,76px)] gap-1.5",
+  "text-cards":
+    "item-grid item-grid-text-cards flex-1 overflow-y-auto grid w-full content-start items-stretch justify-items-stretch px-2.5 py-4 max-w-[var(--inventory-grid-max-width)] mx-auto grid-cols-[repeat(auto-fit,minmax(min(var(--inventory-card-min-width,168px),100%),1fr))] gap-3",
+  list:
+    "item-grid item-grid-list flex-1 overflow-y-auto flex w-full content-start items-stretch justify-items-stretch max-w-none mx-0 flex-col gap-px px-0 py-1 text-[length:var(--inventory-list-base-size,13px)]",
+  "list-compact":
+    "item-grid item-grid-list-compact flex-1 overflow-y-auto flex w-full content-start items-stretch justify-items-stretch max-w-none mx-0 flex-col gap-px px-0 py-1 text-[length:var(--inventory-list-base-size,13px)]",
+};
+
+const INV_SKELETON =
+  "min-h-[120px] bg-[linear-gradient(90deg,var(--surface)_25%,rgba(255,255,255,.04)_50%,var(--surface)_75%)] bg-[length:200%_100%] animate-[skeleton-shimmer_1.5s_ease-in-out_infinite]";
+
+const EMPTY_MSG = "px-6 py-10 text-center leading-[1.6] text-muted";
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 
@@ -342,7 +362,7 @@ export default memo(function InventoryGrid({
     ? Math.max(150, scaledCardMinWidth + 24)
     : scaledCardMinWidth;
   return (
-    <div className={`item-grid item-grid-${view}`}
+    <div className={ITEM_GRID_CLASS[view]}
          style={{
            "--inventory-grid-max-width": `${cardColumns * (cardMinWidth + 12) + 20}px`,
            "--inventory-card-min-width": `${cardMinWidth}px`,
@@ -356,10 +376,10 @@ export default memo(function InventoryGrid({
          onContextMenu={onContextMenu}>
       {loading ? (
         Array.from({ length: 20 }, (_, i) => (
-          <div key={i} className="inv-card inventory-skeleton" />
+          <div key={i} className={`inv-card ${INV_SKELETON}`} />
         ))
       ) : items.length === 0 ? (
-        <div className="empty-msg" style={{gridColumn:"1/-1"}}>
+        <div className={EMPTY_MSG} style={{gridColumn:"1/-1"}}>
           {monitoring
             ? "No items found. Complete a mission or visit a relay to sync inventory."
             : "Start the monitor to begin tracking your inventory."}
