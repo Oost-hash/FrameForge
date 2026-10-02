@@ -46,74 +46,6 @@
 }
 .settings-msg { font-size: 11px; color: var(--green); margin-top: 8px; }
 
-/* ── Sidebar ── */
-.sidebar {
-  width: var(--sidebar-w);
-  flex-shrink: 0;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  padding: 12px 0;
-}
-
-.sidebar-section-label {
-  padding: 0 12px 6px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  color: var(--muted);
-}
-
-.cat-btn {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 6px 12px;
-  background: none;
-  border: none;
-  border-left: 2px solid transparent;
-  color: var(--muted);
-  cursor: pointer;
-  text-align: left;
-  font-size: 13px;
-  transition: background .1s, color .1s;
-}
-.cat-btn:hover { background: rgba(255,255,255,.04); color: var(--text); }
-.cat-active    { color: var(--accent) !important; background: rgba(56,139,253,.08) !important; border-left-color: var(--accent) !important; }
-
-.cat-label { flex: 1; }
-.cat-count {
-  font-size: 11px;
-  background: rgba(56,139,253,.18);
-  color: var(--accent);
-  padding: 1px 6px;
-  border-radius: 10px;
-  min-width: 20px;
-  text-align: center;
-}
-
-.sidebar-divider { border-top: 1px solid var(--border); margin: 10px 0; }
-.db-count { padding: 0 12px 6px; color: var(--muted); font-size: 12px; }
-
-.btn-fetch {
-  margin: 0 12px;
-  padding: 6px 0;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 12px;
-  transition: border-color .15s, color .15s;
-}
-.btn-fetch:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-.btn-fetch:disabled { opacity: .5; cursor: default; }
-.fetch-msg { padding: 6px 12px 0; font-size: 11px; color: var(--muted); word-break: break-word; }
-
 /* ── Main ── */
 
 .toolbar {
@@ -204,12 +136,6 @@
   background: rgba(227,179,65,.08); border-bottom: 1px solid rgba(227,179,65,.2);
   flex-shrink: 0;
 }
-
-/* ── Category counts ── */
-.cat-count { display: flex; align-items: center; gap: 2px; font-size: 11px; }
-.cat-owned { color: var(--accent); font-weight: 600; }
-.cat-sep   { color: var(--border); }
-.cat-total { color: var(--muted); }
 
 /* ── Inventory card grid (see InventoryGrid.css) ── */
 

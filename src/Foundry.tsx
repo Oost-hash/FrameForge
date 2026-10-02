@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import ItemImg from "./ItemImg";
 import { HelpTip } from "./shared/HelpTip";
 import { SecondaryButton } from "./shared/ui/ActionButton";
+import { CategoryButton, CAT_COUNT, CAT_TOTAL } from "./shared/ui/CategoryButton";
 import { ModalCloseButton } from "./shared/ui/ModalCloseButton";
 import FilterPresets from "./shared/FilterPresets";
 import { PREFERENCE_KEYS } from "./constants/preferences";
@@ -849,13 +850,13 @@ export default function Foundry({ inventory, refreshKey, crafting, subsummedWarf
             onChange={e => setInputSearch(e.target.value)} />
         </div>
         {CRAFT_CATEGORIES.map(cat => (
-          <button key={cat} className={`cat-btn ${activeCat === cat ? "cat-active" : ""} ${FY_SIDEBAR_CAT}`}
+          <CategoryButton key={cat} active={activeCat === cat} label={cat}
+            className={FY_SIDEBAR_CAT} labelClassName={FY_CAT_LABEL}
             onClick={() => onFiltersChange({ ...filters, activeCat: cat, search: "" })}>
-            <span className={`cat-label ${FY_CAT_LABEL}`}>{cat}</span>
             {categoryCounts[cat] ? (
-              <span className="cat-count"><span className="cat-total">{categoryCounts[cat]}</span></span>
+              <span className={CAT_COUNT}><span className={CAT_TOTAL}>{categoryCounts[cat]}</span></span>
             ) : null}
-          </button>
+          </CategoryButton>
         ))}
       </div>
 
