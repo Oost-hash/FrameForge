@@ -647,13 +647,7 @@ export default function Overlay() {
     // Outline: dashed frame at the window's current position.
     return (
       <div className={OV_ROOT}>
-        <div style={{
-          position: "absolute", left: 32, right: 32, top: 40, bottom: 40,
-          border: "2px dashed rgba(56,139,253,.85)", borderRadius: 10,
-          background: "rgba(22,27,34,.55)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          color: "#79b8ff", fontSize: 22, fontWeight: 600,
-        }}>
+        <div className="absolute inset-x-8 top-10 bottom-10 flex items-center justify-center rounded-[10px] border-2 border-dashed border-[rgba(56,139,253,.85)] bg-[rgba(22,27,34,.55)] text-[22px] font-semibold text-[#79b8ff]">
           Relic Reward Overlay — outline
         </div>
       </div>

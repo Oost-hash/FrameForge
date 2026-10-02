@@ -365,7 +365,7 @@ export default function TimerHelper({ active, favorites, onFavoriteToggle, fissu
   }
 
   const Chevron = ({ open }: { open: boolean }) => (
-    <svg className={TH_EXP_CHEVRON} viewBox="0 0 10 6" fill="none" style={{ transform: open ? "" : "rotate(-90deg)" }}>
+    <svg className={`${TH_EXP_CHEVRON} ${open ? "" : "-rotate-90"}`} viewBox="0 0 10 6" fill="none">
       <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
@@ -548,7 +548,7 @@ export default function TimerHelper({ active, favorites, onFavoriteToggle, fissu
                     <div key={i} className={TH_INV_ROW}>
                       <span className={owned ? TH_INV_NAME_OWNED : TH_INV_NAME}>{item.name}</span>
                       {owned && <span className={TH_OWNED_TAG}>Owned</span>}
-                      {item.regalAyaPrice ? <span className={TH_PRICE_AYA} style={{ color: "#c084fc" }}>{item.regalAyaPrice} <span className={TH_CURRENCY}>Regal Aya</span></span> : null}
+                      {item.regalAyaPrice ? <span className={`${TH_PRICE_AYA} text-[#c084fc]`}>{item.regalAyaPrice} <span className={TH_CURRENCY}>Regal Aya</span></span> : null}
                       {item.ayaPrice ? <span className={TH_PRICE_AYA}>{item.ayaPrice} <span className={TH_CURRENCY}>Aya</span></span> : null}
                     </div>
                   );
@@ -619,7 +619,7 @@ export default function TimerHelper({ active, favorites, onFavoriteToggle, fissu
             {ws.invasions.map((inv, i) => (
               <div key={i} className={TH_INV_TILE}>
                 <div className={TH_INV_NODE}>{inv.node}</div>
-                <div className={TH_INV_BAR_WRAP} style={{ margin: "3px 0" }}>
+                <div className={`${TH_INV_BAR_WRAP} my-[3px]`}>
                   <div className={TH_INV_BAR_INNER} style={{ width: `${Math.min(100, inv.pct)}%` }} />
                 </div>
                 <div className={TH_INV_FACTIONS}>

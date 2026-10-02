@@ -366,9 +366,8 @@ function TreeNode({ node, inventory, depth }: {
   return (
     <div style={{ marginLeft: depth * 16 }}>
       <div
-        className={`${FY_REC_ROW}${enough ? " opacity-70" : ""}`}
+        className={`${FY_REC_ROW}${enough ? " opacity-70" : ""} ${hasChildren ? "cursor-pointer" : "cursor-default"}`}
         onClick={() => hasChildren && setOpen(o => !o)}
-        style={{ cursor: hasChildren ? "pointer" : "default" }}
       >
         {hasChildren
           ? <span className={FY_CHEVRON}>{open ? "▾" : "▸"}</span>

@@ -342,7 +342,7 @@ export default function ModularWindow({
                     (hasNeeds ? " group-hover:text-foreground" : "")}>{item.name}</span>
                 </div>
                 <span className={MW_ITEM_STATUS}>
-                  {isOwned ? "✓" : allDone ? "⚡" : allCovered ? <span style={{ color: "var(--green)" }}>✓</span> : ""}
+                  {isOwned ? "✓" : allDone ? "⚡" : allCovered ? <span className="text-green">✓</span> : ""}
                 </span>
                 <button className={MW_REMOVE_BTN} onClick={() => onUntrack(id)}>×</button>
               </div>
@@ -481,15 +481,15 @@ export default function ModularWindow({
             {matched.map(({ f, variant }, i) => {
               const ms = new Date(f.expiry).getTime() - timerNow;
               return (
-                <div key={i} className={MW_FAV_ITEM} style={{ flexDirection: "column", alignItems: "stretch", padding: "4px 8px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <div key={i} className={`${MW_FAV_ITEM} flex-col items-stretch px-2 py-1`}>
+                  <div className="flex items-center gap-1">
                     <span className={MW_FISSURE_TIER} style={{ color: TIER_COLOR[f.tier] ?? "#ccc" }}>{f.tier}</span>
                     <span className={MW_FAV_NAME}>{f.missionType}</span>
-                    <span style={{ fontSize: 10, color: "var(--muted)", flexShrink: 0 }}>{variantLabel[variant]}</span>
-                    <span className={MW_FAV_QTY_CD} style={{ marginLeft: "auto" }}>{fmtMs(ms)}</span>
+                    <span className="shrink-0 text-[10px] text-muted">{variantLabel[variant]}</span>
+                    <span className={`${MW_FAV_QTY_CD} ml-auto`}>{fmtMs(ms)}</span>
                   </div>
-                  <div style={{ fontSize: 10, color: "var(--muted)", paddingLeft: 2, marginTop: 1 }}>
-                    {f.enemy && <span style={{ marginRight: 6 }}>{f.enemy}</span>}
+                  <div className="mt-px pl-0.5 text-[10px] text-muted">
+                    {f.enemy && <span className="mr-1.5">{f.enemy}</span>}
                     {f.node && <span>{f.node}</span>}
                   </div>
                 </div>
@@ -503,8 +503,8 @@ export default function ModularWindow({
 
   return (
     <div
-      className={MW_WINDOW + (width !== undefined ? " " + MW_WINDOW_DOCKED : "")}
-      style={width !== undefined ? { width } : { flex: 1 }}
+      className={`${MW_WINDOW}${width !== undefined ? ` ${MW_WINDOW_DOCKED}` : " flex-1"}`}
+      style={width !== undefined ? { width } : undefined}
     >
       {onWidthChange && (
         <ResizeHandle className={MW_RESIZE} value={width ?? 240} axis="x" direction={-1} clamp={value => Math.max(160, Math.min(500, value))} onValueChange={onWidthChange} onValueCommit={onWidthCommit} />

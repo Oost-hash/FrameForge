@@ -197,10 +197,10 @@ function SetCard({ setKey, parts, parentItem, setPrice, setPriceLoading, pricesF
   return (
     <div className={`${MK_CARD} ${isComplete ? "border-[rgba(63,185,80,.4)]" : "border-border"}`}>
       <div className={`${MK_CARD_LEFT}${onCardClick ? ` ${MK_CARD_CLICK}` : ""}`} onClick={onCardClick} title={onCardClick ? "View orders & prices" : undefined}>
-        <div style={{ position: "relative", display: "inline-block" }}>
+        <div className="relative inline-block">
           <ItemImg imageName={parentItem?.image_name} size={64} fallbackText="P" />
           {isCrafting && (
-            <span style={{ position: "absolute", top: -4, right: -6, fontSize: 13 }} title="Building in Foundry">⚒</span>
+            <span className="absolute -top-1 -right-[6px] text-[13px]" title="Building in Foundry">⚒</span>
           )}
         </div>
         <div className={MK_SET_NAME}>{setKey}</div>
@@ -588,7 +588,7 @@ export default function MarketHelper({ inventory, refreshKey, crafting, onWfmLog
       </div>
 
       {/* Keep WfmTrading mounted at all times so auction/whisper state isn't lost on tab switch */}
-      <div style={{ display: activeMarketTab === "trading" ? "flex" : "none", flex: 1, flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
+      <div className={activeMarketTab === "trading" ? "flex min-h-0 flex-1 flex-col overflow-hidden" : "hidden"}>
         <WfmTrading
           wfmLookup={wfmLookup}
           wfmItems={wfmItems}
@@ -627,9 +627,9 @@ export default function MarketHelper({ inventory, refreshKey, crafting, onWfmLog
 
       {activeMarketTab === "sets" && <>
       <div className={MK_HEADER}>
-        <FoundrySearch style={{ width: 200 }} placeholder="Search sets (comma-separated)…"
+        <FoundrySearch className="w-[200px]" placeholder="Search sets (comma-separated)…"
           value={search} onChange={e => set("search", e.target.value)} />
-        <FilterBar style={{ border: "none", padding: 0, flex: 1, flexWrap: "wrap" }}>
+        <FilterBar className="flex-1 flex-wrap border-0 p-0">
           <FilterChip active={ownership.includes("owned")} onClick={() => set("ownership", toggle(ownership, "owned"))}>Owned</FilterChip>
           <FilterChip active={ownership.includes("notowned")} onClick={() => set("ownership", toggle(ownership, "notowned"))}>Not Owned</FilterChip>
           <FilterSeparator />
@@ -663,14 +663,14 @@ export default function MarketHelper({ inventory, refreshKey, crafting, onWfmLog
         <span><strong>{fmt(totalDucats)}</strong> total ducats (owned parts)</span>
         <FilterSeparator />
         <DucatIcon size={13} />
-        <span><strong style={{ color: "#f0c040" }}>{fmt(dupeDucats)}</strong> from dupes</span>
-        {wfmItems.length === 0 && <span style={{ color: "var(--muted)", fontSize: 11 }}>· Connecting to warframe.market…</span>}
-        {wfmItems.length > 0 && <span style={{ color: "var(--green)", fontSize: 11 }}>· {wfmItems.length.toLocaleString()} items from warframe.market</span>}
+        <span><strong className="text-[#f0c040]">{fmt(dupeDucats)}</strong> from dupes</span>
+        {wfmItems.length === 0 && <span className="text-[11px] text-muted">· Connecting to warframe.market…</span>}
+        {wfmItems.length > 0 && <span className="text-[11px] text-green">· {wfmItems.length.toLocaleString()} items from warframe.market</span>}
       </div>
 
       <div className={MK_GRID}>
         {visibleSets.length === 0 ? (
-          <EmptyMessage style={{ gridColumn: "1/-1" }}>No sets match. Adjust filters or own some prime parts first.</EmptyMessage>
+          <EmptyMessage className="col-[1/-1]">No sets match. Adjust filters or own some prime parts first.</EmptyMessage>
         ) : visibleSets.map(([setKey, parts]) => {
           const setNormalKey = normalizeForWfm(setKey + " Set");
           const setUrl       = wfmLookup.get(setNormalKey) ?? setNormalKey;
@@ -797,11 +797,11 @@ function ModsTab({ catalog: allCatalog, inventory, wfmLookup, prices, modCopiesM
   );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+    <div className="flex min-h-0 flex-1 flex-col">
       <div className={MK_HEADER}>
-        <FoundrySearch style={{ width: 200 }} placeholder="Search mods &amp; arcanes…"
+        <FoundrySearch className="w-[200px]" placeholder="Search mods &amp; arcanes…"
           value={search} onChange={e => setSearch(e.target.value)} />
-        <FilterBar style={{ border: "none", padding: 0, flex: 1, flexWrap: "wrap" }}>
+        <FilterBar className="flex-1 flex-wrap border-0 p-0">
           <FilterChip active={catFilter === "all"} onClick={() => setCatFilter("all")}>All</FilterChip>
           <FilterChip active={catFilter === "mods"} onClick={() => setCatFilter("mods")}>Mods</FilterChip>
           <FilterChip active={catFilter === "arcanes"} onClick={() => setCatFilter("arcanes")}>Arcanes</FilterChip>
@@ -821,7 +821,7 @@ function ModsTab({ catalog: allCatalog, inventory, wfmLookup, prices, modCopiesM
       <div className={MK_SUMMARY}>
         <span><strong>{ownedCount.toLocaleString()}</strong> owned · <strong>{catalog.length.toLocaleString()}</strong> total</span>
         <FilterSeparator />
-        <span style={{ color: "var(--muted)" }}>{filtered.length.toLocaleString()} shown</span>
+        <span className="text-muted">{filtered.length.toLocaleString()} shown</span>
       </div>
 
       <div className={MODS_GRID}>
@@ -876,7 +876,7 @@ function ModsTab({ catalog: allCatalog, inventory, wfmLookup, prices, modCopiesM
           );
         })}
         {pageItems.length === 0 && (
-          <EmptyMessage style={{ padding: 24, gridColumn: "1/-1" }}>No items match the current filters.</EmptyMessage>
+          <EmptyMessage className="col-[1/-1] p-6">No items match the current filters.</EmptyMessage>
         )}
       </div>
 

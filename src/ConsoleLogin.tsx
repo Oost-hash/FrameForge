@@ -55,7 +55,7 @@ export default function ConsoleLogin({ onLogin }: Props) {
       {status !== "waiting" && (
         <SecondaryButton
           onClick={open}
-          style={status === "done" ? { opacity: 0.5 } : undefined}
+          className={status === "done" ? "opacity-50" : undefined}
         >
           {status === "done" ? "Re-open Login" : "Open Warframe Login"}
         </SecondaryButton>
@@ -71,7 +71,7 @@ export default function ConsoleLogin({ onLogin }: Props) {
       )}
 
       {msg && (
-        <div className="mt-2 text-[11px]" style={{ color: status === "error" ? "var(--red)" : "var(--green)" }}>
+        <div className={`mt-2 text-[11px] ${status === "error" ? "text-red" : "text-green"}`}>
           {msg}
         </div>
       )}

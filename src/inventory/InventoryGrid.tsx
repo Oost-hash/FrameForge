@@ -467,7 +467,7 @@ export default memo(function InventoryGrid({
           <div key={i} className={`inv-card ${INV_CARD_BASE} ${INV_SKELETON}`} />
         ))
       ) : items.length === 0 ? (
-        <div className={EMPTY_MSG} style={{gridColumn:"1/-1"}}>
+        <div className={`${EMPTY_MSG} col-[1/-1]`}>
           {monitoring
             ? "No items found. Complete a mission or visit a relay to sync inventory."
             : "Start the monitor to begin tracking your inventory."}

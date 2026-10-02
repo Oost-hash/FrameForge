@@ -495,7 +495,7 @@ export default function RivenAnalyzer() {
                   {editingId ? "✓ Update Roll" : "💾 Save Roll"}
                 </button>
                 {editingId && <button className={RA_CANCEL_EDIT} onClick={reset}>Cancel</button>}
-                {saveStatus && <span className="text-[11px]" style={{ color: saveStatus.includes("!") || saveStatus.includes("✓") ? "var(--green)" : "var(--red)" }}>{saveStatus}</span>}
+                {saveStatus && <span className={`text-[11px] ${saveStatus.includes("!") || saveStatus.includes("✓") ? "text-green" : "text-red"}`}>{saveStatus}</span>}
               </div>
             </div>
           )}
@@ -619,7 +619,7 @@ export default function RivenAnalyzer() {
                           />
                           <span className="text-[11px] text-muted">% {s.name}</span>
                         </>) : (<>
-                          <span style={{ color: s.positive ? "rgba(139,148,158,.7)" : "var(--red)" }}>
+                          <span className={s.positive ? "text-[rgba(139,148,158,.7)]" : "text-red"}>
                             {s.positive ? "+" : "−"}
                           </span>
                           <span>{s.value && `${s.value}% `}{s.name}</span>
@@ -653,7 +653,7 @@ export default function RivenAnalyzer() {
                       )}
                       {stats.map((s, i) => (
                         <div key={i} className={RA_SAVED_STAT}>
-                          <span style={{ color: s.positive ? "rgba(139,148,158,.7)" : "var(--red)" }}>
+                          <span className={s.positive ? "text-[rgba(139,148,158,.7)]" : "text-red"}>
                             {s.positive ? "+" : "−"}
                           </span>
                           <span>{s.value && `${s.value}% `}{s.name}</span>

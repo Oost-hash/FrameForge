@@ -240,10 +240,9 @@ function parseDropData(raw: any): RelicDrop[] {
 
 function RelicImg({ src }: { src?: string }) {
   const [failed, setFailed] = useState(false);
-  const base = { width: 44, height: 44, borderRadius: 6, flexShrink: 0 } as const;
   if (!src || failed)
-    return <div style={{ ...base, background: "rgba(255,255,255,.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#8b949e" }}>R</div>;
-  return <img style={{ ...base, objectFit: "contain" }} src={src} alt="" loading="lazy" onError={() => setFailed(true)} />;
+    return <div className="flex size-11 shrink-0 items-center justify-center rounded-md bg-white/6 text-[11px] text-[#8b949e]">R</div>;
+  return <img className="size-11 shrink-0 rounded-md object-contain" src={src} alt="" loading="lazy" onError={() => setFailed(true)} />;
 }
 
 const RARITY_BG: Record<string, string> = {
@@ -256,15 +255,14 @@ function PartImg({ srcs, rarity }: { srcs: (string | undefined)[]; rarity?: stri
   // Deduplicate so the same failing URL isn't retried
   const valid = [...new Set(srcs.filter(Boolean) as string[])];
   const [idx, setIdx] = useState(0);
-  const base = { width: 40, height: 40, borderRadius: 4 } as const;
   const src = valid[idx];
   if (!src) {
     const bg = rarity ? (RARITY_BG[rarity] ?? "rgba(255,255,255,.06)") : "rgba(255,255,255,.06)";
-    return <div style={{ ...base, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "rgba(255,255,255,.3)" }}>?</div>;
+    return <div className="flex size-10 items-center justify-center rounded bg-white/6 text-[9px] text-white/30" style={{ background: bg }}>?</div>;
   }
   // key={src} forces React to unmount/remount the img when src changes,
   // preventing the broken-image icon from persisting between attempts
-  return <img key={src} style={{ ...base, objectFit: "contain", display: "block" }} src={src} alt="" loading="lazy"
+  return <img key={src} className="block size-10 rounded object-contain" src={src} alt="" loading="lazy"
     onError={() => setIdx(i => i + 1)} />;
 }
 
@@ -690,7 +688,7 @@ function PlannerTab({
   }
   function sortArrow(col: typeof sortCol) {
     return (
-      <span className={PL_SORT_ARROW} style={{ visibility: col === sortCol ? "visible" : "hidden" }}>
+      <span className={`${PL_SORT_ARROW} ${col === sortCol ? "visible" : "invisible"}`}>
         {sortDir === "desc" ? "▼" : "▲"}
       </span>
     );
@@ -727,7 +725,7 @@ function PlannerTab({
           <FilterChip active={vaultFilter === "vaulted"} onClick={() => setVaultFilter(v => v === "vaulted" ? "all" : "vaulted")}>Vaulted</FilterChip>
           <FilterChip active={ownedOnly} onClick={() => setOwnedOnly(v => !v)}>Owned Only</FilterChip>
         </div>
-        <span className={PL_COUNT} style={{ marginLeft: "auto" }}>{plannerRows.length} relics</span>
+        <span className={`${PL_COUNT} ml-auto`}>{plannerRows.length} relics</span>
       </div>
 
       {/* Column header */}
@@ -961,11 +959,11 @@ export default function RelicHelper({ inventory, colorblindMode = false, filters
       ) : (<>
       <div className="market-header">
         <FoundrySearch
-          style={{ width: 220 }}
+          className="w-[220px]"
           placeholder="Relic or item names (comma-separated)…"
           value={search} onChange={e => set("search", e.target.value)}
         />
-        <FilterBar style={{ border: "none", padding: 0, flex: 1, flexWrap: "wrap" }}>
+        <FilterBar className="flex-1 flex-wrap border-0 p-0">
           {(["Lith","Meso","Neo","Axi","Requiem"] as const).map(t => (
             <FilterChip key={t} active={tiers.includes(t.toLowerCase())}
               onClick={() => set("tiers", toggle(tiers, t.toLowerCase()))}>{t}</FilterChip>
@@ -1006,7 +1004,7 @@ export default function RelicHelper({ inventory, colorblindMode = false, filters
       </div>
 
       {searchMatchesReward && (
-        <div style={{ padding: "4px 14px", fontSize: 11, color: "var(--accent)" }}>
+        <div className="px-3.5 py-1 text-[11px] text-accent">
           Showing relics with reward drops matching one or more search terms — highlighted in blue
         </div>
       )}
@@ -1014,7 +1012,7 @@ export default function RelicHelper({ inventory, colorblindMode = false, filters
       {visibleDrops.length > PAGE_SIZE && (
         <div className={RL_PAGINATION}>
           <SecondaryButton disabled={page === 0} onClick={() => setPage(p => p - 1)}>← Prev</SecondaryButton>
-          <span style={{ fontSize: 11, color: "var(--muted)" }}>
+          <span className="text-[11px] text-muted">
             {page + 1} / {totalPages} &nbsp;({visibleDrops.length} relics)
           </span>
           <SecondaryButton disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>Next →</SecondaryButton>

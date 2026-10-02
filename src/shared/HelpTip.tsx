@@ -36,10 +36,10 @@ export function HelpTip({ items, align = "right" }: { items: HelpItem[]; align?:
   }, [open]);
 
   return (
-    <div ref={ref} style={{ position: "relative", flexShrink: 0 }}>
+    <div ref={ref} className="relative shrink-0">
       <button className={HT_BTN} onClick={() => setOpen(v => !v)} title="Color legend">?</button>
       {open && (
-        <div className={HT_POPUP} style={{ [align === "left" ? "left" : "right"]: 0 }}>
+        <div className={`${HT_POPUP} ${align === "left" ? "left-0" : "right-0"}`}>
           <div className={HT_TITLE}>Legend</div>
           {items.map((item, i) => (
             <div key={i} className={HT_ROW}>

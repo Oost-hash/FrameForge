@@ -281,7 +281,7 @@ function AuctionEditPopup({ auction, onSave, onClose }: {
           <span className={WFM_AE_TITLE}>
             {weaponName}{modName && <em className={WFM_RIVEN_MOD}> {modName}</em>}
           </span>
-          <button className={WFM_LOGOUT} style={{ fontSize: 18 }} onClick={onClose}>×</button>
+          <button className={`${WFM_LOGOUT} text-lg`} onClick={onClose}>×</button>
         </div>
         <div className={WFM_AE_BODY}>
           <div className={WFM_AE_FIELD}>
@@ -424,7 +424,7 @@ function RivensSection({ rivenOrders, itemIdMap, auctionRefreshKey, onEditOrder,
   const totalCount = rivenOrders.length + auctions.length;
 
   return (
-    <div style={{ marginTop: 16 }}>
+    <div className="mt-4">
       <div className={`${WFM_SECTION_LABEL} ${WFM_SECTION_ROW}`}>
         <span>Rivens ({totalCount})</span>
         <button className={WFM_REFRESH} onClick={load} title="Refresh" disabled={busy}>↻</button>
@@ -922,7 +922,7 @@ function MessagesPanel({ username: _username, wfmItems, recordSales, onListingCh
       {whispers.length === 0 ? (
         <div className={WFM_EMPTY}>
           <div>No trade whispers yet.</div>
-          <div style={{ marginTop: 4, fontSize: 11, color: "var(--muted)" }}>
+          <div className="mt-1 text-[11px] text-muted">
             When someone whispers you a warframe.market trade offer, it will appear here.
           </div>
         </div>
@@ -1115,7 +1115,7 @@ export default function WfmTrading({ wfmLookup: _wfmLookup, wfmItems, imageMap, 
   };
 
   if (checking) {
-    return <div className={WFM_LOGIN_WRAP}><div className="wfm-login-loading" style={{ marginTop: 40 }}>Connecting to warframe.market…</div></div>;
+    return <div className={WFM_LOGIN_WRAP}><div className="wfm-login-loading mt-10">Connecting to warframe.market…</div></div>;
   }
 
   if (!username) {
@@ -1157,17 +1157,17 @@ export default function WfmTrading({ wfmLookup: _wfmLookup, wfmItems, imageMap, 
       </div>
 
       {statusError && (
-        <div style={{ padding: "4px 12px", fontSize: 11, color: "var(--red)", background: "rgba(248,81,73,.08)", borderBottom: "1px solid rgba(248,81,73,.2)" }}>
+        <div className="border-b border-[rgba(248,81,73,.2)] bg-[rgba(248,81,73,.08)] px-3 py-1 text-[11px] text-red">
           {statusError}
         </div>
       )}
 
       {/* Both panels stay mounted so MessagesPanel's trade-completed listener
           fires even when the user is on the Listings tab. */}
-      <div style={{ display: tab === "listings" ? "contents" : "none" }}>
+      <div className={tab === "listings" ? "contents" : "hidden"}>
         <ListingsPanel username={username} itemIdMap={new Map(wfmItems.map(i => [i.id, i.item_name]))} wfmItems={wfmItems} imageMap={imageMap} auctionRefreshKey={auctionRefreshKey} changelog={listingChangelog} onUndo={handleUndo} />
       </div>
-      <div style={{ display: tab === "messages" ? "contents" : "none" }}>
+      <div className={tab === "messages" ? "contents" : "hidden"}>
         <MessagesPanel username={username} wfmItems={wfmItems} recordSales={recordSales} onListingChange={handleListingChange} />
       </div>
     </div>

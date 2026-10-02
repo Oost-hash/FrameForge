@@ -480,12 +480,12 @@ export default function Reports({ dateRange, onDateRangeChange, clockFormat, sys
               </div>
             </div>
           ) : topError ? (
-            <div className={RPT_TOP_LOADING_CLASS} style={{ color: "var(--red)" }}>
+            <div className={`${RPT_TOP_LOADING_CLASS} text-red`}>
               Failed to load market data<br />
-              <span style={{ fontSize: 11, color: "var(--muted)" }}>{topError}</span>
+              <span className="text-[11px] text-muted">{topError}</span>
             </div>
           ) : topItems.length === 0 ? (
-            <div className={RPT_TOP_LOADING_CLASS} style={{ color: "var(--muted)" }}>No market data available</div>
+            <div className={`${RPT_TOP_LOADING_CLASS} text-muted`}>No market data available</div>
           ) : (
             <>
             {topProgress?.refreshing && (
@@ -551,8 +551,8 @@ export default function Reports({ dateRange, onDateRangeChange, clockFormat, sys
         </div>
 
         {tradesError ? (
-          <div className={RPT_EMPTY_CLASS}>
-            <div className={RPT_EMPTY_TITLE_CLASS} style={{ color: "var(--red)" }}>Failed to load trades</div>
+            <div className={RPT_EMPTY_CLASS}>
+            <div className={`${RPT_EMPTY_TITLE_CLASS} text-red`}>Failed to load trades</div>
             <div className={RPT_EMPTY_DESC_CLASS}>{tradesError}</div>
           </div>
         ) : trades.length === 0 ? (

@@ -211,13 +211,7 @@ export default function RelicPickOverlay() {
 
   if (outline) {
     return (
-      <div ref={rootCallback} style={{
-        width: "100%", height: 300, boxSizing: "border-box",
-        border: "2px dashed rgba(56,139,253,.85)", borderRadius: 10,
-        background: "rgba(22,27,34,.55)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        color: "#79b8ff", fontSize: 16, fontWeight: 600,
-      }}>
+      <div ref={rootCallback} className="box-border flex h-[300px] w-full items-center justify-center rounded-[10px] border-2 border-dashed border-[rgba(56,139,253,.85)] bg-[rgba(22,27,34,.55)] text-base font-semibold text-[#79b8ff]">
         Relic Pick Overlay — outline
       </div>
     );
