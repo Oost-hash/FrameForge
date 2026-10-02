@@ -27,6 +27,7 @@ const ROW_INFO_CLASS = "flex min-w-0 flex-col gap-0.5";
 const ROW_LABEL_CLASS = "text-[13px] font-medium text-foreground";
 const ROW_DESC_CLASS = "text-[11px] leading-[1.4] text-muted";
 const SELECT_CLASS = "shrink-0 cursor-pointer rounded-[5px] border border-border bg-surface px-2 py-[3px] text-[12px] text-foreground [color-scheme:dark] hover:border-[rgba(56,139,253,.5)]";
+const STEP_BTN_CLASS = "flex min-w-0 cursor-pointer items-center justify-center border-0 border-border bg-[rgba(255,255,255,.03)] p-0 text-[6px] leading-none text-muted first:border-b hover:bg-[rgba(56,139,253,.18)] hover:text-accent focus-visible:outline focus-visible:outline-accent focus-visible:-outline-offset-1";
 
 export interface SettingsModalProps {
   open: boolean;
@@ -108,17 +109,17 @@ export default function SettingsModal(props: SettingsModalProps) {
       void saveOffsets({ ...overlayOffsets, [keyX]: 0, [keyY]: 0 });
     };
     const axisInput = (key: keyof OverlayOffsets, axis: "X" | "Y") => (
-      <div className="settings-offset-stepper">
+      <div className="grid h-[26px] w-14 grid-cols-[1fr_16px] overflow-hidden rounded-[5px] border border-border bg-background transition-colors duration-120 hover:border-[rgba(56,139,253,.65)] focus-within:border-[rgba(56,139,253,.65)]">
         <input
-          className="settings-offset-input"
+          className="settings-offset-input h-6 min-w-0 w-full border-0 bg-transparent px-[5px] text-right text-[12px] text-foreground tabular-nums outline-none [appearance:textfield]"
           type="number" min={-OVERLAY_OFFSET_LIMIT} max={OVERLAY_OFFSET_LIMIT} step={10}
           value={overlayOffsets[key]}
           aria-label={`${axis} offset`}
           onChange={e => { const n = e.target.valueAsNumber; if (!Number.isNaN(n)) setAxis(key, n); }}
         />
-        <div className="settings-offset-step-buttons">
-          <button type="button" aria-label={`Increase ${axis} offset`} onClick={() => setAxis(key, overlayOffsets[key] + 10)}>▲</button>
-          <button type="button" aria-label={`Decrease ${axis} offset`} onClick={() => setAxis(key, overlayOffsets[key] - 10)}>▼</button>
+        <div className="grid grid-rows-2 border-l border-border">
+          <button type="button" className={STEP_BTN_CLASS} aria-label={`Increase ${axis} offset`} onClick={() => setAxis(key, overlayOffsets[key] + 10)}>▲</button>
+          <button type="button" className={STEP_BTN_CLASS} aria-label={`Decrease ${axis} offset`} onClick={() => setAxis(key, overlayOffsets[key] - 10)}>▼</button>
         </div>
       </div>
     );
@@ -128,12 +129,12 @@ export default function SettingsModal(props: SettingsModalProps) {
           <span className={ROW_LABEL_CLASS}>Position offset</span>
           <span className={ROW_DESC_CLASS}>Moves the overlay this many pixels from its built-in spot. 0 keeps the current placement.</span>
         </div>
-        <div className="settings-offset-controls">
-          <span className="settings-offset-axis">X</span>
+        <div className="flex shrink-0 items-center gap-1">
+          <span className="w-[9px] text-center text-[11px] text-muted">X</span>
           {axisInput(keyX, "X")}
-          <span className="settings-offset-axis">Y</span>
+          <span className="w-[9px] text-center text-[11px] text-muted">Y</span>
           {axisInput(keyY, "Y")}
-          <button className="btn-secondary settings-offset-reset" disabled={overlayOffsets[keyX] === 0 && overlayOffsets[keyY] === 0}
+          <button className="btn-secondary min-w-14 h-[26px]" disabled={overlayOffsets[keyX] === 0 && overlayOffsets[keyY] === 0}
             onClick={resetOffsets}>Reset</button>
         </div>
       </div>
