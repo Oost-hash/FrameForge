@@ -22,6 +22,12 @@ type Setter<T> = Dispatch<SetStateAction<T>>;
 type ScannerMods = Record<string, { total: number; by_rank: Record<string, number> }>;
 type ArchonShards = Record<string, ArchonShard[]>;
 
+const ROW_CLASS = "flex items-center justify-between gap-4";
+const ROW_INFO_CLASS = "flex min-w-0 flex-col gap-0.5";
+const ROW_LABEL_CLASS = "text-[13px] font-medium text-foreground";
+const ROW_DESC_CLASS = "text-[11px] leading-[1.4] text-muted";
+const SELECT_CLASS = "shrink-0 cursor-pointer rounded-[5px] border border-border bg-surface px-2 py-[3px] text-[12px] text-foreground [color-scheme:dark] hover:border-[rgba(56,139,253,.5)]";
+
 export interface SettingsModalProps {
   open: boolean;
   onClose: () => void;
@@ -117,10 +123,10 @@ export default function SettingsModal(props: SettingsModalProps) {
       </div>
     );
     return (
-      <div className="settings-row" style={{ marginTop: 8, opacity: disabled ? 0.45 : 1, pointerEvents: disabled ? "none" : "auto" }}>
-        <div className="settings-row-info">
-          <span className="settings-row-label">Position offset</span>
-          <span className="settings-row-desc">Moves the overlay this many pixels from its built-in spot. 0 keeps the current placement.</span>
+      <div className={ROW_CLASS} style={{ marginTop: 8, opacity: disabled ? 0.45 : 1, pointerEvents: disabled ? "none" : "auto" }}>
+        <div className={ROW_INFO_CLASS}>
+          <span className={ROW_LABEL_CLASS}>Position offset</span>
+          <span className={ROW_DESC_CLASS}>Moves the overlay this many pixels from its built-in spot. 0 keeps the current placement.</span>
         </div>
         <div className="settings-offset-controls">
           <span className="settings-offset-axis">X</span>
@@ -152,7 +158,7 @@ export default function SettingsModal(props: SettingsModalProps) {
               {(["general", "overlays", "market", "filters", "accessibility", "data", "debugging"] as const).map(tab => (
                 <button
                   key={tab}
-                  className={`cursor-pointer rounded-[6px] border-none px-3 py-[7px] text-left text-[13px] transition-colors duration-120 ${settingsTab === tab ? "bg-[rgba(56,139,253,.15)] font-semibold text-accent" : "text-muted hover:bg-[rgba(255,255,255,.06)] hover:text-foreground"}`}
+                  className={`cursor-pointer rounded-[6px] border-none px-3 py-[7px] text-left text-[13px] transition-colors duration-120 ${settingsTab === tab ? "bg-[rgba(56,139,253,.15)] font-semibold text-accent" : "bg-transparent text-muted hover:bg-[rgba(255,255,255,.06)] hover:text-foreground"}`}
                   onClick={() => setSettingsTab(tab)}
                 >
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -169,12 +175,12 @@ export default function SettingsModal(props: SettingsModalProps) {
                 {/* Foundry */}
                 <div className="settings-section">
                   <div className="settings-section-title">Foundry</div>
-                  <div className="settings-row">
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Items per page</span>
-                      <span className="settings-row-desc">How many items to show per page in the Foundry browser.</span>
+                  <div className={ROW_CLASS}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Items per page</span>
+                      <span className={ROW_DESC_CLASS}>How many items to show per page in the Foundry browser.</span>
                     </div>
-                    <select className="settings-select" value={foundryPageSize}
+                    <select className={SELECT_CLASS} value={foundryPageSize}
                       onChange={e => {
                         const next = Number(e.target.value) as FoundryPageSize;
                         setFoundryPageSize(next);
@@ -197,10 +203,10 @@ export default function SettingsModal(props: SettingsModalProps) {
                   <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 8, lineHeight: 1.5 }}>
                     Reads live inventory, crafting jobs, and mod ranks from Warframe's process memory via <code style={{ fontSize: 10 }}>ReadProcessMemory</code>. DE has historically tolerated read-only tools, but has not given explicit permission. Enable at your own risk.
                   </div>
-                  <div className="settings-row">
+                  <div className={ROW_CLASS}>
                     <div>
-                      <span className="settings-row-label">Enable</span>
-                      <span className="settings-row-desc">Required for live inventory, quantity tracking, and mod ranks</span>
+                      <span className={ROW_LABEL_CLASS}>Enable</span>
+                      <span className={ROW_DESC_CLASS}>Required for live inventory, quantity tracking, and mod ranks</span>
                     </div>
                     <button
                       className="btn-secondary"
@@ -257,10 +263,10 @@ export default function SettingsModal(props: SettingsModalProps) {
                 {/* Modular Window */}
                 <div className="settings-section">
                   <div className="settings-section-title">Modular Window</div>
-                  <div className="settings-row">
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Pop-out</span>
-                      <span className="settings-row-desc">Detach the Modular Window into its own floating window.</span>
+                  <div className={ROW_CLASS}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Pop-out</span>
+                      <span className={ROW_DESC_CLASS}>Detach the Modular Window into its own floating window.</span>
                     </div>
                     <button
                       className="btn-secondary"
@@ -290,10 +296,10 @@ export default function SettingsModal(props: SettingsModalProps) {
                       {overlayStatus}
                     </div>
                   )}
-                  <div className="settings-row">
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Enable</span>
-                      <span className="settings-row-desc">Auto-shows reward cards when a Void Fissure screen is detected.</span>
+                  <div className={ROW_CLASS}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Enable</span>
+                      <span className={ROW_DESC_CLASS}>Auto-shows reward cards when a Void Fissure screen is detected.</span>
                     </div>
                     <button
                       className="btn-secondary"
@@ -310,13 +316,13 @@ export default function SettingsModal(props: SettingsModalProps) {
                       }}
                     >{overlayEnabled ? "On" : "Off"}</button>
                   </div>
-                  <div className="settings-row" style={{ marginTop: 8 }}>
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Pick priority</span>
-                      <span className="settings-row-desc">Which card the overlay highlights as the best pick.</span>
+                  <div className={ROW_CLASS} style={{ marginTop: 8 }}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Pick priority</span>
+                      <span className={ROW_DESC_CLASS}>Which card the overlay highlights as the best pick.</span>
                     </div>
                     <select
-                      className="settings-select"
+                      className={SELECT_CLASS}
                       value={overlayPriority}
                       disabled={!overlayEnabled}
                       onChange={e => {
@@ -333,10 +339,10 @@ export default function SettingsModal(props: SettingsModalProps) {
                     </select>
                   </div>
                   {offsetRow("relicX", "relicY", !overlayEnabled)}
-                  <div className="settings-row" style={{ marginTop: 8 }}>
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Show Outline</span>
-                      <span className="settings-row-desc">Toggle a dashed outline of the overlay at its current position.</span>
+                  <div className={ROW_CLASS} style={{ marginTop: 8 }}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Show Outline</span>
+                      <span className={ROW_DESC_CLASS}>Toggle a dashed outline of the overlay at its current position.</span>
                     </div>
                     <button className="btn-secondary" style={{ minWidth: 64, background: outlineReward ? "rgba(56,139,253,.15)" : undefined, borderColor: outlineReward ? "var(--accent)" : undefined }}
                       onClick={() => {
@@ -349,10 +355,10 @@ export default function SettingsModal(props: SettingsModalProps) {
                 {/* Relic Pick Overlay */}
                 <div className="settings-section">
                   <div className="settings-section-title">Relic Pick Overlay</div>
-                  <div className="settings-row">
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Enable</span>
-                      <span className="settings-row-desc">Show the relic pick overlay when opening the relic selection screen.</span>
+                  <div className={ROW_CLASS}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Enable</span>
+                      <span className={ROW_DESC_CLASS}>Show the relic pick overlay when opening the relic selection screen.</span>
                     </div>
                     <button
                       className="btn-secondary"
@@ -366,12 +372,12 @@ export default function SettingsModal(props: SettingsModalProps) {
                       }}
                     >{relicPickEnabled ? "On" : "Off"}</button>
                   </div>
-                  <div className="settings-row" style={{ marginTop: 8, opacity: relicPickEnabled ? 1 : 0.45, pointerEvents: relicPickEnabled ? "auto" : "none" }}>
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Recommendation Base</span>
-                      <span className="settings-row-desc">How relics are ranked in the overlay.</span>
+                  <div className={ROW_CLASS} style={{ marginTop: 8, opacity: relicPickEnabled ? 1 : 0.45, pointerEvents: relicPickEnabled ? "auto" : "none" }}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Recommendation Base</span>
+                      <span className={ROW_DESC_CLASS}>How relics are ranked in the overlay.</span>
                     </div>
-                    <select className="settings-select" value={relicPickPriority}
+                    <select className={SELECT_CLASS} value={relicPickPriority}
                       onChange={e => {
                         const next = e.target.value as RelicPickPriority;
                         setRelicPickPriority(next);
@@ -383,12 +389,12 @@ export default function SettingsModal(props: SettingsModalProps) {
                       ))}
                     </select>
                   </div>
-                  <div className="settings-row" style={{ marginTop: 8, opacity: relicPickEnabled ? 1 : 0.45, pointerEvents: relicPickEnabled ? "auto" : "none" }}>
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Shown Lines Per Relic</span>
-                      <span className="settings-row-desc">How much reward detail to show per relic card.</span>
+                  <div className={ROW_CLASS} style={{ marginTop: 8, opacity: relicPickEnabled ? 1 : 0.45, pointerEvents: relicPickEnabled ? "auto" : "none" }}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Shown Lines Per Relic</span>
+                      <span className={ROW_DESC_CLASS}>How much reward detail to show per relic card.</span>
                     </div>
-                    <select className="settings-select" value={relicPickLines}
+                    <select className={SELECT_CLASS} value={relicPickLines}
                       onChange={e => {
                         const next = e.target.value as RelicPickLines;
                         setRelicPickLines(next);
@@ -401,10 +407,10 @@ export default function SettingsModal(props: SettingsModalProps) {
                     </select>
                   </div>
                   {offsetRow("relicPickX", "relicPickY", !relicPickEnabled)}
-                  <div className="settings-row" style={{ marginTop: 8 }}>
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Show Outline</span>
-                      <span className="settings-row-desc">Toggle a dashed outline of the overlay at its current position.</span>
+                  <div className={ROW_CLASS} style={{ marginTop: 8 }}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Show Outline</span>
+                      <span className={ROW_DESC_CLASS}>Toggle a dashed outline of the overlay at its current position.</span>
                     </div>
                     <button className="btn-secondary" style={{ minWidth: 64, background: outlinePick ? "rgba(56,139,253,.15)" : undefined, borderColor: outlinePick ? "var(--accent)" : undefined }}
                       onClick={() => {
@@ -417,10 +423,10 @@ export default function SettingsModal(props: SettingsModalProps) {
                 {/* Riven Overlay */}
                 <div className="settings-section">
                   <div className="settings-section-title">Riven Overlay</div>
-                  <div className="settings-row">
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Enable</span>
-                      <span className="settings-row-desc">Show the riven overlay when a riven card screen is detected.</span>
+                  <div className={ROW_CLASS}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Enable</span>
+                      <span className={ROW_DESC_CLASS}>Show the riven overlay when a riven card screen is detected.</span>
                     </div>
                     <button
                       className="btn-secondary"
@@ -435,10 +441,10 @@ export default function SettingsModal(props: SettingsModalProps) {
                     >{rivenEnabled ? "On" : "Off"}</button>
                   </div>
                   {offsetRow("rivenX", "rivenY", !rivenEnabled)}
-                  <div className="settings-row" style={{ marginTop: 8 }}>
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Show</span>
-                      <span className="settings-row-desc">Show the riven overlay at its current position.</span>
+                  <div className={ROW_CLASS} style={{ marginTop: 8 }}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Show</span>
+                      <span className={ROW_DESC_CLASS}>Show the riven overlay at its current position.</span>
                     </div>
                     <button className="btn-secondary" style={{ minWidth: 64, background: rivenShown ? "rgba(56,139,253,.15)" : undefined, borderColor: rivenShown ? "var(--accent)" : undefined }}
                       onClick={() => {
@@ -451,10 +457,10 @@ export default function SettingsModal(props: SettingsModalProps) {
                 {/* Relic Overlay — Memory Trigger */}
                 <div className="settings-section">
                   <div className="settings-section-title">Memory Trigger <span style={{ fontSize: 11, opacity: 0.55, fontWeight: 400, marginLeft: 6 }}>in development</span></div>
-                  <div className="settings-row">
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Use memory scan</span>
-                      <span className="settings-row-desc">
+                  <div className={ROW_CLASS}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Use memory scan</span>
+                      <span className={ROW_DESC_CLASS}>
                         Still in development — for testing only. Polls Warframe's process memory for the reward screen event in parallel with EE.log.
                         Timing for both paths is written to the session log so they can be compared.
                         The EE.log overlay is unaffected regardless of this setting.
@@ -480,10 +486,10 @@ export default function SettingsModal(props: SettingsModalProps) {
               {settingsTab === "market" && <>
                 <div className="settings-section">
                   <div className="settings-section-title">Bulk Prices</div>
-                  <div className="settings-row">
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Force Refresh</span>
-                      <span className="settings-row-desc">Re-download price data from FrameForgePricing right now. Use this if prices look stale or missing.</span>
+                  <div className={ROW_CLASS}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Force Refresh</span>
+                      <span className={ROW_DESC_CLASS}>Re-download price data from FrameForgePricing right now. Use this if prices look stale or missing.</span>
                     </div>
                     <BulkPriceRefreshButton />
                   </div>
@@ -496,10 +502,10 @@ export default function SettingsModal(props: SettingsModalProps) {
                       Log in to warframe.market in the <strong>Market</strong> tab to enable these features.
                     </div>
                   )}
-                  <div className="settings-row" style={{ opacity: wfmLoggedIn ? 1 : 0.45, pointerEvents: wfmLoggedIn ? "auto" : "none" }}>
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Go Invisible on startup</span>
-                      <span className="settings-row-desc">When FrameForge opens, immediately set your WFM status to Invisible.</span>
+                  <div className={ROW_CLASS} style={{ opacity: wfmLoggedIn ? 1 : 0.45, pointerEvents: wfmLoggedIn ? "auto" : "none" }}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Go Invisible on startup</span>
+                      <span className={ROW_DESC_CLASS}>When FrameForge opens, immediately set your WFM status to Invisible.</span>
                     </div>
                     <button
                       className="btn-secondary"
@@ -514,10 +520,10 @@ export default function SettingsModal(props: SettingsModalProps) {
                     >{wfmInvisibleOnStart ? "On" : "Off"}</button>
                   </div>
 
-                  <div className="settings-row" style={{ marginTop: 8, opacity: wfmLoggedIn ? 1 : 0.45, pointerEvents: wfmLoggedIn ? "auto" : "none" }}>
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Go Invisible on close</span>
-                      <span className="settings-row-desc">Before FrameForge exits (X button or taskbar close), set your WFM status to Invisible.</span>
+                  <div className={ROW_CLASS} style={{ marginTop: 8, opacity: wfmLoggedIn ? 1 : 0.45, pointerEvents: wfmLoggedIn ? "auto" : "none" }}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Go Invisible on close</span>
+                      <span className={ROW_DESC_CLASS}>Before FrameForge exits (X button or taskbar close), set your WFM status to Invisible.</span>
                     </div>
                     <button
                       className="btn-secondary"
@@ -532,10 +538,10 @@ export default function SettingsModal(props: SettingsModalProps) {
                     >{wfmInvisibleOnClose ? "On" : "Off"}</button>
                   </div>
 
-                  <div className="settings-row" style={{ marginTop: 8, opacity: wfmLoggedIn ? 1 : 0.45, pointerEvents: wfmLoggedIn ? "auto" : "none" }}>
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Auto-invisible timer</span>
-                      <span className="settings-row-desc">
+                  <div className={ROW_CLASS} style={{ marginTop: 8, opacity: wfmLoggedIn ? 1 : 0.45, pointerEvents: wfmLoggedIn ? "auto" : "none" }}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Auto-invisible timer</span>
+                      <span className={ROW_DESC_CLASS}>
                         After{" "}
                         <input
                           type="number" min={1} max={480} value={wfmAutoInvisibleMins}
@@ -565,10 +571,10 @@ export default function SettingsModal(props: SettingsModalProps) {
                 </div>
                 <div className="settings-section">
                   <div className="settings-section-title">Sale Automation</div>
-                  <div className="settings-row" style={{ opacity: wfmLoggedIn ? 1 : 0.45, pointerEvents: wfmLoggedIn ? "auto" : "none" }}>
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Record automatic sales</span>
-                      <span className="settings-row-desc">Record automatically detected sales in your warframe.market statistics. When off, FrameForge only reduces or removes the listing. Recorded sales cannot be undone from FrameForge.</span>
+                  <div className={ROW_CLASS} style={{ opacity: wfmLoggedIn ? 1 : 0.45, pointerEvents: wfmLoggedIn ? "auto" : "none" }}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Record automatic sales</span>
+                      <span className={ROW_DESC_CLASS}>Record automatically detected sales in your warframe.market statistics. When off, FrameForge only reduces or removes the listing. Recorded sales cannot be undone from FrameForge.</span>
                     </div>
                     <button
                       className="btn-secondary"
@@ -588,22 +594,22 @@ export default function SettingsModal(props: SettingsModalProps) {
               {settingsTab === "filters" && <>
                 <div className="settings-section">
                   <div className="settings-section-title">Filter Presets</div>
-                  <div className="settings-row">
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Page</span>
-                      <span className="settings-row-desc">Manage saved and pinned presets for one page.</span>
+                  <div className={ROW_CLASS}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Page</span>
+                      <span className={ROW_DESC_CLASS}>Manage saved and pinned presets for one page.</span>
                     </div>
-                    <select className="settings-select" value={settingsFilterModule} onChange={event => setSettingsFilterModule(event.target.value as FilterPresetModule)}>
+                    <select className={SELECT_CLASS} value={settingsFilterModule} onChange={event => setSettingsFilterModule(event.target.value as FilterPresetModule)}>
                       <option value="inventory">Inventory</option>
                       <option value="foundry">Foundry</option>
                       <option value="market">Market Sets</option>
                       <option value="relics">Relic Browser</option>
                     </select>
                   </div>
-                  <div className="settings-row" style={{ marginTop: 12 }}>
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Restore previous filters on active preset click</span>
-                      <span className="settings-row-desc">When clicking an active pinned preset again, restore the filters from before it was applied instead of clearing filters.</span>
+                  <div className={ROW_CLASS} style={{ marginTop: 12 }}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Restore previous filters on active preset click</span>
+                      <span className={ROW_DESC_CLASS}>When clicking an active pinned preset again, restore the filters from before it was applied instead of clearing filters.</span>
                     </div>
                     <button className="btn-secondary" style={{ minWidth: 64, background: filterPresets.restorePreviousFiltersOnPresetClick ? "rgba(56,139,253,.15)" : undefined, borderColor: filterPresets.restorePreviousFiltersOnPresetClick ? "var(--accent)" : undefined }} onClick={() => setFilterPresets(current => ({ ...current, restorePreviousFiltersOnPresetClick: !current.restorePreviousFiltersOnPresetClick }))}>{filterPresets.restorePreviousFiltersOnPresetClick ? "On" : "Off"}</button>
                   </div>
@@ -618,10 +624,10 @@ export default function SettingsModal(props: SettingsModalProps) {
               {settingsTab === "accessibility" && <>
                 <div className="settings-section">
                   <div className="settings-section-title">Appearance</div>
-                  <div className="settings-row">
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Colorblind Mode</span>
-                      <span className="settings-row-desc">Adds ✓ / ✓✓ symbols to relic reward boxes so status doesn't rely on color alone.</span>
+                  <div className={ROW_CLASS}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Colorblind Mode</span>
+                      <span className={ROW_DESC_CLASS}>Adds ✓ / ✓✓ symbols to relic reward boxes so status doesn't rely on color alone.</span>
                     </div>
                     <button
                       className="btn-secondary"
@@ -635,10 +641,10 @@ export default function SettingsModal(props: SettingsModalProps) {
                       }}
                     >{colorblindMode ? "On" : "Off"}</button>
                   </div>
-                  <div className="settings-row" style={{ marginTop: 8 }}>
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Text Size</span>
-                      <span className="settings-row-desc">{Math.round(textScale * 100)}%</span>
+                  <div className={ROW_CLASS} style={{ marginTop: 8 }}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Text Size</span>
+                      <span className={ROW_DESC_CLASS}>{Math.round(textScale * 100)}%</span>
                     </div>
                     <input type="range" min="0.8" max="2.0" step="0.1" value={textScale}
                       style={{ width: 120 }}
@@ -651,10 +657,10 @@ export default function SettingsModal(props: SettingsModalProps) {
                         saveAllSettings();
                       }} />
                   </div>
-                  <div className="settings-row" style={{ marginTop: 8 }}>
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Clock Format</span>
-                      <span className="settings-row-desc">How times are displayed throughout the app.{clockFormat === "auto" ? ` System locale: ${systemLocale}` : ""}</span>
+                  <div className={ROW_CLASS} style={{ marginTop: 8 }}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Clock Format</span>
+                      <span className={ROW_DESC_CLASS}>How times are displayed throughout the app.{clockFormat === "auto" ? ` System locale: ${systemLocale}` : ""}</span>
                     </div>
                     <div style={{ display: "flex", gap: 4 }}>
                       {CLOCK_FORMAT_OPTIONS.map(f => (
@@ -676,10 +682,10 @@ export default function SettingsModal(props: SettingsModalProps) {
               {settingsTab === "data" && <>
                 <div className="settings-section">
                   <div className="settings-section-title">Item Database</div>
-                  <div className="settings-row">
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Catalog</span>
-                      <span className="settings-row-desc">{itemCount.toLocaleString()} items · {recipeCount.toLocaleString()} recipes cached</span>
+                  <div className={ROW_CLASS}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Catalog</span>
+                      <span className={ROW_DESC_CLASS}>{itemCount.toLocaleString()} items · {recipeCount.toLocaleString()} recipes cached</span>
                     </div>
                     <button className="btn-secondary" onClick={() => { onClose(); handleFetch(); }} disabled={fetching}>
                       {fetching ? "Fetching…" : "Refresh"}
@@ -689,10 +695,10 @@ export default function SettingsModal(props: SettingsModalProps) {
                 </div>
                 <div className="settings-section">
                   <div className="settings-section-title">Inventory Cache</div>
-                  <div className="settings-row">
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Clear Cache</span>
-                      <span className="settings-row-desc">Reset all scanned quantities and changelog.</span>
+                  <div className={ROW_CLASS}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Clear Cache</span>
+                      <span className={ROW_DESC_CLASS}>Reset all scanned quantities and changelog.</span>
                     </div>
                     <button
                       className="btn-danger"
@@ -722,10 +728,10 @@ export default function SettingsModal(props: SettingsModalProps) {
                 </div>
                 <div className="settings-section" style={{ borderColor: "rgba(224,82,82,.3)" }}>
                   <div className="settings-section-title" style={{ color: "var(--red)" }}>Factory Reset</div>
-                  <div className="settings-row">
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Reset Everything</span>
-                      <span className="settings-row-desc">Delete all app data — settings, inventory cache, trade log, market prices, WFM login — and restart. Cannot be undone.</span>
+                  <div className={ROW_CLASS}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Reset Everything</span>
+                      <span className={ROW_DESC_CLASS}>Delete all app data — settings, inventory cache, trade log, market prices, WFM login — and restart. Cannot be undone.</span>
                     </div>
                     <FactoryResetButton />
                   </div>
@@ -740,9 +746,9 @@ export default function SettingsModal(props: SettingsModalProps) {
                   <div className="debug-table">
 
                     {/* Inventory Snapshots */}
-                    <div className="settings-row-info" style={{ opacity: memoryScannerEnabled ? 1 : 0.4 }}>
-                      <span className="settings-row-label">Inventory Snapshots</span>
-                      <span className="settings-row-desc">Saves a JSON snapshot on each memory scan.</span>
+                    <div className={ROW_INFO_CLASS} style={{ opacity: memoryScannerEnabled ? 1 : 0.4 }}>
+                      <span className={ROW_LABEL_CLASS}>Inventory Snapshots</span>
+                      <span className={ROW_DESC_CLASS}>Saves a JSON snapshot on each memory scan.</span>
                     </div>
                     <button className="btn-secondary" style={{ opacity: memoryScannerEnabled ? 1 : 0.4, pointerEvents: memoryScannerEnabled ? "auto" : "none" }}
                       onClick={() => invoke("open_debug_folder", { which: "blobs" }).catch(() => {})}>Go To Folder</button>
@@ -756,9 +762,9 @@ export default function SettingsModal(props: SettingsModalProps) {
                     >{blobLogSize > 0 ? `Clear (${formatBytes(blobLogSize)})` : "Clear"}</button>
 
                     {/* API Responses */}
-                    <div className="settings-row-info" style={{ opacity: companionApiEnabled ? 1 : 0.4 }}>
-                      <span className="settings-row-label">API Responses</span>
-                      <span className="settings-row-desc">Records raw DE API responses on each inventory fetch.</span>
+                    <div className={ROW_INFO_CLASS} style={{ opacity: companionApiEnabled ? 1 : 0.4 }}>
+                      <span className={ROW_LABEL_CLASS}>API Responses</span>
+                      <span className={ROW_DESC_CLASS}>Records raw DE API responses on each inventory fetch.</span>
                     </div>
                     <button className="btn-secondary" style={{ opacity: companionApiEnabled ? 1 : 0.4, pointerEvents: companionApiEnabled ? "auto" : "none" }}
                       onClick={() => invoke("open_debug_folder", { which: "api_logs" }).catch(() => {})}>Go To Folder</button>
@@ -776,10 +782,10 @@ export default function SettingsModal(props: SettingsModalProps) {
 
                 <div className="settings-section">
                   <div className="settings-section-title">Inventory Preview</div>
-                  <div className="settings-row">
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Incoming Batch</span>
-                      <span className="settings-row-desc">Preview gained, lost, crafting, and mod rank changes without modifying your inventory.</span>
+                  <div className={ROW_CLASS}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Incoming Batch</span>
+                      <span className={ROW_DESC_CLASS}>Preview gained, lost, crafting, and mod rank changes without modifying your inventory.</span>
                     </div>
                     <button className="btn-secondary" onClick={() => setShowInventoryBatchPreview(true)}>Preview</button>
                   </div>
@@ -790,9 +796,9 @@ export default function SettingsModal(props: SettingsModalProps) {
                   <div className="debug-table">
 
                     {/* Test Notification */}
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Test Notification</span>
-                      <span className="settings-row-desc">
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Test Notification</span>
+                      <span className={ROW_DESC_CLASS}>
                         Send a desktop notification now, to check the OS delivers them at all.
                         {notifyTestResult && <span style={{ display: "block", marginTop: 2, color: notifyTestResult.startsWith("Sent") ? "var(--green)" : "var(--red)", fontSize: 11 }}>{notifyTestResult}</span>}
                       </span>
@@ -810,9 +816,9 @@ export default function SettingsModal(props: SettingsModalProps) {
                     <div />{/* Clear placeholder */}
 
                     {/* Overlay Log */}
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Overlay Log</span>
-                      <span className="settings-row-desc">Step-by-step log of the last relic overlay attempt.</span>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Overlay Log</span>
+                      <span className={ROW_DESC_CLASS}>Step-by-step log of the last relic overlay attempt.</span>
                     </div>
                     <div />{/* Go To Folder placeholder */}
                     <button className="btn-secondary" onClick={async () => {
@@ -831,9 +837,9 @@ export default function SettingsModal(props: SettingsModalProps) {
                     }}>{overlayLogCopied ? "✓ Copied" : "Copy"}</button>
 
                     {/* Auto-capture */}
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Auto-capture</span>
-                      <span className="settings-row-desc">Automatically saves a screenshot and OCR session log for every relic reward screen. One folder is created per relic in the diagnostics directory.</span>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Auto-capture</span>
+                      <span className={ROW_DESC_CLASS}>Automatically saves a screenshot and OCR session log for every relic reward screen. One folder is created per relic in the diagnostics directory.</span>
                     </div>
                     <button className="btn-secondary" onClick={() => invoke("open_debug_folder", { which: "diag" }).catch(() => {})}>Go To Folder</button>
                     <button className="btn-secondary"
@@ -852,9 +858,9 @@ export default function SettingsModal(props: SettingsModalProps) {
                     >{diagFolderSize > 0 ? `Clear (${formatBytes(diagFolderSize)})` : "Clear"}</button>
 
                     {/* Manual Capture */}
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Manual Capture</span>
-                      <span className="settings-row-desc">
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Manual Capture</span>
+                      <span className={ROW_DESC_CLASS}>
                         Take a diagnostic screenshot + scan log right now.
                         {diagPath && <span style={{ display: "block", marginTop: 2, color: "var(--green)", fontSize: 11 }}>Saved.</span>}
                       </span>
@@ -870,9 +876,9 @@ export default function SettingsModal(props: SettingsModalProps) {
                     <div />{/* Clear placeholder */}
 
                     {/* Memory Probe */}
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Memory Probe</span>
-                      <span className="settings-row-desc">Dumps inventory strings from Warframe's memory.</span>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Memory Probe</span>
+                      <span className={ROW_DESC_CLASS}>Dumps inventory strings from Warframe's memory.</span>
                     </div>
                     <button className="btn-secondary" onClick={() => invoke("open_debug_folder", { which: "probe" }).catch(() => {})}>Go To Folder</button>
                     <button className="btn-secondary" disabled={memoryProbing} onClick={() => {
@@ -892,9 +898,9 @@ export default function SettingsModal(props: SettingsModalProps) {
                     >{probeSize > 0 ? `Clear (${formatBytes(probeSize)})` : "Clear"}</button>
 
                     {/* Raw Memory Record */}
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Raw Memory Record</span>
-                      <span className="settings-row-desc">{rawScanning ? "Recording — navigate in-game, then click Stop." : "Records all readable memory strings while you navigate in-game."}</span>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Raw Memory Record</span>
+                      <span className={ROW_DESC_CLASS}>{rawScanning ? "Recording — navigate in-game, then click Stop." : "Records all readable memory strings while you navigate in-game."}</span>
                     </div>
                     <button className="btn-secondary" onClick={() => invoke("open_debug_folder", { which: "raw_scan" }).catch(() => {})}>Go To Folder</button>
                     <button className={rawScanning ? "btn-danger" : "btn-secondary"}
@@ -910,9 +916,9 @@ export default function SettingsModal(props: SettingsModalProps) {
                     >{rawScanSize > 0 ? `Clear (${formatBytes(rawScanSize)})` : "Clear"}</button>
 
                     {/* Memory Relic Debug */}
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Memory Relic Debug</span>
-                      <span className="settings-row-desc">{memRelicDebugRunning ? "Running — tailing EE.log and scanning Warframe memory. Log at %TEMP%\\frameforge_mem_relic_debug.log." : "Tails EE.log and scans Warframe memory for relic reward patterns. Writes everything to a log file."}</span>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Memory Relic Debug</span>
+                      <span className={ROW_DESC_CLASS}>{memRelicDebugRunning ? "Running — tailing EE.log and scanning Warframe memory. Log at %TEMP%\\frameforge_mem_relic_debug.log." : "Tails EE.log and scans Warframe memory for relic reward patterns. Writes everything to a log file."}</span>
                     </div>
                     <div />{/* no folder button */}
                     <button className={memRelicDebugRunning ? "btn-danger" : "btn-secondary"}
@@ -938,9 +944,9 @@ export default function SettingsModal(props: SettingsModalProps) {
                   <div className="debug-table">
 
                     {/* OCR Era Test */}
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">OCR Era Detect</span>
-                      <span className="settings-row-desc">
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>OCR Era Detect</span>
+                      <span className={ROW_DESC_CLASS}>
                         Reads the top-left quarter of the Warframe window and reports which fissure era OCR finds.
                         {relicPickOcrResult && <span style={{ display: "block", marginTop: 2, color: "var(--accent)", fontSize: 11 }}>{relicPickOcrResult}</span>}
                       </span>
@@ -955,18 +961,18 @@ export default function SettingsModal(props: SettingsModalProps) {
                     <div />
 
                     {/* Test Overlay */}
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Test Overlay</span>
-                      <span className="settings-row-desc">
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Test Overlay</span>
+                      <span className={ROW_DESC_CLASS}>
                         Manually fire the relic pick overlay with a specific era.
                         {relicPickTestResult && <span style={{ display: "block", marginTop: 2, color: "var(--accent)", fontSize: 11 }}>{relicPickTestResult}</span>}
                       </span>
                     </div>
                     <div />
                     <select
+                      className={SELECT_CLASS}
                       value={relicPickTestEra}
                       onChange={e => setRelicPickTestEra(e.target.value)}
-                      style={{ fontSize: 12, padding: "3px 6px", borderRadius: 4, background: "var(--bg2)", border: "1px solid var(--border)", color: "var(--text)" }}
                     >
                       {["LITH","MESO","NEO","AXI","ALL"].map(e => <option key={e} value={e}>{e}</option>)}
                     </select>
@@ -977,9 +983,9 @@ export default function SettingsModal(props: SettingsModalProps) {
                     }}>Launch</button>
 
                     {/* EE.log tail — reveals what string to trigger on */}
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">EE.log Tail</span>
-                      <span className="settings-row-desc">
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>EE.log Tail</span>
+                      <span className={ROW_DESC_CLASS}>
                         Open the relic screen in-game, then click this to see what EE.log wrote.
                         Paste the result here so we can find the correct trigger string.
                       </span>
@@ -998,7 +1004,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                           value={eeLogTail}
                           style={{
                             width: "100%", height: 160, fontSize: 10, fontFamily: "monospace",
-                            background: "var(--bg2)", border: "1px solid var(--border)",
+                            background: "var(--bg)", border: "1px solid var(--border)",
                             color: "var(--text)", borderRadius: 4, padding: 6,
                             resize: "vertical", boxSizing: "border-box"
                           }}
@@ -1013,9 +1019,9 @@ export default function SettingsModal(props: SettingsModalProps) {
                 <div className="settings-section">
                   <div className="settings-section-title">Categorization Debug</div>
                   <div className="debug-table">
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Unmatched Paths</span>
-                      <span className="settings-row-desc">
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Unmatched Paths</span>
+                      <span className={ROW_DESC_CLASS}>
                         When on, writes a JSON file per scan to the Unmatched Paths folder for any inventory path with no WFCD match or that fell to the Misc catch-all.
                       </span>
                     </div>
@@ -1039,10 +1045,10 @@ export default function SettingsModal(props: SettingsModalProps) {
 
               {/* ════ Shared About footer — always visible ════ */}
               <div className="settings-section" style={{ marginTop: "auto", borderTop: "1px solid var(--border)", borderBottom: "none" }}>
-                <div className="settings-row">
-                  <div className="settings-row-info">
-                    <span className="settings-row-label">FrameForge</span>
-                    <span className="settings-row-desc">Version <strong>{appVersion}</strong></span>
+                <div className={ROW_CLASS}>
+                  <div className={ROW_INFO_CLASS}>
+                    <span className={ROW_LABEL_CLASS}>FrameForge</span>
+                    <span className={ROW_DESC_CLASS}>Version <strong>{appVersion}</strong></span>
                   </div>
                 </div>
               </div>
