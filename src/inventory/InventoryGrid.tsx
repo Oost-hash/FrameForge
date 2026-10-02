@@ -29,6 +29,8 @@ const INV_CARD_BASE =
   "relative flex w-full min-w-0 cursor-default flex-col items-center gap-[5px] self-stretch rounded-[9px] border border-border bg-surface px-2.5 pt-2.5 pb-3 transition-[border-color] duration-[120ms] hover:border-[rgba(56,139,253,0.5)]";
 const INV_CARD_BASE_EM =
   "relative flex w-full min-w-0 cursor-default flex-col items-center gap-[.385em] self-stretch rounded-[9px] border border-border bg-surface px-[.769em] pt-[.769em] pb-[.923em] text-[length:var(--inventory-card-base-size,13px)] transition-[border-color] duration-[120ms] hover:border-[rgba(56,139,253,0.5)]";
+const INV_ICON_CELL =
+  "relative flex min-w-0 cursor-pointer flex-col items-center justify-center gap-[5px] self-stretch h-[76px] w-[76px] rounded-[8px] border border-border bg-surface p-1.5 transition-[border-color] duration-[120ms] hover:border-[rgba(56,139,253,0.5)]";
 const INV_FAV_STAR =
   "absolute left-[.538em] top-[.462em] z-[2] cursor-pointer border-0 bg-transparent p-0 text-[1.077em] leading-none transition-colors duration-100";
 const INV_FAV_STAR_ON = "text-[#f0c040]";
@@ -174,7 +176,7 @@ const InvModCard = memo(function InvModCard({ unique_name, name, category, image
 
   if (view === "icons") {
     return (
-      <div key={unique_name} className={`${baseClass} inv-card-icon-only ${INV_CARD_BASE}`} role="img"
+      <div key={unique_name} className={`${baseClass} inv-card-icon-only ${INV_ICON_CELL}`} role="img"
         aria-label={`${name} ×${fmt(total)}${valueTitle(plat, ducats)}`}
         title={`${name} ×${fmt(total)}${valueTitle(plat, ducats)}`}>
         <ItemImg imageName={image_name ?? undefined} category={category} size={52} />
@@ -283,7 +285,7 @@ const InvCard = memo(function InvCard({
 
   if (view === "icons") {
     return (
-      <div className={`${baseClass} inv-card-icon-only ${INV_CARD_BASE}`} role="img"
+      <div className={`${baseClass} inv-card-icon-only ${INV_ICON_CELL}`} role="img"
         aria-label={`${name} (${fmt(qty)})${valueTitle(plat, ducats)}`}
         title={`${name} (${fmt(qty)})${valueTitle(plat, ducats)}`}>
         <ItemImg imageName={image_name ?? undefined} category={category} size={52} />

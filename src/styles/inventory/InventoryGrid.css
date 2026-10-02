@@ -85,11 +85,6 @@
 /* ── Inventory view modes ──────────────────────────────────────────────────── */
 
 /* icons */
-.item-grid-icons .inv-card-icon-only {
-  width: 76px; height: 76px; padding: 6px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; border-radius: 8px;
-}
 .item-grid-icons .inv-card-icon-only img,
 .item-grid-icons .inv-card-icon-only .img { width: 56px !important; height: 56px !important; }
 
