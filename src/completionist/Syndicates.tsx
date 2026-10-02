@@ -269,7 +269,7 @@ export default function Syndicates({ inventory, filters, onFiltersChange }: Prop
             <div key={tier} className="syn-tier-group">
               <div className="syn-tier-header">
                 {tier || "General"}
-                <span style={{ color: "var(--text-dim)", fontWeight: 400, marginLeft: 6 }}>
+                <span className="ml-1.5 font-normal text-[var(--text-dim)]">
                   — {tierComplete}/{items.length}
                 </span>
               </div>

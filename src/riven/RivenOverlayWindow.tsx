@@ -185,9 +185,9 @@ export default function RivenOverlayWindow() {
 
         {/* No result */}
         {!scanning && rolledStats.length === 0 && !analysis && (
-          <div className="rov-scanning" style={{ color: "#f85149" }}>
+          <div className="rov-scanning !text-danger">
             Could not read card stats
-            {parsedWeapon && <div style={{ fontSize: 10, marginTop: 3, color: "rgba(139,148,158,.7)" }}>Weapon: "{parsedWeapon}"</div>}
+            {parsedWeapon && <div className="mt-[3px] text-[10px] text-[rgba(139,148,158,.7)]">Weapon: "{parsedWeapon}"</div>}
           </div>
         )}
 
@@ -209,14 +209,14 @@ export default function RivenOverlayWindow() {
                   <div key={s} className="rov-stat-row rov-stat-safeneg">
                     <span className="rov-stat-icon">✓</span>
                     <span className="rov-stat-name">−{s}</span>
-                    <span className="rov-stat-value" style={{fontSize:10}}>Safe</span>
+                    <span className="rov-stat-value !text-[10px]">Safe</span>
                   </div>
                 ))}
                 {i === 0 && analysis.harmful_negatives.map(s => (
                   <div key={s} className="rov-stat-row rov-stat-harmful">
                     <span className="rov-stat-icon">✗</span>
                     <span className="rov-stat-name">−{s}</span>
-                    <span className="rov-stat-value" style={{fontSize:10}}>Harmful</span>
+                    <span className="rov-stat-value !text-[10px]">Harmful</span>
                   </div>
                 ))}
                 {alt.missing.length > 0 && (
@@ -257,7 +257,7 @@ export default function RivenOverlayWindow() {
                   {originalStats.map((stat, i) => {
                     const cls = classifyOriginalStat(stat);
                     return (
-                      <div key={i} className={`rov-stat-row ${statClass(cls)}`} style={{ opacity: 0.75 }}>
+                      <div key={i} className={`rov-stat-row ${statClass(cls)} opacity-75`}>
                         <span className="rov-stat-icon">{statIcon(cls)}</span>
                         <span className="rov-stat-name">{stat.name}</span>
                         <span className="rov-stat-value">{stat.value}</span>
@@ -271,7 +271,7 @@ export default function RivenOverlayWindow() {
 
             {/* No DB entry */}
             {!analysis && rolledStats.length > 0 && (
-              <div className="rov-missing" style={{ color: "rgba(139,148,158,.6)" }}>
+              <div className="rov-missing !text-[rgba(139,148,158,.6)]">
                 No database entry for {displayName}
               </div>
             )}
@@ -282,9 +282,9 @@ export default function RivenOverlayWindow() {
 
             {/* Raw OCR fallback */}
             {!analysis && ocrRaw && (
-              <details style={{ marginTop: 4 }}>
-                <summary style={{ fontSize: 10, color: "rgba(139,148,158,.5)", cursor: "pointer" }}>Raw OCR</summary>
-                <pre style={{ fontSize: 9, color: "rgba(139,148,158,.6)", whiteSpace: "pre-wrap", maxHeight: 100, overflowY: "auto", marginTop: 3 }}>{ocrRaw}</pre>
+              <details className="mt-1">
+                <summary className="cursor-pointer text-[10px] text-[rgba(139,148,158,.5)]">Raw OCR</summary>
+                <pre className="mt-[3px] max-h-[100px] overflow-y-auto whitespace-pre-wrap text-[9px] text-[rgba(139,148,158,.6)]">{ocrRaw}</pre>
               </details>
             )}
           </>

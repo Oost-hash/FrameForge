@@ -187,7 +187,7 @@ function CreateOrderForm({ urlName, itemId, prefillPrice, prefillType, modRank, 
               className="imp-num-input imp-qty-input" title={`Mod rank (0–${modMaxRank})`} />
           </>
         )}
-        <div className="imp-type-btns" style={{ marginLeft: "auto" }}>
+        <div className="imp-type-btns ml-auto">
           <button className={visible ? "active" : ""} onClick={() => setVisible(true)} title="Order appears on warframe.market">Visible</button>
           <button className={!visible ? "active" : ""} onClick={() => setVisible(false)} title="Order is saved but hidden from other players">Hidden</button>
         </div>
@@ -305,7 +305,7 @@ export default function ItemMarketPopup({ urlName, displayName, imageName, onClo
               {lowestSell && <span className="imp-col-best">Cheapest: {fmt(lowestSell)}p</span>}
             </div>
             {loadingO ? <div className="imp-loading">Loading…</div> :
-             ordersError ? <div className="imp-none" style={{ color: "var(--red)", padding: "8px 10px", fontSize: 11 }}>{ordersError}</div> :
+             ordersError ? <div className="imp-none !px-2.5 !py-2 !text-[11px] !text-danger">{ordersError}</div> :
              !orders?.sell.length ? <div className="imp-none">No sellers found</div> :
              orders.sell.map((o, i) => (
                <OrderRow key={i} o={o} type="sell" displayName={displayName}
@@ -338,14 +338,14 @@ export default function ItemMarketPopup({ urlName, displayName, imageName, onClo
             <input className="imp-edit-input" type="number" min={1} value={editMode.pt}
               onChange={e => editMode.onPtChange(+e.target.value)} />
             <span className="imp-edit-label">p</span>
-            <span className="imp-edit-label" style={{ marginLeft: 8 }}>Qty</span>
+            <span className="imp-edit-label ml-2">Qty</span>
             <input className="imp-edit-input imp-edit-input-sm" type="number" min={1} value={editMode.qty}
               onChange={e => editMode.onQtyChange(+e.target.value)} />
-            <div className="imp-type-btns" style={{ marginLeft: 8 }}>
+            <div className="imp-type-btns ml-2">
               <button className={editMode.visible ? "active" : ""} onClick={() => editMode.onVisibleChange(true)}>Visible</button>
               <button className={!editMode.visible ? "active" : ""} onClick={() => editMode.onVisibleChange(false)}>Hidden</button>
             </div>
-            <button className="imp-action-sell" style={{ marginLeft: "auto" }} onClick={editMode.onSave}>Save</button>
+            <button className="imp-action-sell ml-auto" onClick={editMode.onSave}>Save</button>
             <button className="imp-action-buy" onClick={onClose}>Cancel</button>
           </div>
         ) : isLoggedIn ? (
