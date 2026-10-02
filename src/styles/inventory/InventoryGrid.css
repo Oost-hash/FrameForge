@@ -33,8 +33,6 @@
 /* ── Mod rank breakdown card ───────────────────────────────────────────────── */
 
 .inv-card-mod { align-items: flex-start; }
-.item-grid-cards .inv-card-mod,
-.item-grid-text-cards .inv-card-mod { padding: 2.154em .923em .923em; }
 .inv-card-mod .inv-card-img-wrap { width: var(--inventory-mod-image-size, 48px); height: var(--inventory-mod-image-size, 48px); }
 .item-grid-cards .inv-card-mod .inv-card-img-wrap .img,
 .item-grid-cards .inv-card-mod .inv-card-img-wrap .img-fallback { width: var(--inventory-mod-image-size, 48px) !important; height: var(--inventory-mod-image-size, 48px) !important; }
@@ -87,15 +85,6 @@
 /* icons */
 .item-grid-icons .inv-card-icon-only img,
 .item-grid-icons .inv-card-icon-only .img { width: 56px !important; height: 56px !important; }
-
-/* Without an image, controls share one top row and content keeps the full width. */
-.item-grid-text-cards .inv-card { padding-top: 3em; }
-.item-grid-text-cards .inv-mastery-row:empty { display: none; }
-.item-grid-text-cards .inv-card-side {
-  flex-direction: row;
-  align-items: center;
-  gap: .308em;
-}
 
 /* list + list-compact */
 .inv-card-row {

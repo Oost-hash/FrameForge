@@ -28,7 +28,11 @@ const EMPTY_MSG = "px-6 py-10 text-center leading-[1.6] text-muted";
 const INV_CARD_BASE =
   "relative flex w-full min-w-0 cursor-default flex-col items-center gap-[5px] self-stretch rounded-[9px] border border-border bg-surface px-2.5 pt-2.5 pb-3 transition-[border-color] duration-[120ms] hover:border-[rgba(56,139,253,0.5)]";
 const INV_CARD_BASE_EM =
-  "relative flex w-full min-w-0 cursor-default flex-col items-center gap-[.385em] self-stretch rounded-[9px] border border-border bg-surface px-[.769em] pt-[.769em] pb-[.923em] text-[length:var(--inventory-card-base-size,13px)] transition-[border-color] duration-[120ms] hover:border-[rgba(56,139,253,0.5)]";
+  "relative flex w-full min-w-0 cursor-default flex-col items-center gap-[.385em] self-stretch rounded-[9px] border border-border bg-surface text-[length:var(--inventory-card-base-size,13px)] transition-[border-color] duration-[120ms] hover:border-[rgba(56,139,253,0.5)]";
+const INV_CARD_PAD_EM = "px-[.769em] pt-[.769em] pb-[.923em]";
+const INV_CARD_PAD_EM_TEXT = "px-[.769em] pt-[3em] pb-[.923em]";
+const INV_CARD_PAD_MOD = "px-[.923em] pt-[2.154em] pb-[.923em]";
+const INV_CARD_PAD_MOD_TEXT = "px-[.923em] pt-[3em] pb-[.923em]";
 const INV_ICON_CELL =
   "relative flex min-w-0 cursor-pointer flex-col items-center justify-center gap-[5px] self-stretch h-[76px] w-[76px] rounded-[8px] border border-border bg-surface p-1.5 transition-[border-color] duration-[120ms] hover:border-[rgba(56,139,253,0.5)]";
 const INV_FAV_STAR =
@@ -49,6 +53,8 @@ const INV_CARD_CAT =
   "mt-[-1px] w-full overflow-hidden text-ellipsis whitespace-nowrap text-center text-[.769em] font-semibold uppercase tracking-[0.04em] text-[rgba(139,148,158,0.6)]";
 const INV_CARD_SIDE =
   "absolute top-[.462em] right-[.538em] z-[2] flex flex-col items-end gap-[.308em]";
+const INV_CARD_SIDE_ROW =
+  "absolute top-[.462em] right-[.538em] z-[2] flex flex-row items-center gap-[.308em]";
 const INV_WIKI_BTN =
   "cursor-pointer rounded-[4px] border border-[rgba(56,139,253,0.4)] bg-[rgba(0,0,0,0.4)] px-[.6em] py-[.3em] text-[.769em] font-bold leading-[1.3] text-[#6ea8fe] transition-[background] duration-100 hover:bg-[rgba(56,139,253,0.25)] hover:text-[#a8c8ff]";
 
@@ -125,14 +131,15 @@ function ValueChips({ plat, ducats, className }: {
 
 // Card view: wiki with plat/ducats stacked underneath, pinned to the top-right
 // corner so the content flow (name/cat/rank/qty) is identical on every card.
-function CardSide({ name, plat, ducats }: {
+function CardSide({ name, plat, ducats, horizontal }: {
   name: string;
   plat: number | null;
   ducats: number | null | undefined;
+  horizontal: boolean;
 }) {
   const showDucats = ducats != null && ducats > 0;
   return (
-    <div className={INV_CARD_SIDE}>
+    <div className={horizontal ? INV_CARD_SIDE_ROW : INV_CARD_SIDE}>
       <WikiButton name={name} className={INV_WIKI_BTN} />
       {plat != null && <PriceChip kind="plat" value={plat} />}
       {showDucats && <PriceChip kind="ducat" value={ducats!} />}
@@ -202,7 +209,7 @@ const InvModCard = memo(function InvModCard({ unique_name, name, category, image
     );
   }
   return (
-    <div key={unique_name} className={`${baseClass} inv-card-mod ${INV_CARD_BASE_EM}`}>
+    <div key={unique_name} className={`${baseClass} inv-card-mod ${INV_CARD_BASE_EM} ${view === "text-cards" ? INV_CARD_PAD_MOD_TEXT : INV_CARD_PAD_MOD}`}>
       <button
         className={[INV_FAV_STAR, isFavorite ? INV_FAV_STAR_ON : INV_FAV_STAR_OFF].join(" ")}
         title={isFavorite ? "Remove from Modular Window" : "Add to Modular Window"}
@@ -235,7 +242,7 @@ const InvModCard = memo(function InvModCard({ unique_name, name, category, image
         })}
       </div>
       <div className="inv-card-qty mod-total">{fmt(total)}</div>
-      <CardSide name={name} plat={plat} ducats={ducats} />
+      <CardSide name={name} plat={plat} ducats={ducats} horizontal={view === "text-cards"} />
     </div>
   );
 }, (prev, next) =>
@@ -322,14 +329,14 @@ const InvCard = memo(function InvCard({
     );
   }
   return (
-    <div className={`${baseClass} ${INV_CARD_BASE_EM}`}>
+    <div className={`${baseClass} ${INV_CARD_BASE_EM} ${view === "text-cards" ? INV_CARD_PAD_EM_TEXT : INV_CARD_PAD_EM}`}>
       <button
         className={[INV_FAV_STAR, isFavorite ? INV_FAV_STAR_ON : INV_FAV_STAR_OFF].join(" ")}
         title={isFavorite ? "Remove from Modular Window" : "Add to Modular Window"}
         aria-label={isFavorite ? "Remove from Modular Window" : "Add to Modular Window"}
         onClick={e => { e.stopPropagation(); onToggleFavorite(unique_name); }}
       >{isFavorite ? "★" : "☆"}</button>
-      <div className={INV_MASTERY_ROW}>
+      <div className={view === "text-cards" && !showRank ? "hidden" : INV_MASTERY_ROW}>
         {isMastered
           ? <span className={INV_MASTERY_STAR} title="Mastered">★</span>
           : showRank
@@ -353,7 +360,7 @@ const InvCard = memo(function InvCard({
           <span className={`item-delta ${deltaClass(recentDelta)}`}>{deltaText(recentDelta)}</span>
         )}
       </div>
-      <CardSide name={name} plat={plat} ducats={ducats} />
+      <CardSide name={name} plat={plat} ducats={ducats} horizontal={view === "text-cards"} />
     </div>
   );
 }, (prev, next) => {
