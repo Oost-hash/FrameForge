@@ -135,20 +135,24 @@ export default function SettingsModal(props: SettingsModalProps) {
   };
 
   return (
-      <div className="settings-overlay" onClick={() => onClose()}>
-        <div className={`settings-modal settings-modal-${settingsTab}`} onClick={e => e.stopPropagation()}>
-          <div className="settings-header">
-            <span className="settings-title">Settings</span>
+      <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/60 p-5" onClick={() => onClose()}>
+        <div
+          className={`flex w-[min(849px,95vw)] flex-col rounded-[12px] border border-border bg-surface shadow-[0_20px_60px_rgba(0,0,0,.6)] settings-modal-${settingsTab}`}
+          style={{ height: "calc(90vh / var(--ff-scale, 1))", maxHeight: "calc(90vh / var(--ff-scale, 1))" }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
+            <span className="text-[15px] font-semibold">Settings</span>
             <button className="craft-detail-close" onClick={() => onClose()}>✕</button>
           </div>
 
-          <div className="settings-layout">
+          <div className="flex min-h-0 flex-1">
             {/* ── Sidebar nav ── */}
-            <nav className="settings-sidebar">
+            <nav className="flex min-w-[130px] shrink-0 flex-col gap-0.5 border-r border-border px-2 py-2.5">
               {(["general", "overlays", "market", "filters", "accessibility", "data", "debugging"] as const).map(tab => (
                 <button
                   key={tab}
-                  className={`settings-tab-item${settingsTab === tab ? " active" : ""}`}
+                  className={`cursor-pointer rounded-[6px] border-none px-3 py-[7px] text-left text-[13px] transition-colors duration-120 ${settingsTab === tab ? "bg-[rgba(56,139,253,.15)] font-semibold text-accent" : "text-muted hover:bg-[rgba(255,255,255,.06)] hover:text-foreground"}`}
                   onClick={() => setSettingsTab(tab)}
                 >
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -157,7 +161,7 @@ export default function SettingsModal(props: SettingsModalProps) {
             </nav>
 
             {/* ── Tab content ── */}
-            <div className="settings-body">
+            <div className="flex flex-1 flex-col overflow-y-auto py-2">
 
               {/* ════════════ GENERAL ════════════ */}
               {settingsTab === "general" && <>
@@ -1043,8 +1047,8 @@ export default function SettingsModal(props: SettingsModalProps) {
                 </div>
               </div>
 
-            </div>{/* end settings-body */}
-          </div>{/* end settings-layout */}
+            </div>{/* end tab content */}
+          </div>{/* end layout */}
         </div>
       </div>
     );
