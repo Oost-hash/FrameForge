@@ -310,7 +310,7 @@ export default function RivenAnalyzer() {
       </div>
 
       {showLog && (
-        <pre style={{ background: "rgba(0,0,0,.3)", border: "1px solid rgba(48,54,61,.6)", borderRadius: 5, padding: 10, fontSize: 10, color: "var(--muted)", whiteSpace: "pre-wrap", wordBreak: "break-all", maxHeight: 300, overflowY: "auto", flexShrink: 0 }}>
+        <pre className="max-h-[300px] shrink-0 overflow-y-auto whitespace-pre-wrap break-all rounded-[5px] border border-[rgba(48,54,61,.6)] bg-black/30 p-2.5 text-[10px] text-muted">
           {sessionLog}
         </pre>
       )}
@@ -363,12 +363,12 @@ export default function RivenAnalyzer() {
                   </button>
                 </div>
               ))}
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+              <div className="mt-1 flex items-center gap-2">
                 <button className="riven-save-btn" onClick={saveCurrentRoll}>
                   {editingId ? "✓ Update Roll" : "💾 Save Roll"}
                 </button>
                 {editingId && <button className="riven-cancel-edit-btn" onClick={reset}>Cancel</button>}
-                {saveStatus && <span style={{ fontSize: 11, color: saveStatus.includes("!") || saveStatus.includes("✓") ? "var(--green)" : "var(--red)" }}>{saveStatus}</span>}
+                {saveStatus && <span className="text-[11px]" style={{ color: saveStatus.includes("!") || saveStatus.includes("✓") ? "var(--green)" : "var(--red)" }}>{saveStatus}</span>}
               </div>
             </div>
           )}
@@ -430,9 +430,9 @@ export default function RivenAnalyzer() {
       {/* ── Saved Rolls ──────────────────────────────────────────────────────── */}
       {savedRivens.length > 0 && (
         <div className="riven-saved-section">
-          <div className="riven-section-label" style={{ marginBottom: 8 }}>
+          <div className="riven-section-label mb-2">
             Saved Rolls ({savedRivens.length}/50)
-            {compareIds.size > 0 && <span style={{ marginLeft: 8, color: "var(--accent)", fontSize: 11 }}>
+            {compareIds.size > 0 && <span className="ml-2 text-[11px] text-accent">
               {compareIds.size === 1 ? "Select 1 more to compare" : "Comparing ↓"}
             </span>}
           </div>
@@ -471,7 +471,7 @@ export default function RivenAnalyzer() {
 
                   {/* Verdict */}
                   {r.verdict && (
-                    <div style={{ fontSize: 11, fontWeight: 700, color: verdictColor2(r.verdict), marginBottom: 4 }}>
+                    <div className="mb-1 text-[11px] font-bold" style={{ color: verdictColor2(r.verdict) }}>
                       {r.verdict.split("—")[0].trim()} · {Math.round(r.score * 100)}%
                     </div>
                   )}
@@ -479,18 +479,18 @@ export default function RivenAnalyzer() {
                   {/* Stats — editable in edit mode */}
                   <div className="riven-saved-stats">
                     {(isEditing ? inlineEditStats : stats).map((s, i) => (
-                      <div key={i} className="riven-saved-stat" style={{ alignItems: "center", gap: 4 }}>
+                      <div key={i} className="riven-saved-stat items-center gap-1">
                         {isEditing ? (<>
                           <button
-                            className="riven-sign-btn" style={{ width: 18, height: 18, fontSize: 11, padding: 0 }}
+                            className="riven-sign-btn !size-[18px] !min-w-0 !p-0 !text-[11px]"
                             onClick={() => setInlineEditStats(prev => prev.map((x, j) => j === i ? { ...x, positive: !x.positive } : x))}
                           >{s.positive ? "+" : "−"}</button>
                           <input
-                            style={{ width: 48, background: "rgba(0,0,0,.3)", border: "1px solid rgba(48,54,61,.6)", borderRadius: 3, color: "var(--text)", fontSize: 11, padding: "1px 4px", textAlign: "right" }}
+                            className="w-12 rounded-[3px] border border-[rgba(48,54,61,.6)] bg-black/30 px-1 py-px text-right text-[11px] text-foreground"
                             value={s.value}
                             onChange={e => setInlineEditStats(prev => prev.map((x, j) => j === i ? { ...x, value: e.target.value } : x))}
                           />
-                          <span style={{ fontSize: 11, color: "var(--muted)" }}>% {s.name}</span>
+                          <span className="text-[11px] text-muted">% {s.name}</span>
                         </>) : (<>
                           <span style={{ color: s.positive ? "rgba(139,148,158,.7)" : "var(--red)" }}>
                             {s.positive ? "+" : "−"}
@@ -501,7 +501,7 @@ export default function RivenAnalyzer() {
                     ))}
                   </div>
 
-                  <div style={{ fontSize: 10, color: "rgba(139,148,158,.4)", marginTop: 4 }}>
+                  <div className="mt-1 text-[10px] text-[rgba(139,148,158,.4)]">
                     {r.saved_at.slice(0, 10)}
                   </div>
                 </div>
@@ -512,7 +512,7 @@ export default function RivenAnalyzer() {
           {/* Comparison panel */}
           {compareList.length === 2 && (
             <div className="riven-compare-panel">
-              <div className="riven-section-label" style={{ marginBottom: 8 }}>Comparison</div>
+              <div className="riven-section-label mb-2">Comparison</div>
               <div className="riven-compare-grid">
                 {compareList.map(r => {
                   const stats: RivenStat[] = (() => { try { return JSON.parse(r.stats_json); } catch { return []; } })();
@@ -520,7 +520,7 @@ export default function RivenAnalyzer() {
                     <div key={r.id} className="riven-compare-col">
                       <div className="riven-compare-label">{r.label}</div>
                       {r.verdict && (
-                        <div style={{ fontSize: 11, fontWeight: 700, color: verdictColor2(r.verdict), marginBottom: 6 }}>
+                        <div className="mb-1.5 text-[11px] font-bold" style={{ color: verdictColor2(r.verdict) }}>
                           {r.verdict.split("—")[0].trim()} · {Math.round(r.score * 100)}%
                         </div>
                       )}
