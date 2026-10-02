@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { TAURI_EVENTS } from "../constants/tauri";
 import type { CacheStatuses } from "../types/cache";
+import { CONN_CHIP, CONN_DOT, CONN_LABEL, CONN_STATUS } from "./connStatus";
 
 function overall(statuses: CacheStatuses): "online" | "warn" | "offline" {
   const values = Object.values(statuses);
@@ -61,6 +62,7 @@ export default function CacheStatusChip() {
   }, [open]);
 
   const state = overall(statuses);
+  const s = CONN_STATUS[state];
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -71,13 +73,13 @@ export default function CacheStatusChip() {
   return (
     <div ref={chipRef} className="relative">
       <div
-        className={`conn-chip conn-${state}`}
+        className={`${CONN_CHIP} ${s.chip}`}
         onClick={() => setOpen((v) => !v)}
         title="Data cache status"
       >
-        <span className="conn-dot" />
-        <span className="conn-label">Data</span>
-        <span className="conn-detail">
+        <span className={`${CONN_DOT} ${s.dot}`} />
+        <span className={CONN_LABEL}>Data</span>
+        <span className={s.detail}>
           {state === "online" ? "fresh" : state === "warn" ? "stale" : "offline"}
         </span>
       </div>

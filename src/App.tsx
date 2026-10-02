@@ -44,6 +44,7 @@ import HeaderActions from "./header/HeaderActions";
 import ErrorBoundary from "./shared/ErrorBoundary";
 import HeaderStatusBadges from "./header/HeaderStatusBadges";
 import ConnectionStatusChip from "./header/ConnectionStatusChip";
+import { CONN_CHIP, CONN_DOT, CONN_STATUS } from "./header/connStatus";
 import KeepMountedWhenHidden from "./KeepMountedWhenHidden";
 import { FOUNDRY_FILTERS_DEFAULT, INVENTORY_FILTERS_DEFAULT, MARKET_FILTERS_DEFAULT, RELIC_FILTERS_DEFAULT } from "./constants/filters";
 import { PREFERENCE_KEYS } from "./constants/preferences";
@@ -656,8 +657,8 @@ export default function App() {
     <div className="shell">
 
       {/* ── Header ── */}
-      <header className="header">
-        <span className="header-title">{APP_TITLE}</span>
+      <header className="flex h-[var(--header-h)] shrink-0 items-center gap-[12px] border-b border-border bg-surface px-[16px]">
+        <span className="text-[15px] font-semibold text-foreground">{APP_TITLE}</span>
         <HeaderStatusBadges
           masteryRank={masteryRank}
           playerName={playerName}
@@ -671,7 +672,7 @@ export default function App() {
           }}
           onDismissUpdate={() => setPendingUpdate(null)}
         />
-        <div className="header-right">
+        <div className="ml-auto flex items-center gap-[6px]">
           {/* ── Connection status chips ── */}
           {(() => {
             // Memory chip
@@ -749,9 +750,9 @@ export default function App() {
                   onClick={!wfmLoggedIn ? () => activateModule("market") : undefined}
                 />
                 {overlayStatus && (
-                  <span className="conn-chip conn-overlay">
-                    <span className="conn-dot" />
-                    <span className="conn-detail">{overlayStatus}</span>
+                  <span className={`${CONN_CHIP} ${CONN_STATUS.overlay.chip}`}>
+                    <span className={`${CONN_DOT} ${CONN_STATUS.overlay.dot}`} />
+                    <span className={CONN_STATUS.overlay.detail}>{overlayStatus}</span>
                   </span>
                 )}
                 <CacheStatusChip />
