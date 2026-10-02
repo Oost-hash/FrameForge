@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import InventoryGrid from "./InventoryGrid";
 import { ViewToggle } from "../shared/ViewToggle";
+import { ModalCloseButton } from "../shared/ui/ModalCloseButton";
 import type { ViewMode } from "../types/ui";
 
 interface InventoryBatchPreviewProps {
@@ -82,7 +83,7 @@ export default function InventoryBatchPreview({ onClose }: InventoryBatchPreview
             <span className="mt-0.5 block text-[11px] text-muted">{expired ? "Recent indicators have expired." : "This does not change inventory data."}</span>
           </div>
           <ViewToggle view={view} onChange={setView} />
-          <button ref={closeButtonRef} className="craft-detail-close" onClick={onClose} aria-label="Close preview">x</button>
+          <ModalCloseButton ref={closeButtonRef} onClick={onClose} aria-label="Close preview">x</ModalCloseButton>
         </header>
         <div className="flex flex-wrap gap-1 border-b border-border px-3 py-2" aria-label="Preview state">
           {PREVIEW_STATES.map(([state, label]) => (

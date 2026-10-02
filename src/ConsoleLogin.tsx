@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { TAURI_EVENTS } from "./constants/tauri";
+import { SecondaryButton } from "./shared/ui/ActionButton";
 import type { ConsoleLoginSuccessPayload } from "./types/tauri";
 
 interface Props {
@@ -52,21 +53,20 @@ export default function ConsoleLogin({ onLogin }: Props) {
       </div>
 
       {status !== "waiting" && (
-        <button
-          className="btn-secondary"
+        <SecondaryButton
           onClick={open}
           style={status === "done" ? { opacity: 0.5 } : undefined}
         >
           {status === "done" ? "Re-open Login" : "Open Warframe Login"}
-        </button>
+        </SecondaryButton>
       )}
 
       {status === "waiting" && (
         <div className="flex items-center gap-2.5">
           <span className="text-[12px] text-muted">Waiting for login…</span>
-          <button className="btn-secondary px-2.5 py-0.5 text-[11px]" onClick={cancel}>
+          <SecondaryButton onClick={cancel}>
             Cancel
-          </button>
+          </SecondaryButton>
         </div>
       )}
 

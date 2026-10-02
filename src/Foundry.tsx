@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useCallback, memo, startTransition, useRe
 import { invoke } from "@tauri-apps/api/core";
 import ItemImg from "./ItemImg";
 import { HelpTip } from "./shared/HelpTip";
+import { SecondaryButton } from "./shared/ui/ActionButton";
+import { ModalCloseButton } from "./shared/ui/ModalCloseButton";
 import FilterPresets from "./shared/FilterPresets";
 import { PREFERENCE_KEYS } from "./constants/preferences";
 import { matchesSearchTerms, splitSearchTerms } from "./lib/search";
@@ -198,6 +200,9 @@ const FY_MODAL_HEADER = "flex shrink-0 items-center gap-[10px] border-b border-b
 const FY_MODAL_TITLE = "min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[15px] font-semibold";
 const FY_MODAL_BADGE = "shrink-0 rounded-[4px] border border-[rgba(224,123,0,.3)] bg-[rgba(224,123,0,.15)] px-[7px] py-[2px] text-[11px] text-[#e07b00]";
 const FY_MODAL_TABS = "flex shrink-0 gap-0 border-b border-border px-[18px] pt-[8px]";
+const FY_MODE_TOGGLE = "px-[10px] py-[3px] rounded-[6px] border cursor-pointer text-[11px] transition-all duration-150";
+const FY_MODE_TOGGLE_ON = "border-accent! text-accent! bg-[rgba(56,139,253,.1)]!";
+const FY_MODE_TOGGLE_OFF = "border-border bg-transparent text-muted hover:border-accent hover:text-accent";
 const FY_MODAL_BODY = "flex-1 overflow-y-auto px-[18px] py-[12px]";
 const FY_KUVA_NOTICE = "flex items-start gap-[12px] rounded-[8px] border border-[rgba(157,108,255,.25)] bg-[rgba(157,108,255,.08)] p-[16px] text-[13px] leading-[1.6] text-foreground";
 const FY_KUVA_ICON = "shrink-0 text-[20px]";
@@ -415,7 +420,7 @@ function RecipeModal({ item, recipe, inventory, isTracked, onTrack, onClose, cra
           <button className={isTracked ? FY_TRACK_BTN_ON : FY_TRACK_BTN} onClick={onTrack}>
             {isTracked ? "★ Tracked" : "☆ Track"}
           </button>
-          <button className="craft-detail-close" onClick={onClose}>✕</button>
+          <ModalCloseButton onClick={onClose}>✕</ModalCloseButton>
         </div>
 
         {isKuva ? (
@@ -441,8 +446,8 @@ function RecipeModal({ item, recipe, inventory, isTracked, onTrack, onClose, cra
         ) : (
           <>
             <div className={FY_MODAL_TABS}>
-              <button className={`toggle-btn ${mode === "tree" ? "toggle-active" : ""}`} onClick={() => setMode("tree")}>Full tree</button>
-              <button className={`toggle-btn ${mode === "needs" ? "toggle-active" : ""}`} onClick={() => setMode("needs")}>What I need</button>
+              <button className={`${FY_MODE_TOGGLE} ${mode === "tree" ? FY_MODE_TOGGLE_ON : FY_MODE_TOGGLE_OFF}`} onClick={() => setMode("tree")}>Full tree</button>
+              <button className={`${FY_MODE_TOGGLE} ${mode === "needs" ? FY_MODE_TOGGLE_ON : FY_MODE_TOGGLE_OFF}`} onClick={() => setMode("needs")}>What I need</button>
             </div>
             <div className={FY_MODAL_BODY}>
               {!recipe ? (
@@ -911,9 +916,9 @@ export default function Foundry({ inventory, refreshKey, crafting, subsummedWarf
         </div>
         {pageCount > 1 && (
           <div className={FY_PAGINATION}>
-            <button className="btn-secondary" disabled={page === 0} onClick={() => setPage(p => p - 1)}>← Prev</button>
+            <SecondaryButton disabled={page === 0} onClick={() => setPage(p => p - 1)}>← Prev</SecondaryButton>
             <span className={FY_PG_LABEL}>Page {page + 1} of {pageCount}</span>
-            <button className="btn-secondary" disabled={page >= pageCount - 1} onClick={() => setPage(p => p + 1)}>Next →</button>
+            <SecondaryButton disabled={page >= pageCount - 1} onClick={() => setPage(p => p + 1)}>Next →</SecondaryButton>
           </div>
         )}
       </div>

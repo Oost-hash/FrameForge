@@ -3,8 +3,6 @@
 .settings-offset-input::-webkit-inner-spin-button,
 .settings-offset-input::-webkit-outer-spin-button { appearance: none; margin: 0; }
 
-/* Kept in CSS: descendant overrides of shared classes (isolate per plan). The
-   filter-presets section keeps `settings-filter-presets` and the debug wrappers
-   keep `debug-table` solely for these two rules. */
+/* Kept in CSS: descendant override of a shared class (isolate per plan). The
+   filter-presets section keeps `settings-filter-presets` solely for this rule. */
 .settings-filter-presets .inventory-presets-list { flex: 1; }
-.debug-table .btn-secondary { white-space: nowrap; text-align: center; }

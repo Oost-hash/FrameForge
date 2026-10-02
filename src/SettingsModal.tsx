@@ -5,6 +5,8 @@ import { notify, ensurePermission } from "./lib/notify";
 import { formatBytes } from "./lib/formatters";
 import { hidePickOutline, hideRewardOutline, hideRivenOverlay, showPickOutline, showRewardOutline, showRivenOverlay } from "./lib/outlineWindows";
 import FilterPresets from "./shared/FilterPresets";
+import { ActionButton, DangerButton, SecondaryButton } from "./shared/ui/ActionButton";
+import { ModalCloseButton } from "./shared/ui/ModalCloseButton";
 import { PREFERENCE_KEYS } from "./constants/preferences";
 import { CLOCK_FORMAT_OPTIONS, FOUNDRY_PAGE_SIZE_OPTIONS, RELIC_OVERLAY_PRIORITY_OPTIONS, RELIC_PICK_LINES_OPTIONS, RELIC_PICK_PRIORITY_OPTIONS } from "./constants/settings";
 import { TAURI_COMMANDS, TAURI_EVENTS } from "./constants/tauri";
@@ -66,14 +68,14 @@ export interface SettingsModalProps {
 function FactoryResetButton() {
   const [confirm, setConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
-  if (!confirm) return <button className="btn-danger" onClick={() => setConfirm(true)}>Factory Reset</button>;
-  return <div style={{ display: "flex", gap: 8, alignItems: "center" }}><span style={{ fontSize: 12, color: "var(--red)" }}>Are you sure? This cannot be undone.</span><button className="btn-danger" disabled={resetting} onClick={() => { setResetting(true); invoke("factory_reset").catch(() => setResetting(false)); }}>{resetting ? "Resetting…" : "Yes, reset"}</button><button className="btn-secondary" onClick={() => setConfirm(false)}>Cancel</button></div>;
+  if (!confirm) return <DangerButton onClick={() => setConfirm(true)}>Factory Reset</DangerButton>;
+  return <div style={{ display: "flex", gap: 8, alignItems: "center" }}><span style={{ fontSize: 12, color: "var(--red)" }}>Are you sure? This cannot be undone.</span><DangerButton disabled={resetting} onClick={() => { setResetting(true); invoke("factory_reset").catch(() => setResetting(false)); }}>{resetting ? "Resetting…" : "Yes, reset"}</DangerButton><SecondaryButton onClick={() => setConfirm(false)}>Cancel</SecondaryButton></div>;
 }
 
 function BulkPriceRefreshButton() {
   const [state, setState] = useState<"idle" | "loading" | "ok" | "err">("idle");
   const label = state === "loading" ? "Fetching…" : state === "ok" ? "Done!" : state === "err" ? "Failed" : "Refresh Now";
-  return <button className="btn-secondary" disabled={state === "loading"} style={{ minWidth: 100, borderColor: state === "ok" ? "var(--accent)" : state === "err" ? "#e05252" : undefined }} onClick={() => { setState("loading"); invoke("refresh_bulk_prices").then(() => { setState("ok"); setTimeout(() => setState("idle"), 3000); }).catch(() => { setState("err"); setTimeout(() => setState("idle"), 4000); }); }}>{label}</button>;
+  return <SecondaryButton disabled={state === "loading"} style={{ minWidth: 100, borderColor: state === "ok" ? "var(--accent)" : state === "err" ? "#e05252" : undefined }} onClick={() => { setState("loading"); invoke("refresh_bulk_prices").then(() => { setState("ok"); setTimeout(() => setState("idle"), 3000); }).catch(() => { setState("err"); setTimeout(() => setState("idle"), 4000); }); }}>{label}</SecondaryButton>;
 }
 
 export default function SettingsModal(props: SettingsModalProps) {
@@ -135,8 +137,8 @@ export default function SettingsModal(props: SettingsModalProps) {
           {axisInput(keyX, "X")}
           <span className="w-[9px] text-center text-[11px] text-muted">Y</span>
           {axisInput(keyY, "Y")}
-          <button className="btn-secondary min-w-14 h-[26px]" disabled={overlayOffsets[keyX] === 0 && overlayOffsets[keyY] === 0}
-            onClick={resetOffsets}>Reset</button>
+          <SecondaryButton className="min-w-14 h-[26px]" disabled={overlayOffsets[keyX] === 0 && overlayOffsets[keyY] === 0}
+            onClick={resetOffsets}>Reset</SecondaryButton>
         </div>
       </div>
     );
@@ -151,7 +153,7 @@ export default function SettingsModal(props: SettingsModalProps) {
         >
           <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
             <span className="text-[15px] font-semibold">Settings</span>
-            <button className="craft-detail-close" onClick={() => onClose()}>✕</button>
+            <ModalCloseButton onClick={() => onClose()}>✕</ModalCloseButton>
           </div>
 
           <div className="flex min-h-0 flex-1">
@@ -210,13 +212,12 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>Enable</span>
                       <span className={ROW_DESC_CLASS}>Required for live inventory, quantity tracking, and mod ranks</span>
                     </div>
-                    <button
-                      className="btn-secondary"
+                    <SecondaryButton
                       style={{ minWidth: 64, background: memoryScannerEnabled ? "rgba(240,192,64,.15)" : undefined, borderColor: memoryScannerEnabled ? "#f0c040" : undefined, color: memoryScannerEnabled ? "#f0c040" : undefined }}
                         onClick={() => setMemoryScannerEnabled(v => !v)}
                     >
                       {memoryScannerEnabled ? "On" : "Off"}
-                    </button>
+                    </SecondaryButton>
                   </div>
                 </div>
 
@@ -270,8 +271,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>Pop-out</span>
                       <span className={ROW_DESC_CLASS}>Detach the Modular Window into its own floating window.</span>
                     </div>
-                    <button
-                      className="btn-secondary"
+                    <SecondaryButton
                       style={{ minWidth: 64, background: modularPopout ? "rgba(56,139,253,.15)" : undefined, borderColor: modularPopout ? "var(--accent)" : undefined }}
                       onClick={() => {
                         const next = !modularPopout;
@@ -279,7 +279,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                         settingsRef.current = { ...settingsRef.current, modularPopout: next };
                         saveAllSettings();
                       }}
-                    >{modularPopout ? "On" : "Off"}</button>
+                    >{modularPopout ? "On" : "Off"}</SecondaryButton>
                   </div>
                 </div>
 
@@ -303,8 +303,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>Enable</span>
                       <span className={ROW_DESC_CLASS}>Auto-shows reward cards when a Void Fissure screen is detected.</span>
                     </div>
-                    <button
-                      className="btn-secondary"
+                    <SecondaryButton
                       style={{ minWidth: 64, background: overlayEnabled ? "rgba(56,139,253,.15)" : undefined, borderColor: overlayEnabled ? "var(--accent)" : undefined }}
                       onClick={() => {
                         const next = !overlayEnabled;
@@ -316,7 +315,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                           emit(TAURI_EVENTS.RELIC_SCREEN, true).catch(() => {});
                         }
                       }}
-                    >{overlayEnabled ? "On" : "Off"}</button>
+                    >{overlayEnabled ? "On" : "Off"}</SecondaryButton>
                   </div>
                   <div className={ROW_CLASS} style={{ marginTop: 8 }}>
                     <div className={ROW_INFO_CLASS}>
@@ -346,11 +345,11 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>Show Outline</span>
                       <span className={ROW_DESC_CLASS}>Toggle a dashed outline of the overlay at its current position.</span>
                     </div>
-                    <button className="btn-secondary" style={{ minWidth: 64, background: outlineReward ? "rgba(56,139,253,.15)" : undefined, borderColor: outlineReward ? "var(--accent)" : undefined }}
+                    <SecondaryButton style={{ minWidth: 64, background: outlineReward ? "rgba(56,139,253,.15)" : undefined, borderColor: outlineReward ? "var(--accent)" : undefined }}
                       onClick={() => {
                         if (outlineReward) { hideRewardOutline().catch(() => {}); setOutlineReward(false); }
                         else { showRewardOutline().catch(() => {}); setOutlineReward(true); }
-                      }}>{outlineReward ? "Hide" : "Show"}</button>
+                      }}>{outlineReward ? "Hide" : "Show"}</SecondaryButton>
                   </div>
                 </div>
 
@@ -362,8 +361,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>Enable</span>
                       <span className={ROW_DESC_CLASS}>Show the relic pick overlay when opening the relic selection screen.</span>
                     </div>
-                    <button
-                      className="btn-secondary"
+                    <SecondaryButton
                       style={{ minWidth: 64, background: relicPickEnabled ? "rgba(56,139,253,.15)" : undefined, borderColor: relicPickEnabled ? "var(--accent)" : undefined }}
                       onClick={() => {
                         const next = !relicPickEnabled;
@@ -372,7 +370,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                         saveAllSettings();
                         invoke(TAURI_COMMANDS.SET_RELIC_PICK_ENABLED, { enabled: next });
                       }}
-                    >{relicPickEnabled ? "On" : "Off"}</button>
+                    >{relicPickEnabled ? "On" : "Off"}</SecondaryButton>
                   </div>
                   <div className={ROW_CLASS} style={{ marginTop: 8, opacity: relicPickEnabled ? 1 : 0.45, pointerEvents: relicPickEnabled ? "auto" : "none" }}>
                     <div className={ROW_INFO_CLASS}>
@@ -414,11 +412,11 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>Show Outline</span>
                       <span className={ROW_DESC_CLASS}>Toggle a dashed outline of the overlay at its current position.</span>
                     </div>
-                    <button className="btn-secondary" style={{ minWidth: 64, background: outlinePick ? "rgba(56,139,253,.15)" : undefined, borderColor: outlinePick ? "var(--accent)" : undefined }}
+                    <SecondaryButton style={{ minWidth: 64, background: outlinePick ? "rgba(56,139,253,.15)" : undefined, borderColor: outlinePick ? "var(--accent)" : undefined }}
                       onClick={() => {
                         if (outlinePick) { hidePickOutline().catch(() => {}); setOutlinePick(false); }
                         else { showPickOutline().catch(() => {}); setOutlinePick(true); }
-                      }}>{outlinePick ? "Hide" : "Show"}</button>
+                      }}>{outlinePick ? "Hide" : "Show"}</SecondaryButton>
                   </div>
                 </div>
 
@@ -430,8 +428,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>Enable</span>
                       <span className={ROW_DESC_CLASS}>Show the riven overlay when a riven card screen is detected.</span>
                     </div>
-                    <button
-                      className="btn-secondary"
+                    <SecondaryButton
                       style={{ minWidth: 64, background: rivenEnabled ? "rgba(56,139,253,.15)" : undefined, borderColor: rivenEnabled ? "var(--accent)" : undefined }}
                       onClick={() => {
                         const next = !rivenEnabled;
@@ -440,7 +437,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                         settingsRef.current = { ...settingsRef.current, rivenEnabled: next };
                         saveAllSettings();
                       }}
-                    >{rivenEnabled ? "On" : "Off"}</button>
+                    >{rivenEnabled ? "On" : "Off"}</SecondaryButton>
                   </div>
                   {offsetRow("rivenX", "rivenY", !rivenEnabled)}
                   <div className={ROW_CLASS} style={{ marginTop: 8 }}>
@@ -448,11 +445,11 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>Show</span>
                       <span className={ROW_DESC_CLASS}>Show the riven overlay at its current position.</span>
                     </div>
-                    <button className="btn-secondary" style={{ minWidth: 64, background: rivenShown ? "rgba(56,139,253,.15)" : undefined, borderColor: rivenShown ? "var(--accent)" : undefined }}
+                    <SecondaryButton style={{ minWidth: 64, background: rivenShown ? "rgba(56,139,253,.15)" : undefined, borderColor: rivenShown ? "var(--accent)" : undefined }}
                       onClick={() => {
                         if (rivenShown) { hideRivenOverlay().catch(() => {}); setRivenShown(false); }
                         else { showRivenOverlay().catch(() => {}); setRivenShown(true); }
-                      }}>{rivenShown ? "Hide" : "Show"}</button>
+                      }}>{rivenShown ? "Hide" : "Show"}</SecondaryButton>
                   </div>
                 </div>
 
@@ -468,8 +465,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                         The EE.log overlay is unaffected regardless of this setting.
                       </span>
                     </div>
-                    <button
-                      className="btn-secondary"
+                    <SecondaryButton
                       style={{ minWidth: 64, background: memTriggerEnabled ? "rgba(56,139,253,.15)" : undefined, borderColor: memTriggerEnabled ? "var(--accent)" : undefined }}
                       onClick={() => {
                         const next = !memTriggerEnabled;
@@ -478,7 +474,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                         saveAllSettings();
                         invoke(TAURI_COMMANDS.SET_MEM_TRIGGER_ENABLED, { enabled: next });
                       }}
-                    >{memTriggerEnabled ? "On" : "Off"}</button>
+                    >{memTriggerEnabled ? "On" : "Off"}</SecondaryButton>
                   </div>
                 </div>
 
@@ -509,8 +505,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>Go Invisible on startup</span>
                       <span className={ROW_DESC_CLASS}>When FrameForge opens, immediately set your WFM status to Invisible.</span>
                     </div>
-                    <button
-                      className="btn-secondary"
+                    <SecondaryButton
                       style={{ minWidth: 64, background: wfmInvisibleOnStart ? "rgba(56,139,253,.15)" : undefined, borderColor: wfmInvisibleOnStart ? "var(--accent)" : undefined }}
                       onClick={() => {
                         const next = !wfmInvisibleOnStart;
@@ -519,7 +514,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                         settingsRef.current = { ...settingsRef.current, wfmInvisibleOnStart: next };
                         saveAllSettings();
                       }}
-                    >{wfmInvisibleOnStart ? "On" : "Off"}</button>
+                    >{wfmInvisibleOnStart ? "On" : "Off"}</SecondaryButton>
                   </div>
 
                   <div className={ROW_CLASS} style={{ marginTop: 8, opacity: wfmLoggedIn ? 1 : 0.45, pointerEvents: wfmLoggedIn ? "auto" : "none" }}>
@@ -527,8 +522,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>Go Invisible on close</span>
                       <span className={ROW_DESC_CLASS}>Before FrameForge exits (X button or taskbar close), set your WFM status to Invisible.</span>
                     </div>
-                    <button
-                      className="btn-secondary"
+                    <SecondaryButton
                       style={{ minWidth: 64, background: wfmInvisibleOnClose ? "rgba(56,139,253,.15)" : undefined, borderColor: wfmInvisibleOnClose ? "var(--accent)" : undefined }}
                       onClick={() => {
                         const next = !wfmInvisibleOnClose;
@@ -537,7 +531,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                         settingsRef.current = { ...settingsRef.current, wfmInvisibleOnClose: next };
                         saveAllSettings();
                       }}
-                    >{wfmInvisibleOnClose ? "On" : "Off"}</button>
+                    >{wfmInvisibleOnClose ? "On" : "Off"}</SecondaryButton>
                   </div>
 
                   <div className={ROW_CLASS} style={{ marginTop: 8, opacity: wfmLoggedIn ? 1 : 0.45, pointerEvents: wfmLoggedIn ? "auto" : "none" }}>
@@ -559,8 +553,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                         minutes, automatically set status to Invisible.
                       </span>
                     </div>
-                    <button
-                      className="btn-secondary"
+                    <SecondaryButton
                       style={{ minWidth: 64, background: wfmAutoInvisible ? "rgba(56,139,253,.15)" : undefined, borderColor: wfmAutoInvisible ? "var(--accent)" : undefined }}
                       onClick={() => {
                         const next = !wfmAutoInvisible;
@@ -568,7 +561,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                         settingsRef.current = { ...settingsRef.current, wfmAutoInvisible: next };
                         saveAllSettings();
                       }}
-                    >{wfmAutoInvisible ? "On" : "Off"}</button>
+                    >{wfmAutoInvisible ? "On" : "Off"}</SecondaryButton>
                   </div>
                 </div>
                 <div className="settings-section">
@@ -578,8 +571,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>Record automatic sales</span>
                       <span className={ROW_DESC_CLASS}>Record automatically detected sales in your warframe.market statistics. When off, FrameForge only reduces or removes the listing. Recorded sales cannot be undone from FrameForge.</span>
                     </div>
-                    <button
-                      className="btn-secondary"
+                    <SecondaryButton
                       style={{ minWidth: 64, background: wfmRecordSales ? "rgba(56,139,253,.15)" : undefined, borderColor: wfmRecordSales ? "var(--accent)" : undefined }}
                       onClick={() => {
                         const next = !wfmRecordSales;
@@ -587,7 +579,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                         settingsRef.current = { ...settingsRef.current, wfmRecordSales: next };
                         saveAllSettings();
                       }}
-                    >{wfmRecordSales ? "On" : "Off"}</button>
+                    >{wfmRecordSales ? "On" : "Off"}</SecondaryButton>
                   </div>
                 </div>
               </>}
@@ -613,7 +605,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>Restore previous filters on active preset click</span>
                       <span className={ROW_DESC_CLASS}>When clicking an active pinned preset again, restore the filters from before it was applied instead of clearing filters.</span>
                     </div>
-                    <button className="btn-secondary" style={{ minWidth: 64, background: filterPresets.restorePreviousFiltersOnPresetClick ? "rgba(56,139,253,.15)" : undefined, borderColor: filterPresets.restorePreviousFiltersOnPresetClick ? "var(--accent)" : undefined }} onClick={() => setFilterPresets(current => ({ ...current, restorePreviousFiltersOnPresetClick: !current.restorePreviousFiltersOnPresetClick }))}>{filterPresets.restorePreviousFiltersOnPresetClick ? "On" : "Off"}</button>
+                    <SecondaryButton style={{ minWidth: 64, background: filterPresets.restorePreviousFiltersOnPresetClick ? "rgba(56,139,253,.15)" : undefined, borderColor: filterPresets.restorePreviousFiltersOnPresetClick ? "var(--accent)" : undefined }} onClick={() => setFilterPresets(current => ({ ...current, restorePreviousFiltersOnPresetClick: !current.restorePreviousFiltersOnPresetClick }))}>{filterPresets.restorePreviousFiltersOnPresetClick ? "On" : "Off"}</SecondaryButton>
                   </div>
                 </div>
                 {settingsFilterModule === "inventory" && <FilterPresets variant="settings" module="inventory" filters={inventoryFilters} onFiltersChange={setInventoryFilters} filterPresets={filterPresets} onFilterPresetsChange={setFilterPresets} />}
@@ -631,8 +623,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>Colorblind Mode</span>
                       <span className={ROW_DESC_CLASS}>Adds ✓ / ✓✓ symbols to relic reward boxes so status doesn't rely on color alone.</span>
                     </div>
-                    <button
-                      className="btn-secondary"
+                    <SecondaryButton
                       style={{ minWidth: 64, background: colorblindMode ? "rgba(56,139,253,.15)" : undefined, borderColor: colorblindMode ? "var(--accent)" : undefined }}
                       onClick={() => {
                         const next = !colorblindMode;
@@ -641,7 +632,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                         settingsRef.current = { ...settingsRef.current, colorblindMode: next };
                         saveAllSettings();
                       }}
-                    >{colorblindMode ? "On" : "Off"}</button>
+                    >{colorblindMode ? "On" : "Off"}</SecondaryButton>
                   </div>
                   <div className={ROW_CLASS} style={{ marginTop: 8 }}>
                     <div className={ROW_INFO_CLASS}>
@@ -666,14 +657,14 @@ export default function SettingsModal(props: SettingsModalProps) {
                     </div>
                     <div style={{ display: "flex", gap: 4 }}>
                       {CLOCK_FORMAT_OPTIONS.map(f => (
-                        <button key={f} className="btn-secondary" style={{ minWidth: 44, background: clockFormat === f ? "rgba(56,139,253,.15)" : undefined, borderColor: clockFormat === f ? "var(--accent)" : undefined }}
+                        <SecondaryButton key={f} style={{ minWidth: 44, background: clockFormat === f ? "rgba(56,139,253,.15)" : undefined, borderColor: clockFormat === f ? "var(--accent)" : undefined }}
                           onClick={() => {
                             setClockFormat(f);
                             settingsRef.current = { ...settingsRef.current, clockFormat: f };
                             saveAllSettings();
                           }}>
                           {f === "auto" ? "Auto" : f}
-                        </button>
+                        </SecondaryButton>
                       ))}
                     </div>
                   </div>
@@ -689,9 +680,9 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>Catalog</span>
                       <span className={ROW_DESC_CLASS}>{itemCount.toLocaleString()} items · {recipeCount.toLocaleString()} recipes cached</span>
                     </div>
-                    <button className="btn-secondary" onClick={() => { onClose(); handleFetch(); }} disabled={fetching}>
+                    <SecondaryButton onClick={() => { onClose(); handleFetch(); }} disabled={fetching}>
                       {fetching ? "Fetching…" : "Refresh"}
-                    </button>
+                    </SecondaryButton>
                   </div>
                   {fetchMsg && <div className="settings-msg">{fetchMsg}</div>}
                 </div>
@@ -702,8 +693,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>Clear Cache</span>
                       <span className={ROW_DESC_CLASS}>Reset all scanned quantities and changelog.</span>
                     </div>
-                    <button
-                      className="btn-danger"
+                    <DangerButton
                       onClick={async () => {
                         try {
                           await invoke("clear_cache");
@@ -724,7 +714,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                           setClearMsg("Cache cleared.");
                         } catch (e) { setClearMsg(`Error: ${e}`); }
                       }}
-                    >Clear Cache</button>
+                    >Clear Cache</DangerButton>
                   </div>
                   {clearMsg && <div className="settings-msg">{clearMsg}</div>}
                 </div>
@@ -752,32 +742,32 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>Inventory Snapshots</span>
                       <span className={ROW_DESC_CLASS}>Saves a JSON snapshot on each memory scan.</span>
                     </div>
-                    <button className="btn-secondary" style={{ opacity: memoryScannerEnabled ? 1 : 0.4, pointerEvents: memoryScannerEnabled ? "auto" : "none" }}
-                      onClick={() => invoke("open_debug_folder", { which: "blobs" }).catch(() => {})}>Go To Folder</button>
-                    <button className="btn-secondary"
+                    <SecondaryButton style={{ opacity: memoryScannerEnabled ? 1 : 0.4, pointerEvents: memoryScannerEnabled ? "auto" : "none" }}
+                      onClick={() => invoke("open_debug_folder", { which: "blobs" }).catch(() => {})}>Go To Folder</SecondaryButton>
+                    <SecondaryButton
                       style={{ background: blobLogEnabled ? "rgba(56,139,253,.15)" : undefined, borderColor: blobLogEnabled ? "var(--accent)" : undefined, opacity: memoryScannerEnabled ? 1 : 0.4, pointerEvents: memoryScannerEnabled ? "auto" : "none" }}
-                        onClick={() => setBlobLogEnabled(v => !v)}>{blobLogEnabled ? "On" : "Off"}</button>
-                    <button className="btn-secondary"
+                        onClick={() => setBlobLogEnabled(v => !v)}>{blobLogEnabled ? "On" : "Off"}</SecondaryButton>
+                    <SecondaryButton
                       style={{ color: blobLogSize > 0 ? "var(--red)" : undefined, borderColor: blobLogSize > 0 ? "var(--red)" : undefined, opacity: memoryScannerEnabled ? 1 : 0.4, pointerEvents: memoryScannerEnabled ? "auto" : "none" }}
                       disabled={blobLogSize === 0}
                       onClick={async () => { await invoke("clear_debug_data", { which: "blobs" }); setBlobLogSize(0); }}
-                    >{blobLogSize > 0 ? `Clear (${formatBytes(blobLogSize)})` : "Clear"}</button>
+                    >{blobLogSize > 0 ? `Clear (${formatBytes(blobLogSize)})` : "Clear"}</SecondaryButton>
 
                     {/* API Responses */}
                     <div className={ROW_INFO_CLASS} style={{ opacity: companionApiEnabled ? 1 : 0.4 }}>
                       <span className={ROW_LABEL_CLASS}>API Responses</span>
                       <span className={ROW_DESC_CLASS}>Records raw DE API responses on each inventory fetch.</span>
                     </div>
-                    <button className="btn-secondary" style={{ opacity: companionApiEnabled ? 1 : 0.4, pointerEvents: companionApiEnabled ? "auto" : "none" }}
-                      onClick={() => invoke("open_debug_folder", { which: "api_logs" }).catch(() => {})}>Go To Folder</button>
-                    <button className="btn-secondary"
+                    <SecondaryButton style={{ opacity: companionApiEnabled ? 1 : 0.4, pointerEvents: companionApiEnabled ? "auto" : "none" }}
+                      onClick={() => invoke("open_debug_folder", { which: "api_logs" }).catch(() => {})}>Go To Folder</SecondaryButton>
+                    <SecondaryButton
                       style={{ background: apiLogEnabled ? "rgba(56,139,253,.15)" : undefined, borderColor: apiLogEnabled ? "var(--accent)" : undefined, opacity: companionApiEnabled ? 1 : 0.4, pointerEvents: companionApiEnabled ? "auto" : "none" }}
-                        onClick={() => setApiLogEnabled(v => !v)}>{apiLogEnabled ? "On" : "Off"}</button>
-                    <button className="btn-secondary"
+                        onClick={() => setApiLogEnabled(v => !v)}>{apiLogEnabled ? "On" : "Off"}</SecondaryButton>
+                    <SecondaryButton
                       style={{ color: apiLogSize > 0 ? "var(--red)" : undefined, borderColor: apiLogSize > 0 ? "var(--red)" : undefined, opacity: companionApiEnabled ? 1 : 0.4, pointerEvents: companionApiEnabled ? "auto" : "none" }}
                       disabled={apiLogSize === 0}
                       onClick={async () => { await invoke("clear_debug_data", { which: "api_logs" }); setApiLogSize(0); }}
-                    >{apiLogSize > 0 ? `Clear (${formatBytes(apiLogSize)})` : "Clear"}</button>
+                    >{apiLogSize > 0 ? `Clear (${formatBytes(apiLogSize)})` : "Clear"}</SecondaryButton>
 
                   </div>
                 </div>
@@ -789,7 +779,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>Incoming Batch</span>
                       <span className={ROW_DESC_CLASS}>Preview gained, lost, crafting, and mod rank changes without modifying your inventory.</span>
                     </div>
-                    <button className="btn-secondary" onClick={() => setShowInventoryBatchPreview(true)}>Preview</button>
+                    <SecondaryButton onClick={() => setShowInventoryBatchPreview(true)}>Preview</SecondaryButton>
                   </div>
                 </div>
 
@@ -806,7 +796,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       </span>
                     </div>
                     <div />{/* Go To Folder placeholder */}
-                    <button className="btn-secondary" onClick={async () => {
+                    <SecondaryButton onClick={async () => {
                       setNotifyTestResult("");
                       if (!(await ensurePermission())) {
                         setNotifyTestResult("Permission denied — notifications are blocked for FrameForge in your system settings.");
@@ -814,7 +804,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       }
                       await notify("FrameForge", "Test notification — watched fissure alerts will look like this.");
                       setNotifyTestResult("Sent. If nothing appeared, the OS notification daemon is dropping it.");
-                    }}>Send</button>
+                    }}>Send</SecondaryButton>
                     <div />{/* Clear placeholder */}
 
                     {/* Overlay Log */}
@@ -823,11 +813,11 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_DESC_CLASS}>Step-by-step log of the last relic overlay attempt.</span>
                     </div>
                     <div />{/* Go To Folder placeholder */}
-                    <button className="btn-secondary" onClick={async () => {
+                    <SecondaryButton onClick={async () => {
                       try { alert(await invoke<string>("get_overlay_session_log")); }
                       catch (e) { alert(`Error: ${e}`); }
-                    }}>View</button>
-                    <button className="btn-secondary" onClick={async () => {
+                    }}>View</SecondaryButton>
+                    <SecondaryButton onClick={async () => {
                       try {
                         const log = await invoke<string>("get_overlay_session_log");
                         navigator.clipboard.writeText(log).then(() => {
@@ -836,15 +826,15 @@ export default function SettingsModal(props: SettingsModalProps) {
                         }).catch(() => {});
                       }
                       catch (e) { alert(`Error: ${e}`); }
-                    }}>{overlayLogCopied ? "✓ Copied" : "Copy"}</button>
+                    }}>{overlayLogCopied ? "✓ Copied" : "Copy"}</SecondaryButton>
 
                     {/* Auto-capture */}
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Auto-capture</span>
                       <span className={ROW_DESC_CLASS}>Automatically saves a screenshot and OCR session log for every relic reward screen. One folder is created per relic in the diagnostics directory.</span>
                     </div>
-                    <button className="btn-secondary" onClick={() => invoke("open_debug_folder", { which: "diag" }).catch(() => {})}>Go To Folder</button>
-                    <button className="btn-secondary"
+                    <SecondaryButton onClick={() => invoke("open_debug_folder", { which: "diag" }).catch(() => {})}>Go To Folder</SecondaryButton>
+                    <SecondaryButton
                       style={{ background: autoDiagEnabled ? "rgba(56,139,253,.15)" : undefined, borderColor: autoDiagEnabled ? "var(--accent)" : undefined }}
                       onClick={() => {
                         const next = !autoDiagEnabled;
@@ -852,12 +842,12 @@ export default function SettingsModal(props: SettingsModalProps) {
                         localStorage.setItem(PREFERENCE_KEYS.AUTO_DIAGNOSTICS, String(next));
                         settingsRef.current = { ...settingsRef.current, autoDiagEnabled: next };
                         saveAllSettings();
-                      }}>{autoDiagEnabled ? "On" : "Off"}</button>
-                    <button className="btn-secondary"
+                      }}>{autoDiagEnabled ? "On" : "Off"}</SecondaryButton>
+                    <SecondaryButton
                       style={{ color: diagFolderSize > 0 ? "var(--red)" : undefined, borderColor: diagFolderSize > 0 ? "var(--red)" : undefined }}
                       disabled={diagFolderSize === 0}
                       onClick={async () => { await invoke("clear_diag_folder"); setDiagFolderSize(0); }}
-                    >{diagFolderSize > 0 ? `Clear (${formatBytes(diagFolderSize)})` : "Clear"}</button>
+                    >{diagFolderSize > 0 ? `Clear (${formatBytes(diagFolderSize)})` : "Clear"}</SecondaryButton>
 
                     {/* Manual Capture */}
                     <div className={ROW_INFO_CLASS}>
@@ -867,14 +857,14 @@ export default function SettingsModal(props: SettingsModalProps) {
                         {diagPath && <span style={{ display: "block", marginTop: 2, color: "var(--green)", fontSize: 11 }}>Saved.</span>}
                       </span>
                     </div>
-                    <button className="btn-secondary" onClick={() => invoke("open_debug_folder", { which: "manual_capture" }).catch(() => {})}>Go To Folder</button>
-                    <button className="btn-secondary" disabled={diagCapturing}
+                    <SecondaryButton onClick={() => invoke("open_debug_folder", { which: "manual_capture" }).catch(() => {})}>Go To Folder</SecondaryButton>
+                    <SecondaryButton disabled={diagCapturing}
                       onClick={async () => {
                         setDiagCapturing(true); setDiagPath(null);
                         try { const p = await invoke<string>("capture_diagnostics"); setDiagPath(p); reloadDebugSizes(); }
                         catch (e) { setDiagPath(`Error: ${e}`); }
                         finally { setDiagCapturing(false); }
-                      }}>{diagCapturing ? "Working…" : "Capture"}</button>
+                      }}>{diagCapturing ? "Working…" : "Capture"}</SecondaryButton>
                     <div />{/* Clear placeholder */}
 
                     {/* Memory Probe */}
@@ -882,8 +872,8 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>Memory Probe</span>
                       <span className={ROW_DESC_CLASS}>Dumps inventory strings from Warframe's memory.</span>
                     </div>
-                    <button className="btn-secondary" onClick={() => invoke("open_debug_folder", { which: "probe" }).catch(() => {})}>Go To Folder</button>
-                    <button className="btn-secondary" disabled={memoryProbing} onClick={() => {
+                    <SecondaryButton onClick={() => invoke("open_debug_folder", { which: "probe" }).catch(() => {})}>Go To Folder</SecondaryButton>
+                    <SecondaryButton disabled={memoryProbing} onClick={() => {
                       setMemoryProbing(true);
                       invoke<string>("dump_memory_probe")
                         .then(result => {
@@ -892,30 +882,30 @@ export default function SettingsModal(props: SettingsModalProps) {
                         })
                         .catch(e => alert("Probe failed: " + String(e)))
                         .finally(() => setMemoryProbing(false));
-                    }}>{memoryProbing ? "Running…" : "Run"}</button>
-                    <button className="btn-secondary"
+                    }}>{memoryProbing ? "Running…" : "Run"}</SecondaryButton>
+                    <SecondaryButton
                       style={{ color: probeSize > 0 ? "var(--red)" : undefined, borderColor: probeSize > 0 ? "var(--red)" : undefined }}
                       disabled={probeSize === 0}
                       onClick={async () => { await invoke("clear_debug_data", { which: "probe" }); setProbeSize(0); }}
-                    >{probeSize > 0 ? `Clear (${formatBytes(probeSize)})` : "Clear"}</button>
+                    >{probeSize > 0 ? `Clear (${formatBytes(probeSize)})` : "Clear"}</SecondaryButton>
 
                     {/* Raw Memory Record */}
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Raw Memory Record</span>
                       <span className={ROW_DESC_CLASS}>{rawScanning ? "Recording — navigate in-game, then click Stop." : "Records all readable memory strings while you navigate in-game."}</span>
                     </div>
-                    <button className="btn-secondary" onClick={() => invoke("open_debug_folder", { which: "raw_scan" }).catch(() => {})}>Go To Folder</button>
-                    <button className={rawScanning ? "btn-danger" : "btn-secondary"}
+                    <SecondaryButton onClick={() => invoke("open_debug_folder", { which: "raw_scan" }).catch(() => {})}>Go To Folder</SecondaryButton>
+                    <ActionButton variant={rawScanning ? "danger" : "secondary"}
                       onClick={() => {
                         invoke<string>("toggle_raw_scan")
                           .then(status => { const active = status === "started"; setRawScanning(active); if (!active) reloadDebugSizes(); })
                           .catch(e => alert("Error: " + String(e)));
-                      }}>{rawScanning ? "Stop" : "Record"}</button>
-                    <button className="btn-secondary"
+                      }}>{rawScanning ? "Stop" : "Record"}</ActionButton>
+                    <SecondaryButton
                       style={{ color: rawScanSize > 0 ? "var(--red)" : undefined, borderColor: rawScanSize > 0 ? "var(--red)" : undefined }}
                       disabled={rawScanSize === 0 || rawScanning}
                       onClick={async () => { await invoke("clear_debug_data", { which: "raw_scan" }); setRawScanSize(0); }}
-                    >{rawScanSize > 0 ? `Clear (${formatBytes(rawScanSize)})` : "Clear"}</button>
+                    >{rawScanSize > 0 ? `Clear (${formatBytes(rawScanSize)})` : "Clear"}</SecondaryButton>
 
                     {/* Memory Relic Debug */}
                     <div className={ROW_INFO_CLASS}>
@@ -923,7 +913,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_DESC_CLASS}>{memRelicDebugRunning ? "Running — tailing EE.log and scanning Warframe memory. Log at %TEMP%\\frameforge_mem_relic_debug.log." : "Tails EE.log and scans Warframe memory for relic reward patterns. Writes everything to a log file."}</span>
                     </div>
                     <div />{/* no folder button */}
-                    <button className={memRelicDebugRunning ? "btn-danger" : "btn-secondary"}
+                    <ActionButton variant={memRelicDebugRunning ? "danger" : "secondary"}
                       onClick={async () => {
                         if (memRelicDebugRunning) {
                           await invoke("stop_memory_relic_debug").catch(() => {});
@@ -935,7 +925,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                             alert(`Memory relic debug started.\nLog: ${path}`);
                           } catch (e) { alert("Error: " + String(e)); }
                         }
-                      }}>{memRelicDebugRunning ? "End" : "Start"}</button>
+                      }}>{memRelicDebugRunning ? "End" : "Start"}</ActionButton>
                     <div />{/* no clear button */}
 
                   </div>
@@ -954,12 +944,12 @@ export default function SettingsModal(props: SettingsModalProps) {
                       </span>
                     </div>
                     <div />
-                    <button className="btn-secondary" disabled={relicPickOcrTesting} onClick={async () => {
+                    <SecondaryButton disabled={relicPickOcrTesting} onClick={async () => {
                       setRelicPickOcrTesting(true); setRelicPickOcrResult(null);
                       try { setRelicPickOcrResult(await invoke<string>("debug_detect_fissure_era")); }
                       catch (e) { setRelicPickOcrResult(`Error: ${e}`); }
                       finally { setRelicPickOcrTesting(false); }
-                    }}>{relicPickOcrTesting ? "Running…" : "Test OCR"}</button>
+                    }}>{relicPickOcrTesting ? "Running…" : "Test OCR"}</SecondaryButton>
                     <div />
 
                     {/* Test Overlay */}
@@ -978,11 +968,11 @@ export default function SettingsModal(props: SettingsModalProps) {
                     >
                       {["LITH","MESO","NEO","AXI","ALL"].map(e => <option key={e} value={e}>{e}</option>)}
                     </select>
-                    <button className="btn-secondary" onClick={async () => {
+                    <SecondaryButton onClick={async () => {
                       setRelicPickTestResult(null);
                       try { setRelicPickTestResult(await invoke<string>("test_relic_pick_overlay", { era: relicPickTestEra })); }
                       catch (e) { setRelicPickTestResult(`Error: ${e}`); }
-                    }}>Launch</button>
+                    }}>Launch</SecondaryButton>
 
                     {/* EE.log tail — reveals what string to trigger on */}
                     <div className={ROW_INFO_CLASS}>
@@ -993,11 +983,11 @@ export default function SettingsModal(props: SettingsModalProps) {
                       </span>
                     </div>
                     <div />
-                    <button className="btn-secondary" onClick={async () => {
+                    <SecondaryButton onClick={async () => {
                       setEeLogTail(null);
                       try { setEeLogTail(await invoke<string>("debug_ee_log_tail")); }
                       catch (e) { setEeLogTail(`Error: ${e}`); }
-                    }}>Tail Log</button>
+                    }}>Tail Log</SecondaryButton>
                     <div />
                     {eeLogTail && (
                       <div style={{ gridColumn: "1 / -1", marginTop: 4 }}>
@@ -1027,19 +1017,19 @@ export default function SettingsModal(props: SettingsModalProps) {
                         When on, writes a JSON file per scan to the Unmatched Paths folder for any inventory path with no WFCD match or that fell to the Misc catch-all.
                       </span>
                     </div>
-                    <button className="btn-secondary"
-                      onClick={() => invoke("open_debug_folder", { which: "unmatched_paths" }).catch(() => {})}>Go To Folder</button>
-                    <button className="btn-secondary"
+                    <SecondaryButton
+                      onClick={() => invoke("open_debug_folder", { which: "unmatched_paths" }).catch(() => {})}>Go To Folder</SecondaryButton>
+                    <SecondaryButton
                       style={{ background: debugCatEnabled ? "rgba(56,139,253,.15)" : undefined, borderColor: debugCatEnabled ? "var(--accent)" : undefined }}
                       onClick={() => invoke<boolean>("toggle_debug_categorization").then(setDebugCatEnabled).catch(() => {})}>
                       {debugCatEnabled ? "On" : "Off"}
-                    </button>
-                    <button className="btn-secondary"
+                    </SecondaryButton>
+                    <SecondaryButton
                       style={{ color: unmatchedPathsSize > 0 ? "var(--red)" : undefined, borderColor: unmatchedPathsSize > 0 ? "var(--red)" : undefined }}
                       disabled={unmatchedPathsSize === 0}
                       onClick={async () => { await invoke("clear_debug_data", { which: "unmatched_paths" }); setUnmatchedPathsSize(0); }}>
                       {unmatchedPathsSize > 0 ? `Clear (${formatBytes(unmatchedPathsSize)})` : "Clear"}
-                    </button>
+                    </SecondaryButton>
                   </div>
                 </div>
 

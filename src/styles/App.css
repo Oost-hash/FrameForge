@@ -169,21 +169,6 @@
 }
 .settings-msg { font-size: 11px; color: var(--green); margin-top: 8px; }
 
-.btn-secondary {
-  padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer;
-  border: 1px solid var(--border); background: var(--surface); color: var(--text);
-  transition: all .15s; flex-shrink: 0; white-space: nowrap;
-}
-.btn-secondary:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-.btn-secondary:disabled { opacity: .5; cursor: default; }
-
-.btn-danger {
-  padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer;
-  border: 1px solid rgba(248,81,73,.4); background: rgba(248,81,73,.08); color: var(--red);
-  transition: all .15s; flex-shrink: 0; white-space: nowrap;
-}
-.btn-danger:hover { border-color: var(--red); background: rgba(248,81,73,.15); }
-
 .body { display: flex; flex: 1; overflow: hidden; min-height: 0; }
 .app-content { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
 .module-content { flex: 1; display: flex; min-width: 0; min-height: 0; overflow: hidden; }
@@ -491,14 +476,6 @@
 }
 .relic-icon { flex-shrink: 0; opacity: .9; }
 
-/* Detail close button (used in modal header) */
-.craft-detail-close {
-  background: none; border: none; cursor: pointer; color: var(--muted);
-  font-size: 14px; padding: 2px 6px; flex-shrink: 0; border-radius: 4px;
-  transition: color .1s, background .1s;
-}
-.craft-detail-close:hover { color: var(--text); background: rgba(255,255,255,.06); }
-
 .tracking-toggle { display: flex; gap: 2px; }
 .tracking-toggle-btn {
   padding: 2px 7px; border-radius: 4px; border: 1px solid var(--border);
@@ -506,10 +483,6 @@
 }
 .tracking-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
 .tracking-toggle-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(56,139,253,.1); }
-
-.toggle-btn { padding: 3px 10px; border-radius: 6px; border: 1px solid var(--border); background: none; color: var(--muted); cursor: pointer; font-size: 11px; transition: all .15s; }
-.toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
-.toggle-active { border-color: var(--accent) !important; color: var(--accent) !important; background: rgba(56,139,253,.1) !important; }
 
 /* ── Scrollbars ── */
 ::-webkit-scrollbar       { width: 6px; }

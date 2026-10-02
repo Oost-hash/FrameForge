@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef, type Dispatch, type 
 import { invoke } from "@tauri-apps/api/core";
 import { HelpTip } from "./shared/HelpTip";
 import FilterPresets from "./shared/FilterPresets";
+import { SecondaryButton } from "./shared/ui/ActionButton";
 import { PREFERENCE_KEYS } from "./constants/preferences";
 import { matchesSearchTerms, splitSearchTerms } from "./lib/search";
 import { RELIC_DROP_RATES, RELIC_REFINEMENT_LABELS, RELIC_REFINEMENT_ORDER } from "./constants/relics";
@@ -988,7 +989,7 @@ export default function RelicHelper({ inventory, colorblindMode = false, filters
           <button className={`fchip ${sortMode === "az"     ? "fchip-on" : ""}`} onClick={() => set("sortMode", "az")}>A–Z</button>
           <button className={`fchip ${sortMode === "za"     ? "fchip-on" : ""}`} onClick={() => set("sortMode", "za")}>Z–A</button>
           <span className="fbar-sep"/>
-          {dropError && <button className="btn-secondary ml-1" onClick={() => loadDrops(true)}>↺ Retry</button>}
+          {dropError && <SecondaryButton className="ml-1" onClick={() => loadDrops(true)}>↺ Retry</SecondaryButton>}
           <span className="ml-auto text-[11px] text-muted">
             {dropLoading ? "Loading…" : `${visibleDrops.length} relics · ${ownedCount} owned`}
           </span>
@@ -1011,11 +1012,11 @@ export default function RelicHelper({ inventory, colorblindMode = false, filters
 
       {visibleDrops.length > PAGE_SIZE && (
         <div className={RL_PAGINATION}>
-          <button className="btn-secondary" disabled={page === 0} onClick={() => setPage(p => p - 1)}>← Prev</button>
+          <SecondaryButton disabled={page === 0} onClick={() => setPage(p => p - 1)}>← Prev</SecondaryButton>
           <span style={{ fontSize: 11, color: "var(--muted)" }}>
             {page + 1} / {totalPages} &nbsp;({visibleDrops.length} relics)
           </span>
-          <button className="btn-secondary" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>Next →</button>
+          <SecondaryButton disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>Next →</SecondaryButton>
         </div>
       )}
 
