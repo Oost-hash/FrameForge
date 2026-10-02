@@ -8,7 +8,7 @@ import { TAURI_COMMANDS, TAURI_EVENTS } from "../constants/tauri";
 import type { SettingsFile } from "../types/tauri";
 import type { RelicPickPayload, RelicPickRelic, RelicPickReward } from "../types/relics";
 import type { RelicPickLines, RelicPickPriority } from "../types/settings";
-import "../styles/relic-overlay/RelicPickOverlay.css";
+import "./RelicPickOverlay.css";
 
 // ── Tailwind class constants (formerly RelicPickOverlay.css) ──────────────────
 // Note: body transparency stays in RelicPickOverlay.css (document context).

@@ -24,7 +24,7 @@ async function saveOverlayRoll(
   await emit(TAURI_EVENTS.RIVEN_ROLL_SAVED).catch(() => {});
 }
 
-import "../styles/riven/RivenOverlayWindow.css";
+import "./RivenOverlayWindow.css";
 
 // ── Tailwind class constants (formerly RivenOverlayWindow.css) ────────────────
 

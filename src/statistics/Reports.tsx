@@ -5,7 +5,7 @@ import ItemImg from "../ItemImg";
 import { TAURI_COMMANDS, TAURI_EVENTS } from "../constants/tauri";
 import type { WfmTopItem } from "../types/market";
 import type { Trade, TradeSession } from "../types/trades";
-import "../styles/statistics/Reports.css";
+import "./Reports.css";
 
 interface CategoryStat {
   category: string;

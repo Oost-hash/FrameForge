@@ -7,7 +7,7 @@ import { openWiki, copyWikiLink } from "./lib/wiki";
 import { formatUnixTime } from "./lib/formatters";
 import type { ClockFormat } from "./types/settings";
 import type { ChangeLogEntry } from "./types/inventory";
-import "./styles/ChangeLog.css";
+import "./ChangeLog.css";
 
 export const CHANGE_BATCH_GAP_SECONDS = 8;
 const MIN_LOG_HEIGHT = 100;
