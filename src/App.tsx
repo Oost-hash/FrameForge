@@ -654,7 +654,7 @@ export default function App() {
 
   return (
     <ImgCacheDirContext.Provider value={imgCacheDir}>
-    <div className="shell">
+    <div className="flex h-full flex-col overflow-hidden">
 
       {/* ── Header ── */}
       <header className="flex h-[var(--header-h)] shrink-0 items-center gap-[12px] border-b border-border bg-surface px-[16px]">
@@ -774,12 +774,12 @@ export default function App() {
 
       {showInventoryBatchPreview && <InventoryBatchPreview onClose={closeInventoryBatchPreview} />}
 
-      <div className="body">
+      <div className="flex flex-1 overflow-hidden min-h-0">
 
         <AppNavigation activeModule={activeModule} onModuleChange={activateModule} />
 
-        <div className="app-content">
-        <div className="module-content">
+        <div className="flex min-w-0 min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="flex min-w-0 min-h-0 flex-1">
         {/* ── Inventory module ── */}
         {visitedModules.has("inventory") && (
         <KeepMountedWhenHidden active={activeModule === "inventory"}>
@@ -796,7 +796,7 @@ export default function App() {
               fetchMsg={fetchMsg}
             />
 
-            <div className="main">
+            <div className="flex min-w-0 min-h-0 flex-1 flex-col overflow-hidden">
               {monitoring && warframeRunning && !inventorySynced && (
                 <div className="sync-banner">
                   Inventory not synced yet — complete a mission or visit a relay to load your inventory
