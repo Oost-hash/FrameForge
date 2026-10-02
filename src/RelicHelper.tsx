@@ -839,8 +839,8 @@ export default function RelicHelper({ inventory, colorblindMode = false, filters
           <button className={`fchip ${sortMode === "az"     ? "fchip-on" : ""}`} onClick={() => set("sortMode", "az")}>A–Z</button>
           <button className={`fchip ${sortMode === "za"     ? "fchip-on" : ""}`} onClick={() => set("sortMode", "za")}>Z–A</button>
           <span className="fbar-sep"/>
-          {dropError && <button className="btn-secondary" style={{ marginLeft: 4 }} onClick={() => loadDrops(true)}>↺ Retry</button>}
-          <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--muted)" }}>
+          {dropError && <button className="btn-secondary ml-1" onClick={() => loadDrops(true)}>↺ Retry</button>}
+          <span className="ml-auto text-[11px] text-muted">
             {dropLoading ? "Loading…" : `${visibleDrops.length} relics · ${ownedCount} owned`}
           </span>
           <ViewToggle view={relicView} onChange={v => { setRelicView(v); localStorage.setItem(PREFERENCE_KEYS.RELIC_VIEW, v); }} />

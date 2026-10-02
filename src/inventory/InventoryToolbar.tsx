@@ -65,7 +65,7 @@ export default function InventoryToolbar({
         <button className={`fchip ${sortMode === "qty-asc" ? "fchip-on" : ""}`} onClick={() => onFiltersChange(previous => ({ ...previous, sortMode: "qty-asc" }))}>Qty ↑</button>
         <button className={`fchip ${sortMode === "name-asc" ? "fchip-on" : ""}`} onClick={() => onFiltersChange(previous => ({ ...previous, sortMode: "name-asc" }))}>A-Z</button>
         <button className={`fchip ${sortMode === "name-desc" ? "fchip-on" : ""}`} onClick={() => onFiltersChange(previous => ({ ...previous, sortMode: "name-desc" }))}>Z-A</button>
-        <span className="item-count-label" style={{ marginLeft: "auto" }}>{itemCount} item{itemCount !== 1 ? "s" : ""}{itemCount === 1000 ? " (capped)" : ""}</span>
+        <span className="item-count-label ml-auto">{itemCount} item{itemCount !== 1 ? "s" : ""}{itemCount === 1000 ? " (capped)" : ""}</span>
         <ViewToggle
           view={view === "text-cards" ? "cards" : view === "list-compact" ? "list" : view}
           onChange={onViewChange}

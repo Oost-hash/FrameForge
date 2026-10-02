@@ -553,7 +553,7 @@ export default function MarketHelper({ inventory, refreshKey, crafting, onWfmLog
           <button className={`fchip ${sortMode === "az"     ? "fchip-on" : ""}`} onClick={() => set("sortMode", "az")}>A–Z</button>
           <button className={`fchip ${sortMode === "za"     ? "fchip-on" : ""}`} onClick={() => set("sortMode", "za")}>Z–A</button>
           <span className="fbar-sep"/>
-          <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--muted)" }}>{visibleSets.length} sets</span>
+          <span className="ml-auto text-[11px] text-muted">{visibleSets.length} sets</span>
           <HelpTip items={[
             { swatch: "rgba(240,192,64,.5)", icon: "✓", label: "Complete set", desc: "Gold border + ✓ — all parts in inventory" },
             { icon: "+",  label: "+ Dupes",    desc: "Extra copies of at least one part" },

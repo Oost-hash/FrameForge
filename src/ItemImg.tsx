@@ -4,7 +4,7 @@ import { warframeStatImageUrl } from "./constants/urls";
 
 function BlueprintIcon() {
   return (
-    <svg className="img-fallback size-8 shrink-0 rounded border-0 bg-transparent p-0" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg className="img-fallback size-8 shrink-0 rounded-[4px] border-0 bg-transparent p-0" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="5" y="2" width="17" height="22" rx="1.5" fill="#0d1f33" stroke="#388bfd" strokeWidth="1.2"/>
       <path d="M18 2 L22 6 L18 6 Z" fill="#388bfd" opacity="0.5"/>
       <line x1="8" y1="11" x2="19" y2="11" stroke="#388bfd" strokeWidth="1" opacity="0.9"/>
@@ -48,10 +48,10 @@ export default function ItemImg({ imageName, category = "?", size = 32, classNam
   }, [imageName]);
 
   const imageClassName = className === "img"
-    ? `${className} shrink-0 rounded object-contain opacity-0 -translate-x-1 -translate-y-1 scale-90 transition-[opacity,transform] duration-[250ms] ease-out${loaded ? " translate-x-0 translate-y-0 scale-100 opacity-100" : ""}`
+    ? `${className} shrink-0 rounded-[4px] object-contain opacity-0 -translate-x-1 -translate-y-1 scale-90 transition-[opacity,transform] duration-[250ms] ease-[ease-out]${loaded ? " translate-x-0 translate-y-0 scale-100 opacity-100" : ""}`
     : className;
   const fallbackClassNames = fallbackClassName === "img-fallback"
-    ? `${fallbackClassName} flex shrink-0 items-center justify-center rounded border border-border bg-white/6 font-semibold text-muted`
+    ? `${fallbackClassName} flex shrink-0 items-center justify-center rounded-[4px] border border-border bg-white/6 font-semibold text-muted`
     : fallbackClassName;
 
   if (!imageName || failed) {

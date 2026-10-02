@@ -113,11 +113,10 @@ function ArchonCrystalIcon({ shards }: { shards: ArchonShard[] }) {
     const pts = verts.map(v => `${v.x.toFixed(2)},${v.y.toFixed(2)}`).join(" ");
     return (
       <span
-        className="craft-icon-tag craft-icon-archon"
+        className="craft-icon-tag craft-icon-archon p-0"
         title={`Archon Shards:\n${lines}`}
-        style={{ padding: 0 }}
       >
-        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" style={{ display: "block" }}>
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" className="block">
           {/* 1. Tauforged wedge fills — drawn first so outline goes on top */}
           {Array.from({ length: 5 }, (_, i) => {
             const s = shards?.[i];
@@ -744,7 +743,7 @@ export default function Foundry({ inventory, refreshKey, crafting, subsummedWarf
           <button className={`fchip ${filterLvlCap   ? "fchip-on" : ""}`} onClick={() => onFiltersChange({ ...filters, filterLvlCap: !filterLvlCap, ...(!filterLvlCap ? { activeCat: "All" } : {}) })}>Lvl &gt; 30</button>
           <span className="fbar-sep"/>
           <FilterPresets module="foundry" {...{ filters, onFiltersChange, filterPresets, onFilterPresetsChange, onOpenSettings }} />
-          <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--muted)" }}>{visible.length} items</span>
+          <span className="ml-auto text-[11px] text-muted">{visible.length} items</span>
           <ViewToggle view={craftView} onChange={v => { setCraftView(v); localStorage.setItem(PREFERENCE_KEYS.FOUNDRY_VIEW, v); }} />
           <HelpTip items={[
             { swatch: "rgba(240,192,64,.5)", icon: "✓✓", label: "Owned",          desc: "Gold border + ✓✓ — item built and in inventory" },
