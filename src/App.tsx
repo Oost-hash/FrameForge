@@ -798,7 +798,7 @@ export default function App() {
 
             <div className="flex min-w-0 min-h-0 flex-1 flex-col overflow-hidden">
               {monitoring && warframeRunning && !inventorySynced && (
-                <div className="sync-banner">
+                <div className="shrink-0 border-b border-[#e3b341]/20 bg-[#e3b341]/[.08] px-4 py-2 text-xs text-[#e3b341]">
                   Inventory not synced yet — complete a mission or visit a relay to load your inventory
                 </div>
               )}

@@ -40,8 +40,8 @@ export default function ConsoleLogin({ onLogin }: Props) {
   };
 
   return (
-    <div className="settings-section mt-3 border-t border-white/6 pt-3">
-      <div className="settings-section-title flex items-center gap-2">
+    <div className="mt-3 border-t border-white/6 border-b border-[rgba(48,54,61,.6)] px-5 pt-3 pb-3 last:border-b-0">
+      <div className="mb-2.5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.07em] text-muted">
         Console / Web Login
         <span className="rounded-[4px] border border-[#ffb400]/30 bg-[#ffb400]/15 px-[5px] py-px text-[9px] font-bold tracking-[.06em] text-[#ffb400]">EXPERIMENTAL</span>
       </div>
@@ -71,7 +71,7 @@ export default function ConsoleLogin({ onLogin }: Props) {
       )}
 
       {msg && (
-        <div className="settings-msg mt-1.5" style={{ color: status === "error" ? "var(--red)" : "var(--green)" }}>
+        <div className="mt-2 text-[11px]" style={{ color: status === "error" ? "var(--red)" : "var(--green)" }}>
           {msg}
         </div>
       )}

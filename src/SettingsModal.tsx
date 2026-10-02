@@ -31,6 +31,9 @@ const ROW_DESC_CLASS = "text-[11px] leading-[1.4] text-muted";
 const SELECT_CLASS = "shrink-0 cursor-pointer rounded-[5px] border border-border bg-surface px-2 py-[3px] text-[12px] text-foreground [color-scheme:dark] hover:border-[rgba(56,139,253,.5)]";
 const STEP_BTN_CLASS = "flex min-w-0 cursor-pointer items-center justify-center border-0 border-border bg-[rgba(255,255,255,.03)] p-0 text-[6px] leading-none text-muted first:border-b hover:bg-[rgba(56,139,253,.18)] hover:text-accent focus-visible:outline focus-visible:outline-accent focus-visible:-outline-offset-1";
 const DEBUG_TABLE_CLASS = "debug-table grid grid-cols-[1fr_auto_auto_auto] items-center gap-x-2 gap-y-3";
+const SECTION_CLASS = "border-b border-[rgba(48,54,61,.6)] px-5 py-3 last:border-b-0";
+const SECTION_TITLE_CLASS = "mb-2.5 text-[10px] font-bold uppercase tracking-[.07em] text-muted";
+const SECTION_MSG_CLASS = "mt-2 text-[11px] text-green";
 
 export interface SettingsModalProps {
   open: boolean;
@@ -177,8 +180,8 @@ export default function SettingsModal(props: SettingsModalProps) {
               {settingsTab === "general" && <>
 
                 {/* Foundry */}
-                <div className="settings-section">
-                  <div className="settings-section-title">Foundry</div>
+                <div className={SECTION_CLASS}>
+                  <div className={SECTION_TITLE_CLASS}>Foundry</div>
                   <div className={ROW_CLASS}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Items per page</span>
@@ -197,8 +200,8 @@ export default function SettingsModal(props: SettingsModalProps) {
                 </div>
 
                 {/* Memory Scanner */}
-                <div className="settings-section" style={{ borderColor: memoryScannerEnabled ? "rgba(240,192,64,.3)" : undefined }}>
-                  <div className="settings-section-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div className={SECTION_CLASS} style={{ borderColor: memoryScannerEnabled ? "rgba(240,192,64,.3)" : undefined }}>
+                  <div className={`${SECTION_TITLE_CLASS} flex items-center gap-2`}>
                     Memory Scanner
                     <span style={{ fontSize: 10, background: "rgba(240,192,64,.15)", color: "#f0c040", border: "1px solid rgba(240,192,64,.35)", borderRadius: 3, padding: "1px 6px", fontWeight: 700 }}>
                       EULA GREY AREA
@@ -222,8 +225,8 @@ export default function SettingsModal(props: SettingsModalProps) {
                 </div>
 
                 {/* Warframe API */}
-                <div className="settings-section">
-                  <div className="settings-section-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div className={SECTION_CLASS}>
+                  <div className={`${SECTION_TITLE_CLASS} flex items-center gap-2`}>
                     Warframe API
                     <span style={{ fontSize: 10, background: "rgba(240,192,64,.15)", color: "#f0c040", border: "1px solid rgba(240,192,64,.35)", borderRadius: 3, padding: "1px 6px", fontWeight: 700 }}>
                       SUSPENDED
@@ -242,8 +245,8 @@ export default function SettingsModal(props: SettingsModalProps) {
                 </div>
 
                 {/* Account Login */}
-                <div className="settings-section">
-                  <div className="settings-section-title">Account Login</div>
+                <div className={SECTION_CLASS}>
+                  <div className={SECTION_TITLE_CLASS}>Account Login</div>
                   <div style={{
                     fontSize: 11, color: "var(--muted)", lineHeight: 1.6,
                     background: "rgba(255,100,100,.07)", border: "1px solid rgba(255,100,100,.2)",
@@ -264,8 +267,8 @@ export default function SettingsModal(props: SettingsModalProps) {
                 </div>
 
                 {/* Modular Window */}
-                <div className="settings-section">
-                  <div className="settings-section-title">Modular Window</div>
+                <div className={SECTION_CLASS}>
+                  <div className={SECTION_TITLE_CLASS}>Modular Window</div>
                   <div className={ROW_CLASS}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Pop-out</span>
@@ -289,8 +292,8 @@ export default function SettingsModal(props: SettingsModalProps) {
               {settingsTab === "overlays" && <>
 
                 {/* Relic Overlay */}
-                <div className="settings-section">
-                  <div className="settings-section-title">Relic Reward Overlay</div>
+                <div className={SECTION_CLASS}>
+                  <div className={SECTION_TITLE_CLASS}>Relic Reward Overlay</div>
                   {overlayStatus && (
                     <div style={{ fontSize: 12, padding: '4px 8px', marginBottom: 6,
                       background: 'rgba(255,255,255,0.05)', borderRadius: 4,
@@ -354,8 +357,8 @@ export default function SettingsModal(props: SettingsModalProps) {
                 </div>
 
                 {/* Relic Pick Overlay */}
-                <div className="settings-section">
-                  <div className="settings-section-title">Relic Pick Overlay</div>
+                <div className={SECTION_CLASS}>
+                  <div className={SECTION_TITLE_CLASS}>Relic Pick Overlay</div>
                   <div className={ROW_CLASS}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Enable</span>
@@ -421,8 +424,8 @@ export default function SettingsModal(props: SettingsModalProps) {
                 </div>
 
                 {/* Riven Overlay */}
-                <div className="settings-section">
-                  <div className="settings-section-title">Riven Overlay</div>
+                <div className={SECTION_CLASS}>
+                  <div className={SECTION_TITLE_CLASS}>Riven Overlay</div>
                   <div className={ROW_CLASS}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Enable</span>
@@ -454,8 +457,8 @@ export default function SettingsModal(props: SettingsModalProps) {
                 </div>
 
                 {/* Relic Overlay — Memory Trigger */}
-                <div className="settings-section">
-                  <div className="settings-section-title">Memory Trigger <span style={{ fontSize: 11, opacity: 0.55, fontWeight: 400, marginLeft: 6 }}>in development</span></div>
+                <div className={SECTION_CLASS}>
+                  <div className={SECTION_TITLE_CLASS}>Memory Trigger <span style={{ fontSize: 11, opacity: 0.55, fontWeight: 400, marginLeft: 6 }}>in development</span></div>
                   <div className={ROW_CLASS}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Use memory scan</span>
@@ -482,8 +485,8 @@ export default function SettingsModal(props: SettingsModalProps) {
 
               {/* ════════════ MARKET ════════════ */}
               {settingsTab === "market" && <>
-                <div className="settings-section">
-                  <div className="settings-section-title">Bulk Prices</div>
+                <div className={SECTION_CLASS}>
+                  <div className={SECTION_TITLE_CLASS}>Bulk Prices</div>
                   <div className={ROW_CLASS}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Force Refresh</span>
@@ -492,8 +495,8 @@ export default function SettingsModal(props: SettingsModalProps) {
                     <BulkPriceRefreshButton />
                   </div>
                 </div>
-                <div className="settings-section">
-                  <div className="settings-section-title">Status Automation</div>
+                <div className={SECTION_CLASS}>
+                  <div className={SECTION_TITLE_CLASS}>Status Automation</div>
                   {!wfmLoggedIn && (
                     <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 10, lineHeight: 1.5,
                       padding: "6px 10px", background: "rgba(255,255,255,.04)", borderRadius: 5 }}>
@@ -564,8 +567,8 @@ export default function SettingsModal(props: SettingsModalProps) {
                     >{wfmAutoInvisible ? "On" : "Off"}</SecondaryButton>
                   </div>
                 </div>
-                <div className="settings-section">
-                  <div className="settings-section-title">Sale Automation</div>
+                <div className={SECTION_CLASS}>
+                  <div className={SECTION_TITLE_CLASS}>Sale Automation</div>
                   <div className={ROW_CLASS} style={{ opacity: wfmLoggedIn ? 1 : 0.45, pointerEvents: wfmLoggedIn ? "auto" : "none" }}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Record automatic sales</span>
@@ -586,8 +589,8 @@ export default function SettingsModal(props: SettingsModalProps) {
 
               {/* ════════════ FILTERS ════════════ */}
               {settingsTab === "filters" && <>
-                <div className="settings-section">
-                  <div className="settings-section-title">Filter Presets</div>
+                <div className={SECTION_CLASS}>
+                  <div className={SECTION_TITLE_CLASS}>Filter Presets</div>
                   <div className={ROW_CLASS}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Page</span>
@@ -616,8 +619,8 @@ export default function SettingsModal(props: SettingsModalProps) {
 
               {/* ════════════ ACCESSIBILITY ════════════ */}
               {settingsTab === "accessibility" && <>
-                <div className="settings-section">
-                  <div className="settings-section-title">Appearance</div>
+                <div className={SECTION_CLASS}>
+                  <div className={SECTION_TITLE_CLASS}>Appearance</div>
                   <div className={ROW_CLASS}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Colorblind Mode</span>
@@ -673,8 +676,8 @@ export default function SettingsModal(props: SettingsModalProps) {
 
               {/* ════════════ DATA ════════════ */}
               {settingsTab === "data" && <>
-                <div className="settings-section">
-                  <div className="settings-section-title">Item Database</div>
+                <div className={SECTION_CLASS}>
+                  <div className={SECTION_TITLE_CLASS}>Item Database</div>
                   <div className={ROW_CLASS}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Catalog</span>
@@ -684,10 +687,10 @@ export default function SettingsModal(props: SettingsModalProps) {
                       {fetching ? "Fetching…" : "Refresh"}
                     </SecondaryButton>
                   </div>
-                  {fetchMsg && <div className="settings-msg">{fetchMsg}</div>}
+                  {fetchMsg && <div className={SECTION_MSG_CLASS}>{fetchMsg}</div>}
                 </div>
-                <div className="settings-section">
-                  <div className="settings-section-title">Inventory Cache</div>
+                <div className={SECTION_CLASS}>
+                  <div className={SECTION_TITLE_CLASS}>Inventory Cache</div>
                   <div className={ROW_CLASS}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Clear Cache</span>
@@ -716,10 +719,10 @@ export default function SettingsModal(props: SettingsModalProps) {
                       }}
                     >Clear Cache</DangerButton>
                   </div>
-                  {clearMsg && <div className="settings-msg">{clearMsg}</div>}
+                  {clearMsg && <div className={SECTION_MSG_CLASS}>{clearMsg}</div>}
                 </div>
-                <div className="settings-section" style={{ borderColor: "rgba(224,82,82,.3)" }}>
-                  <div className="settings-section-title" style={{ color: "var(--red)" }}>Factory Reset</div>
+                <div className={SECTION_CLASS} style={{ borderColor: "rgba(224,82,82,.3)" }}>
+                  <div className={SECTION_TITLE_CLASS} style={{ color: "var(--red)" }}>Factory Reset</div>
                   <div className={ROW_CLASS}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Reset Everything</span>
@@ -733,8 +736,8 @@ export default function SettingsModal(props: SettingsModalProps) {
               {/* ════════════ DEBUGGING ════════════ */}
               {settingsTab === "debugging" && <>
 
-                <div className="settings-section">
-                  <div className="settings-section-title">Loggers</div>
+                <div className={SECTION_CLASS}>
+                  <div className={SECTION_TITLE_CLASS}>Loggers</div>
                   <div className={DEBUG_TABLE_CLASS}>
 
                     {/* Inventory Snapshots */}
@@ -772,8 +775,8 @@ export default function SettingsModal(props: SettingsModalProps) {
                   </div>
                 </div>
 
-                <div className="settings-section">
-                  <div className="settings-section-title">Inventory Preview</div>
+                <div className={SECTION_CLASS}>
+                  <div className={SECTION_TITLE_CLASS}>Inventory Preview</div>
                   <div className={ROW_CLASS}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Incoming Batch</span>
@@ -783,8 +786,8 @@ export default function SettingsModal(props: SettingsModalProps) {
                   </div>
                 </div>
 
-                <div className="settings-section">
-                  <div className="settings-section-title">Diagnostics</div>
+                <div className={SECTION_CLASS}>
+                  <div className={SECTION_TITLE_CLASS}>Diagnostics</div>
                   <div className={DEBUG_TABLE_CLASS}>
 
                     {/* Test Notification */}
@@ -931,8 +934,8 @@ export default function SettingsModal(props: SettingsModalProps) {
                   </div>
                 </div>
 
-                <div className="settings-section">
-                  <div className="settings-section-title">Relic Pick Overlay</div>
+                <div className={SECTION_CLASS}>
+                  <div className={SECTION_TITLE_CLASS}>Relic Pick Overlay</div>
                   <div className={DEBUG_TABLE_CLASS}>
 
                     {/* OCR Era Test */}
@@ -1008,8 +1011,8 @@ export default function SettingsModal(props: SettingsModalProps) {
                 </div>
 
                 {/* ── Categorization Debug ── */}
-                <div className="settings-section">
-                  <div className="settings-section-title">Categorization Debug</div>
+                <div className={SECTION_CLASS}>
+                  <div className={SECTION_TITLE_CLASS}>Categorization Debug</div>
                   <div className={DEBUG_TABLE_CLASS}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Unmatched Paths</span>
@@ -1036,7 +1039,7 @@ export default function SettingsModal(props: SettingsModalProps) {
               </>}
 
               {/* ════ Shared About footer — always visible ════ */}
-              <div className="settings-section" style={{ marginTop: "auto", borderTop: "1px solid var(--border)", borderBottom: "none" }}>
+              <div className={SECTION_CLASS} style={{ marginTop: "auto", borderTop: "1px solid var(--border)", borderBottom: "none" }}>
                 <div className={ROW_CLASS}>
                   <div className={ROW_INFO_CLASS}>
                     <span className={ROW_LABEL_CLASS}>FrameForge</span>
