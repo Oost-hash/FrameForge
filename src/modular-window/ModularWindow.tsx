@@ -66,6 +66,11 @@ const MW_REQ_NAME =
   "flex-1 whitespace-nowrap overflow-hidden text-ellipsis min-w-0";
 const MW_REQ_COUNTS = "flex items-center gap-[2px] shrink-0 text-[11px] tabular-nums";
 const MW_REQ_ALL_GOOD = "pt-[3px] pb-[4px] text-[11px] text-success";
+const MW_QTY_HAVE = "text-success";
+const MW_QTY_NEED = "text-danger";
+const MW_QTY_SEP = "text-muted";
+const MW_QTY_REQUIRED = "text-muted";
+const MW_SHORTAGE = "shrink-0 rounded-[4px] bg-[rgba(248,81,73,.12)] px-[5px] py-px text-[11px] font-semibold text-danger";
 
 const MW_FAV_LIST = "shrink-0";
 const MW_FAV_ITEM =
@@ -346,10 +351,10 @@ export default function ModularWindow({
                       <div key={`${id}-${r.unique_name}`} className={MW_REQ_ROW}>
                         <span className={MW_REQ_NAME + (r.shortage > 0 ? " text-foreground" : " text-muted")}>{r.name}</span>
                         <span className={MW_REQ_COUNTS}>
-                          <span className={r.shortage === 0 ? "qty-have" : "qty-need"}>{fmt(r.owned)}</span>
-                          <span className="qty-sep">/</span>
-                          <span className="qty-required">{fmt(r.needed)}</span>
-                          {r.shortage > 0 && <span className="recipe-shortage">−{fmt(r.shortage)}</span>}
+                          <span className={r.shortage === 0 ? MW_QTY_HAVE : MW_QTY_NEED}>{fmt(r.owned)}</span>
+                          <span className={MW_QTY_SEP}>/</span>
+                          <span className={MW_QTY_REQUIRED}>{fmt(r.needed)}</span>
+                          {r.shortage > 0 && <span className={MW_SHORTAGE}>−{fmt(r.shortage)}</span>}
                         </span>
                       </div>
                     ))
