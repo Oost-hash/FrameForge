@@ -6,6 +6,11 @@ import { TIMER_LABELS } from "../constants/timers";
 import { getTimerInfo, fmtMs, matchesWatch } from "../TimerHelper";
 import type { FissureWatch } from "../types/settings";
 import type { CatalogItem, InventoryItem, RecipeComponent, RecipeComponentStatus } from "../types/items";
+
+const TRACKING_TOGGLE = "flex gap-[2px]";
+const TRACKING_TOGGLE_BTN =
+  "px-[7px] py-[2px] rounded-[4px] border border-border bg-transparent text-muted cursor-pointer text-[10px] transition-all duration-150 hover:border-accent! hover:text-accent!";
+const TRACKING_TOGGLE_ON = "border-accent! text-accent! bg-[rgba(56,139,253,.1)]!";
 import type { MatchedFissure } from "../types/worldstate";
 import { useWorldState } from "../worldstate";
 
@@ -400,9 +405,9 @@ export default function ModularWindow({
   );
 
   const trackingToggle = (
-    <div className="tracking-toggle">
-      <button className={`tracking-toggle-btn${trackingView === "need" ? " active" : ""}`} onClick={e => { e.stopPropagation(); setTrackingView("need"); }}>Missing</button>
-      <button className={`tracking-toggle-btn${trackingView === "all" ? " active" : ""}`} onClick={e => { e.stopPropagation(); setTrackingView("all"); }}>All</button>
+    <div className={TRACKING_TOGGLE}>
+      <button className={`${TRACKING_TOGGLE_BTN}${trackingView === "need" ? ` ${TRACKING_TOGGLE_ON}` : ""}`} onClick={e => { e.stopPropagation(); setTrackingView("need"); }}>Missing</button>
+      <button className={`${TRACKING_TOGGLE_BTN}${trackingView === "all" ? ` ${TRACKING_TOGGLE_ON}` : ""}`} onClick={e => { e.stopPropagation(); setTrackingView("all"); }}>All</button>
     </div>
   );
 

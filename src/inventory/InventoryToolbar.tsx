@@ -7,6 +7,16 @@ import type { ViewMode } from "../types/ui";
 import type { FilterPresetModule, FilterPresetSettings } from "../types/filterPresets";
 import FilterPresets from "../shared/FilterPresets";
 
+const TOOLBAR = "flex items-center gap-[12px] px-[16px] py-[10px] border-b border-border shrink-0";
+const ITEM_COUNT_LABEL = "text-muted text-[11px] whitespace-nowrap";
+const IMAGE_TOGGLE =
+  "inventory-image-toggle flex items-center gap-[5px] shrink-0 text-muted cursor-pointer text-[11px] whitespace-nowrap hover:text-foreground";
+const CTRL_WRAP =
+  "flex items-center shrink-0 h-[25px] overflow-hidden border border-border rounded-[5px] text-muted text-[10px] tabular-nums";
+const CTRL_SPAN = "min-w-[42px] text-center";
+const CTRL_BTN =
+  "self-stretch w-[24px] border-0 bg-[rgba(255,255,255,.03)] text-muted cursor-pointer text-[15px] leading-none hover:enabled:bg-[rgba(255,255,255,.08)] hover:enabled:text-foreground disabled:opacity-35 disabled:cursor-default";
+
 interface InventoryToolbarProps {
   filters: InventoryFilters;
   onFiltersChange: Dispatch<SetStateAction<InventoryFilters>>;
@@ -34,7 +44,7 @@ export default function InventoryToolbar({
   const imagesVisible = view === "cards" || view === "list";
   return (
     <>
-      <div className="toolbar">
+      <div className={TOOLBAR}>
         <SearchBar
           placeholder="Search items (comma-separated)…"
           value={search}
@@ -65,7 +75,7 @@ export default function InventoryToolbar({
         <button className={`fchip ${sortMode === "qty-asc" ? "fchip-on" : ""}`} onClick={() => onFiltersChange(previous => ({ ...previous, sortMode: "qty-asc" }))}>Qty ↑</button>
         <button className={`fchip ${sortMode === "name-asc" ? "fchip-on" : ""}`} onClick={() => onFiltersChange(previous => ({ ...previous, sortMode: "name-asc" }))}>A-Z</button>
         <button className={`fchip ${sortMode === "name-desc" ? "fchip-on" : ""}`} onClick={() => onFiltersChange(previous => ({ ...previous, sortMode: "name-desc" }))}>Z-A</button>
-        <span className="item-count-label ml-auto">{itemCount} item{itemCount !== 1 ? "s" : ""}{itemCount === 1000 ? " (capped)" : ""}</span>
+        <span className={`${ITEM_COUNT_LABEL} ml-auto`}>{itemCount} item{itemCount !== 1 ? "s" : ""}{itemCount === 1000 ? " (capped)" : ""}</span>
         <ViewToggle
           view={view === "text-cards" ? "cards" : view === "list-compact" ? "list" : view}
           onChange={onViewChange}
@@ -73,7 +83,7 @@ export default function InventoryToolbar({
         />
         {(isCardView || isListView) && (
           <>
-            <label className="inventory-image-toggle">
+            <label className={IMAGE_TOGGLE}>
               <input type="checkbox" checked={imagesVisible}
                 onChange={event => onViewChange(isCardView
                   ? (event.target.checked ? "cards" : "text-cards")
@@ -81,20 +91,20 @@ export default function InventoryToolbar({
               Images
             </label>
             {isCardView && (
-              <div className="inventory-column-control" aria-label="Maximum card columns">
-                <button title="Fewer columns" aria-label="Fewer columns" disabled={cardColumns <= 5}
+              <div className={CTRL_WRAP} aria-label="Maximum card columns">
+                <button title="Fewer columns" aria-label="Fewer columns" className={CTRL_BTN} disabled={cardColumns <= 5}
                   onClick={() => onCardColumnsChange(cardColumns - 1)}>−</button>
-                <span>{cardColumns} cols</span>
-                <button title="More columns" aria-label="More columns" disabled={cardColumns >= 24}
+                <span className={CTRL_SPAN}>{cardColumns} cols</span>
+                <button title="More columns" aria-label="More columns" className={CTRL_BTN} disabled={cardColumns >= 24}
                   onClick={() => onCardColumnsChange(cardColumns + 1)}>+</button>
               </div>
             )}
             {isListView && (
-              <div className="inventory-list-text-control" aria-label="List text size">
-                <button title="Smaller text" aria-label="Smaller text" disabled={listTextScale <= 80}
+              <div className={CTRL_WRAP} aria-label="List text size">
+                <button title="Smaller text" aria-label="Smaller text" className={CTRL_BTN} disabled={listTextScale <= 80}
                   onClick={() => onListTextScaleChange(listTextScale - 10)}>−</button>
-                <span>{listTextScale}%</span>
-                <button title="Larger text" aria-label="Larger text" disabled={listTextScale >= 150}
+                <span className={CTRL_SPAN}>{listTextScale}%</span>
+                <button title="Larger text" aria-label="Larger text" className={CTRL_BTN} disabled={listTextScale >= 150}
                   onClick={() => onListTextScaleChange(listTextScale + 10)}>+</button>
               </div>
             )}

@@ -48,29 +48,6 @@
 
 /* ── Main ── */
 
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.search-box {
-  flex: 1;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
-  padding: 6px 10px;
-  font-size: 13px;
-  outline: none;
-}
-.search-box:focus { border-color: var(--accent); }
-
-.item-count-label { color: var(--muted); font-size: 11px; white-space: nowrap; }
-
 /* ── Filter bar ── */
 .filter-bar {
   display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
@@ -141,23 +118,8 @@
 
 .empty-msg { padding: 40px 24px; color: var(--muted); text-align: center; line-height: 1.6; }
 
-/* ── View toggle (shared across Inventory / Foundry / Relics) ── */
+/* ── Image toggle (inventory): checkbox input + pseudo rules ── */
 
-.view-toggle { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
-.view-btn {
-  background: none; border: 1px solid transparent; border-radius: 4px;
-  cursor: pointer; color: var(--muted); padding: 3px 5px;
-  display: flex; align-items: center; justify-content: center;
-  transition: color .12s, border-color .12s, background .12s;
-  line-height: 0;
-}
-.view-btn:hover { color: var(--text); background: rgba(255,255,255,.06); }
-.view-btn-active { color: var(--accent); border-color: rgba(56,139,253,.4); background: rgba(56,139,253,.08); }
-
-.inventory-image-toggle {
-  display: flex; align-items: center; gap: 5px; flex-shrink: 0;
-  color: var(--muted); cursor: pointer; font-size: 11px; white-space: nowrap;
-}
 .inventory-image-toggle input {
   appearance: none; display: grid; place-content: center;
   width: 14px; height: 14px; flex-shrink: 0; cursor: pointer;
@@ -171,28 +133,8 @@
 }
 .inventory-image-toggle input:checked { border-color: var(--accent); background: var(--accent); }
 .inventory-image-toggle input:checked::before { transform: rotate(-45deg) scale(1); }
-.inventory-image-toggle:hover { color: var(--text); }
 .inventory-image-toggle:hover input { border-color: var(--accent); }
 .inventory-image-toggle input:focus-visible { outline: 2px solid rgba(56,139,253,.45); outline-offset: 2px; }
-
-.inventory-column-control,
-.inventory-list-text-control {
-  display: flex; align-items: center; flex-shrink: 0;
-  height: 25px; overflow: hidden;
-  border: 1px solid var(--border); border-radius: 5px;
-  color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums;
-}
-.inventory-column-control span,
-.inventory-list-text-control span { min-width: 42px; text-align: center; }
-.inventory-column-control button,
-.inventory-list-text-control button {
-  align-self: stretch; width: 24px; border: 0; background: rgba(255,255,255,.03);
-  color: var(--muted); cursor: pointer; font-size: 15px; line-height: 1;
-}
-.inventory-column-control button:hover:not(:disabled),
-.inventory-list-text-control button:hover:not(:disabled) { background: rgba(255,255,255,.08); color: var(--text); }
-.inventory-column-control button:disabled,
-.inventory-list-text-control button:disabled { opacity: .35; cursor: default; }
 
 .foundry-search {
   width: 100%; box-sizing: border-box;
@@ -228,15 +170,6 @@
   z-index: 100; margin-bottom: 4px; line-height: 1.5;
 }
 .relic-icon { flex-shrink: 0; opacity: .9; }
-
-.tracking-toggle { display: flex; gap: 2px; }
-.tracking-toggle-btn {
-  padding: 2px 7px; border-radius: 4px; border: 1px solid var(--border);
-  background: none; color: var(--muted); cursor: pointer; font-size: 10px; transition: all .15s;
-}
-.tracking-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
-.tracking-toggle-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(56,139,253,.1); }
-
 /* ── Scrollbars ── */
 ::-webkit-scrollbar       { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
