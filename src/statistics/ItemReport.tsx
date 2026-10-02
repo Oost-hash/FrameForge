@@ -4,7 +4,6 @@ import { useCatalog } from "../hooks/useCatalog";
 import type { CatalogItem } from "../types/items";
 import type { SnapshotPoint, TrackedItem } from "../types/inventory";
 import { PREFERENCE_KEYS } from "../constants/preferences";
-import "../styles/statistics/ItemReport.css";
 
 type Timeframe = "7" | "30" | "90" | "all";
 
@@ -27,7 +26,7 @@ const IR_GRID = "grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-2.5";
 const IR_CARD =
   "flex cursor-default flex-col gap-2 rounded-[8px] border bg-surface px-3.5 py-3 transition-[border-color,opacity] duration-100";
 const IR_DRAG_HANDLE =
-  "shrink-0 cursor-grab select-none pr-0.5 text-[16px] leading-none text-muted opacity-40 transition-opacity duration-150 hover:opacity-100";
+  "shrink-0 select-none pr-0.5 text-[16px] leading-none text-muted opacity-40 transition-opacity duration-150 hover:opacity-100";
 const IR_CARD_HEADER = "flex min-w-0 items-center justify-between gap-2";
 const IR_CARD_NAME = "min-w-0 flex-1 truncate text-[13px] font-semibold text-foreground";
 const IR_CARD_RIGHT = "flex shrink-0 items-center gap-1";
@@ -120,11 +119,12 @@ interface CardProps {
   onRemove: () => void;
   onHandleMouseDown: (e: React.MouseEvent) => void;
   onCardMouseEnter: () => void;
+  isDragging: boolean;
   isDragSource: boolean;
   isDragOver: boolean;
 }
 
-function TrackedItemCard({ item, allSnapshots, timeframe, onTimeframeChange, onRemove, onHandleMouseDown, onCardMouseEnter, isDragSource, isDragOver }: CardProps) {
+function TrackedItemCard({ item, allSnapshots, timeframe, onTimeframeChange, onRemove, onHandleMouseDown, onCardMouseEnter, isDragging, isDragSource, isDragOver }: CardProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const displayData = useMemo(() => {
@@ -156,7 +156,7 @@ function TrackedItemCard({ item, allSnapshots, timeframe, onTimeframeChange, onR
       onMouseEnter={onCardMouseEnter}
     >
       <div className={IR_CARD_HEADER}>
-        <span className={`${IR_DRAG_HANDLE} ir-drag-handle`} title="Drag to reorder" onMouseDown={onHandleMouseDown}>⠿</span>
+        <span className={`${IR_DRAG_HANDLE} ${isDragging ? "cursor-grabbing" : "cursor-grab"}`} title="Drag to reorder" onMouseDown={onHandleMouseDown}>⠿</span>
         <span className={IR_CARD_NAME}>{item.display_name}</span>
         {confirmDelete ? (
           <div className={IR_CONFIRM_ROW}>
@@ -452,7 +452,7 @@ export default function ItemReport() {
       ) : (
         <div className={IR_SCROLL}>
           <div
-            className={`${IR_GRID}${draggingFrom ? " ir-grid-dragging select-none cursor-grabbing" : ""}`}
+            className={`${IR_GRID}${draggingFrom ? " select-none cursor-grabbing" : ""}`}
           >
             {orderedTracked.map(item => (
               <TrackedItemCard
@@ -468,6 +468,7 @@ export default function ItemReport() {
                   dragTargetRef.current = item.unique_name;
                   setDragTarget(item.unique_name);
                 }}
+                isDragging={draggingFrom !== null}
                 isDragSource={draggingFrom === item.unique_name}
                 isDragOver={dragTarget === item.unique_name && draggingFrom !== item.unique_name}
               />

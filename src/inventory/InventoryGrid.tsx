@@ -5,7 +5,7 @@ import { fmt, deltaClass, deltaText } from "../utils";
 import { openWiki } from "../lib/wiki";
 import "../styles/inventory/InventoryGrid.css";
 
-// ─── Presentatie (InventoryGrid.css) ─────────────────────────────────────────
+// ─── Presentatie (InventoryGrid.css retains variable-backed image overrides) ──
 
 const ITEM_GRID_CLASS: Record<ViewMode, string> = {
   cards:
@@ -161,9 +161,9 @@ function valueTitle(plat: number | null, ducats: number | null | undefined): str
 
 function PriceChip({ kind, value }: { kind: "plat" | "ducat"; value: number }) {
   return kind === "plat" ? (
-    <span className="inv-price inv-price-plat" title={`Market: ${fmt(value)} plat`}><PlatIcon />{fmt(value)}</span>
+    <span className="inline-flex items-center gap-[2px] rounded-[4px] bg-[rgba(179,157,219,.10)] px-[.091em] py-[.455em] text-[.846em] font-bold leading-[1.4] text-[#b39ddb] tabular-nums" title={`Market: ${fmt(value)} plat`}><PlatIcon />{fmt(value)}</span>
   ) : (
-    <span className="inv-price inv-price-ducat" title={`Ducats: ${fmt(value)}`}><DucatIcon />{fmt(value)}</span>
+    <span className="inline-flex items-center gap-[2px] rounded-[4px] bg-[rgba(240,192,64,.10)] px-[.091em] py-[.455em] text-[.846em] font-bold leading-[1.4] text-[#f0c040] tabular-nums" title={`Ducats: ${fmt(value)}`}><DucatIcon />{fmt(value)}</span>
   );
 }
 
