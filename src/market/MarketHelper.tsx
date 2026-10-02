@@ -162,9 +162,11 @@ const RIV_M_INPUT   = "flex-1 w-0 bg-[rgba(0,0,0,.25)] border border-border roun
 const RIV_M_NOTE    = "resize-none h-[48px]";
 const RIV_M_TOGROW  = "mt-[2px]";
 const RIV_TOG       = "inline-flex items-center gap-[6px] cursor-pointer select-none";
-const RIV_TOG_TRACK = "relative w-[32px] h-[17px] bg-[var(--border)] rounded-[9px] transition-[background] duration-[150ms] shrink-0";
-const RIV_TOG_THUMB = "absolute top-[2px] left-[2px] w-[13px] h-[13px] bg-white rounded-full transition-[left] duration-[150ms]";
+const RIV_TOG_TRACK = "relative h-[17px] w-[32px] shrink-0 rounded-[9px] bg-[var(--border)] transition-[background] duration-[150ms] peer-checked:bg-accent peer-checked:[&>span]:left-[17px]";
+const RIV_TOG_THUMB = "absolute top-[2px] left-[2px] h-[13px] w-[13px] rounded-full bg-white transition-[left] duration-[150ms]";
 const RIV_TOG_LABEL = "text-[12px] text-foreground min-w-[44px]";
+const RIV_POLARITY_ICON = "size-[14px] align-middle dark:invert [html[data-theme=dark]_&]:invert [html[data-theme=light]_&]:invert-0";
+const RIV_CARD_META = "flex gap-0 text-[11px] text-muted [&>span]:whitespace-nowrap [&>span+span]:before:content-['·'] [&>span+span]:before:mx-[3px]";
 const RIV_M_WARN    = "text-[11px] text-[#e3b341] bg-[rgba(227,179,65,.1)] border border-[rgba(227,179,65,.3)] rounded-[4px] px-[8px] py-[6px]";
 const RIV_M_ERR     = "text-[11px] text-danger bg-[rgba(248,81,73,.1)] border border-[rgba(248,81,73,.3)] rounded-[4px] px-[8px] py-[6px]";
 const RIV_SALE_TYPE = "flex gap-0 border border-border rounded-[5px] overflow-hidden";
@@ -1343,7 +1345,7 @@ function RivenSellModal({ riven, weaponName, disposition, category, onClose, onS
 
         <div>
           <div className={RIV_M_WEAPON}>{weaponName}{(() => { const mn = (riven.mod_name || rivenModName(riven)); return mn ? <> <span className={RIV_MOD_NAME}>{mn.replace(/^./, c => c.toUpperCase())}</span></> : null; })()}</div>
-          <div className={RIV_M_META}>{category} · MR {riven.lvl_req ?? "?"} · Rank {riven.mod_rank} · {disposition.toFixed(2)}x · {riven.rerolls} roll{riven.rerolls !== 1 ? "s" : ""}{riven.polarity && POLARITY_DISPLAY[riven.polarity] ? <> · <img src={POLARITY_DISPLAY[riven.polarity].icon} className="polarity-icon" alt={POLARITY_DISPLAY[riven.polarity].name} /> {POLARITY_DISPLAY[riven.polarity].name}</> : ""}</div>
+          <div className={RIV_M_META}>{category} · MR {riven.lvl_req ?? "?"} · Rank {riven.mod_rank} · {disposition.toFixed(2)}x · {riven.rerolls} roll{riven.rerolls !== 1 ? "s" : ""}{riven.polarity && POLARITY_DISPLAY[riven.polarity] ? <> · <img src={POLARITY_DISPLAY[riven.polarity].icon} className={RIV_POLARITY_ICON} alt={POLARITY_DISPLAY[riven.polarity].name} /> {POLARITY_DISPLAY[riven.polarity].name}</> : ""}</div>
         </div>
 
         <div className={RIV_M_STATS}>
@@ -1404,9 +1406,9 @@ function RivenSellModal({ riven, weaponName, disposition, category, onClose, onS
         </div>
         <div className={`${RIV_M_ROW} ${RIV_M_TOGROW}`}>
           <span className={RIV_M_LABEL}>Visible on WFM</span>
-          <label className={`${RIV_TOG} riven-toggle`}>
-            <input type="checkbox" checked={visible} onChange={e => setVisible(e.target.checked)} />
-            <span className={`${RIV_TOG_TRACK} riven-toggle-track`}><span className={`${RIV_TOG_THUMB} riven-toggle-thumb`} /></span>
+          <label className={RIV_TOG}>
+            <input className="peer sr-only" type="checkbox" checked={visible} onChange={e => setVisible(e.target.checked)} />
+            <span className={RIV_TOG_TRACK}><span className={RIV_TOG_THUMB} /></span>
             <span className={RIV_TOG_LABEL}>{visible ? "Visible" : "Hidden"}</span>
           </label>
         </div>
@@ -1489,9 +1491,9 @@ function VeiledSellModal({ category, count, onClose, onSuccess }: VeiledSellModa
         </div>
         <div className={`${RIV_M_ROW} ${RIV_M_TOGROW}`}>
           <span className={RIV_M_LABEL}>Visible on WFM</span>
-          <label className={`${RIV_TOG} riven-toggle`}>
-            <input type="checkbox" checked={visible} onChange={e => setVisible(e.target.checked)} />
-            <span className={`${RIV_TOG_TRACK} riven-toggle-track`}><span className={`${RIV_TOG_THUMB} riven-toggle-thumb`} /></span>
+          <label className={RIV_TOG}>
+            <input className="peer sr-only" type="checkbox" checked={visible} onChange={e => setVisible(e.target.checked)} />
+            <span className={RIV_TOG_TRACK}><span className={RIV_TOG_THUMB} /></span>
             <span className={RIV_TOG_LABEL}>{visible ? "Visible" : "Hidden"}</span>
           </label>
         </div>
@@ -1571,14 +1573,14 @@ const RivensTab = memo(function RivensTab({ rivens, catalog, wfmUsername, onAuct
                       Sell ↗
                     </button>
                   </div>
-                  <div className="riven-card-meta">
+                  <div className={RIV_CARD_META}>
                     <span>{cat}</span>
                     <span>MR {r.lvl_req ?? "?"}</span>
                     <span>Rank {r.mod_rank}</span>
                     <span>{disp.toFixed(2)}x</span>
                     <span>{r.rerolls} roll{r.rerolls !== 1 ? "s" : ""}</span>
                     {r.polarity && POLARITY_DISPLAY[r.polarity] && (
-                      <span className={RIV_POLARITY}><img src={POLARITY_DISPLAY[r.polarity].icon} className="polarity-icon" alt={POLARITY_DISPLAY[r.polarity].name} /> {POLARITY_DISPLAY[r.polarity].name}</span>
+                      <span className={RIV_POLARITY}><img src={POLARITY_DISPLAY[r.polarity].icon} className={RIV_POLARITY_ICON} alt={POLARITY_DISPLAY[r.polarity].name} /> {POLARITY_DISPLAY[r.polarity].name}</span>
                     )}
                   </div>
                   <div className={RIV_STATS}>

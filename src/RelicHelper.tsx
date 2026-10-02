@@ -87,13 +87,14 @@ const RL_REFINEMENTS = "flex flex-col gap-px";
 const RL_REF = "text-[10px] whitespace-nowrap";
 const RL_REWARDS_GRID = "grid grid-cols-3 grid-rows-[80px_80px] flex-1 overflow-hidden";
 const RL_ICON_COUNT = "text-[10px] font-bold text-muted";
-const RL_ROW_IMG = "shrink-0";
+const RL_ROW_IMG = "shrink-0 [&_img]:size-6! [&_img]:object-contain!";
 const RL_ROW_NAME =
   "flex-1 min-w-0 text-[12px] font-medium text-foreground whitespace-nowrap overflow-hidden text-ellipsis";
 const RL_ROW_TOTAL = "shrink-0 text-[12px] font-bold text-muted";
 const RL_ROW_REFS = "shrink-0 text-[10px] tracking-[.02em] text-muted";
 const RL_TEXT_REWARDS = "flex-1 min-w-0 px-2 py-1 flex flex-col justify-around";
 const RL_TEXT_REWARD = "text-[10px] whitespace-nowrap overflow-hidden text-ellipsis leading-[1.5]";
+const RL_VAULT_BADGE = "whitespace-nowrap rounded-[3px] border border-[rgba(255,107,107,.35)] bg-[rgba(255,107,107,.15)] px-1 py-px text-[9px] font-bold tracking-[.02em] text-[#ff6b6b]";
 const RL_PAGINATION = "flex items-center gap-[10px] px-[14px] py-[6px] border-b border-border shrink-0";
 const RL_SUBTAB =
   "border-0 border-b-2 bg-transparent text-[12px] font-medium px-[14px] pt-1 pb-[6px] cursor-pointer transition-[color]";
@@ -112,14 +113,13 @@ const RL_LIST_CLS: Record<ViewMode, string> = {
   "list-compact": "flex flex-col gap-px px-0 py-1 flex-1 overflow-y-auto",
 };
 
-// Card shell + state modifiers. bg/border-color are state-dependent (the old
-// cascade let .relic-text-card/.relic-card-icon-only re-set background later in
-// the sheet than .relic-card-complete, so complete is gold-bg only on cards/rows).
+  // Card shell + state modifiers. Background and border color depend on state,
+  // so complete uses its gold background only for cards and rows.
 function relicCardCls(view: ViewMode, state: CardState): string {
   const isRow = view === "list" || view === "list-compact";
   const shell =
     view === "icons"
-      ? "w-[76px] h-[88px] rounded-[8px] px-1 pt-[6px] pb-1 flex flex-col items-center justify-center gap-1 cursor-default transition-[border-color]"
+      ? "w-[76px] h-[88px] rounded-[8px] px-1 pt-[6px] pb-1 flex flex-col items-center justify-center gap-1 cursor-default transition-[border-color] [&_img]:size-[52px]! [&_img]:object-contain!"
       : isRow
       ? "h-[160px] rounded-[8px] flex flex-row items-center gap-2 px-3 py-[5px] min-h-[32px] transition-[border-color]"
       : view === "text-cards"
@@ -403,7 +403,7 @@ function RelicCard({ drop, catalogRelicByName, inventory, ownedPrimeNames, searc
 
   if (view === "icons") {
     return (
-      <div className={`relic-card-icon-only ${relicCardCls("icons", cardState)}`} title={`${drop.fullName} ×${total}`}>
+      <div className={relicCardCls("icons", cardState)} title={`${drop.fullName} ×${total}`}>
         <RelicImg src={CDN(intactCat?.image_name)} />
         <span className={RL_ICON_COUNT}>×{total}</span>
       </div>
@@ -416,9 +416,9 @@ function RelicCard({ drop, catalogRelicByName, inventory, ownedPrimeNames, searc
       .join(" ");
     return (
       <div className={relicCardCls(view, cardState)}>
-        {view === "list" && <div className={`relic-row-img ${RL_ROW_IMG}`}><RelicImg src={CDN(intactCat?.image_name)} /></div>}
+        {view === "list" && <div className={RL_ROW_IMG}><RelicImg src={CDN(intactCat?.image_name)} /></div>}
         <div className={RL_ROW_NAME}>{drop.fullName}</div>
-        {intactCat?.vaulted && <span className="vault-badge vault-yes" style={{ fontSize: 9 }}>🔒</span>}
+        {intactCat?.vaulted && <span className={RL_VAULT_BADGE}>🔒</span>}
         <span className={RL_ROW_TOTAL}>×{total}</span>
         {refCompact && <span className={RL_ROW_REFS}>{refCompact}</span>}
       </div>
@@ -430,7 +430,7 @@ function RelicCard({ drop, catalogRelicByName, inventory, ownedPrimeNames, searc
       <div className={relicCardCls("text-cards", cardState)}>
         <div className={RL_CARD_LEFT_TEXT}>
           <div className={RL_CARD_NAME}>{drop.fullName}</div>
-          {intactCat?.vaulted && <span className="vault-badge vault-yes">🔒 Vaulted</span>}
+          {intactCat?.vaulted && <span className={RL_VAULT_BADGE}>🔒 Vaulted</span>}
           <div className={RL_REFINEMENTS}>
             {refCounts.some(r => r.count > 0)
               ? refCounts.map(r => (
@@ -461,7 +461,7 @@ function RelicCard({ drop, catalogRelicByName, inventory, ownedPrimeNames, searc
           {colorblindMode && allComplete && <span className={RL_CB_RELIC_CHECK} title="All rewards obtained">✓✓</span>}
         </div>
         <div className={RL_CARD_NAME}>{drop.fullName}</div>
-        {intactCat?.vaulted && <span className="vault-badge vault-yes">🔒 Vaulted</span>}
+        {intactCat?.vaulted && <span className={RL_VAULT_BADGE}>🔒 Vaulted</span>}
         <div className={RL_REFINEMENTS}>
           {refCounts.some(r => r.count > 0)
             ? refCounts.map(r => (
@@ -763,7 +763,7 @@ function PlannerTab({
               <div className={PL_ROW_MAIN} onClick={() => setExpanded(isOpen ? null : drop.fullName)}>
                 <div className={PL_COL_NAME}>
                   <span className={PL_RELIC_NAME}>{drop.fullName}</span>
-                  {vaulted && <span className="vault-badge vault-yes" style={{ fontSize: 9 }}>🔒</span>}
+                  {vaulted && <span className={RL_VAULT_BADGE}>🔒</span>}
                   <span className={PL_OWNED}>×{totalOwned}</span>
                 </div>
                 {RELIC_REFINEMENT_ORDER.map(t => (

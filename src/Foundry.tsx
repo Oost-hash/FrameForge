@@ -125,7 +125,7 @@ const FY_CARD = `${FY_CARD_SHELL} border-border bg-surface hover:border-[rgba(56
 const FY_CARD_OWNED = `${FY_CARD_SHELL} border-[rgba(240,192,64,.6)] bg-[rgba(240,192,64,.04)] hover:border-[rgba(56,139,253,.5)] hover:z-[5]`;
 const FY_CARD_READY = `${FY_CARD_SHELL} border-[rgba(56,139,253,.55)] bg-[rgba(56,139,253,.04)] hover:border-[rgba(56,139,253,.5)] hover:z-[5]`;
 
-const FY_CC_IMAGE = "col-start-1 row-start-1 relative overflow-hidden bg-[rgba(0,0,0,.15)] border-r border-border";
+const FY_CC_IMAGE = "col-start-1 row-start-1 relative overflow-hidden bg-[rgba(0,0,0,.15)] border-r border-border [&_img]:block! [&_img]:h-[96px]! [&_img]:w-[88px]! [&_img]:rounded-none! [&_img]:object-cover! [&_.img-fallback]:h-[96px]! [&_.img-fallback]:w-[88px]! [&_.img-fallback]:rounded-none!";
 const FY_CC_STAR = "absolute top-[3px] left-[5px] z-[2] cursor-pointer border-0 bg-transparent p-0 text-[14px] leading-none text-[rgba(255,255,255,.45)] hover:text-[#f0c040]";
 const FY_CC_STAR_TRACKED = "absolute top-[3px] left-[5px] z-[2] cursor-pointer border-0 bg-transparent p-0 text-[14px] leading-none text-[#f0c040]";
 const FY_CC_WIKI = "absolute top-[3px] right-[4px] z-[2] cursor-pointer rounded-[3px] border border-[rgba(56,139,253,.4)] bg-[rgba(0,0,0,.5)] px-1 py-px text-[8px] font-bold text-[#6ea8fe] hover:bg-[rgba(56,139,253,.25)]";
@@ -155,7 +155,7 @@ const FY_COMP_ACQUIRED = "flex flex-1 items-center justify-center px-[6px] text-
 const FY_MR_REQ = "whitespace-nowrap rounded-[3px] bg-[rgba(255,255,255,.07)] px-1 py-px text-[9px] font-bold text-[#8b949e]";
 const FY_ROW_MR = "shrink-0 whitespace-nowrap rounded-[3px] bg-[rgba(255,255,255,.07)] px-1 py-px text-[10px] font-bold text-[#8b949e]";
 
-const FY_ICON_SHELL = "relative flex h-[88px] w-[88px] cursor-pointer items-center justify-center overflow-hidden rounded-[8px] border bg-surface transition-colors";
+const FY_ICON_SHELL = "relative flex h-[88px] w-[88px] cursor-pointer items-center justify-center overflow-hidden rounded-[8px] border bg-surface transition-colors [&_img]:size-[80px]! [&_img]:object-cover!";
 const FY_ICON_CARD = `${FY_ICON_SHELL} border-border hover:border-[rgba(56,139,253,.5)]`;
 const FY_ICON_CARD_OWNED = `${FY_ICON_SHELL} border-[rgba(240,192,64,.6)]`;
 const FY_ICON_CARD_READY = `${FY_ICON_SHELL} border-[rgba(56,139,253,.55)]`;
@@ -166,7 +166,7 @@ const FY_ICON_BADGE_READY = `${FY_ICON_BADGE} bg-[rgba(56,139,253,.2)] text-acce
 const FY_ROW_SHELL = "flex min-h-[34px] cursor-pointer items-center gap-[8px] border-b border-b-[rgba(48,54,61,.35)] px-[12px] py-[5px] transition-colors duration-100 hover:bg-[rgba(255,255,255,.03)]";
 const FY_ROW_OWNED = `${FY_ROW_SHELL} border-l-2 border-l-[rgba(240,192,64,.7)]`;
 const FY_ROW_READY = `${FY_ROW_SHELL} border-l-2 border-l-[rgba(56,139,253,.7)]`;
-const FY_ROW_ICON = "flex h-[26px] w-[26px] shrink-0 items-center justify-center";
+const FY_ROW_ICON = "flex h-[26px] w-[26px] shrink-0 items-center justify-center [&_img]:size-6! [&_img]:rounded-[3px]! [&_img]:object-cover!";
 const FY_ROW_NAME = "min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[12px] font-medium text-foreground";
 const FY_ROW_STATUS = "flex shrink-0 gap-[3px]";
 const FY_ROW_PARTS = "shrink-0 text-[10px] text-muted";
@@ -179,6 +179,11 @@ const FY_TEXT_CARD_READY = `${FY_TEXT_SHELL} border-[rgba(56,139,253,.55)] bg-[r
 const FY_CTC_NAME = "text-[12px] font-semibold leading-[1.3] text-foreground";
 const FY_CTC_META = "flex flex-wrap items-center gap-[4px]";
 const FY_CTC_TAGS = "flex flex-wrap gap-[3px]";
+const FY_VAULT_BADGE = "whitespace-nowrap rounded-[3px] px-1 py-px text-[9px] font-bold tracking-[.02em]";
+const FY_VAULT_YES = `${FY_VAULT_BADGE} border border-[rgba(255,107,107,.35)] bg-[rgba(255,107,107,.15)] text-[#ff6b6b]`;
+const FY_VAULT_NO = `${FY_VAULT_BADGE} border border-[rgba(78,205,196,.3)] bg-[rgba(78,205,196,.12)] text-[#4ecdc4]`;
+const FY_RELIC_ICON_WRAP = "relic-icon-wrap relative mr-[2px] flex shrink-0 cursor-help";
+const FY_RELIC_ICON = "shrink-0 opacity-90";
 
 const FY_TAG = "inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[3px] text-[10px] font-bold cursor-default";
 const FY_TAG_MASTERED = `${FY_TAG} bg-[rgba(78,205,196,.15)] text-[#4ecdc4]`;
@@ -294,7 +299,7 @@ function ArchonCrystalIcon({ shards }: { shards: ArchonShard[] }) {
 
 function RelicIcon() {
   return (
-    <svg viewBox="0 0 20 26" width="11" height="14" fill="none" xmlns="http://www.w3.org/2000/svg" className="relic-icon">
+    <svg viewBox="0 0 20 26" width="11" height="14" fill="none" xmlns="http://www.w3.org/2000/svg" className={FY_RELIC_ICON}>
       <ellipse cx="10" cy="13" rx="8.5" ry="11.5" fill="rgba(255,220,100,.15)" stroke="rgba(255,220,100,.7)" strokeWidth="1.2"/>
       <path d="M10 4 C7 7 6 10 8 13 C10 16 9 19 10 22" stroke="rgba(255,220,100,.9)" strokeWidth="1.3" strokeLinecap="round" fill="none"/>
       <path d="M10 4 C13 7 14 10 12 13 C10 16 11 19 10 22" stroke="rgba(255,220,100,.6)" strokeWidth="0.9" strokeLinecap="round" fill="none"/>
@@ -339,7 +344,7 @@ function CompRow({ comp, inventory, relicDrops, relicNames }: {
   return (
     <div className={FY_COMP_ROW[status]}>
       {ownedRelics.length > 0 && (
-        <span className="relic-icon-wrap" title={ownedRelics.join("\n")}><RelicIcon /></span>
+        <span className={FY_RELIC_ICON_WRAP} title={ownedRelics.join("\n")}><RelicIcon /></span>
       )}
       <span className={FY_COMP_NAME[status]}>{comp.name}</span>
       {status === "part"      && <span className={`${FY_COMP_BADGE} text-[#f0c040]`}>✓</span>}
@@ -518,7 +523,7 @@ const CraftCard = memo(function CraftCard({ item, recipe, inventory, relicDrops,
 
   if (view === "icons") {
     return (
-      <div className={`craft-icon-card ${isOwned ? FY_ICON_CARD_OWNED : allParts ? FY_ICON_CARD_READY : FY_ICON_CARD}`}
+      <div className={isOwned ? FY_ICON_CARD_OWNED : allParts ? FY_ICON_CARD_READY : FY_ICON_CARD}
         title={`${item.name}${isOwned ? " (owned)" : allParts ? " (ready)" : ""}`}
         onClick={() => onOpen(item)}>
         <ItemImg imageName={item.image_name} category={item.category} size={72} />
@@ -534,7 +539,7 @@ const CraftCard = memo(function CraftCard({ item, recipe, inventory, relicDrops,
         className={isOwned ? FY_ROW_OWNED : allParts ? FY_ROW_READY : FY_ROW_SHELL}
         onClick={() => onOpen(item)}>
         {view === "list" && (
-          <div className={`craft-row-icon ${FY_ROW_ICON}`}>
+          <div className={FY_ROW_ICON}>
             <ItemImg imageName={item.image_name} category={item.category} size={24} />
           </div>
         )}
@@ -564,8 +569,8 @@ const CraftCard = memo(function CraftCard({ item, recipe, inventory, relicDrops,
         onClick={() => onOpen(item)}>
         <div className={FY_CTC_NAME}>{item.name}</div>
         <div className={FY_CTC_META}>
-          {item.vaulted === true  && <span className="vault-badge vault-yes">🔒 Vaulted</span>}
-          {item.vaulted === false && <span className="vault-badge vault-no">🔓 Unvaulted</span>}
+          {item.vaulted === true  && <span className={FY_VAULT_YES}>🔒 Vaulted</span>}
+          {item.vaulted === false && <span className={FY_VAULT_NO}>🔓 Unvaulted</span>}
           {item.mastery_req != null && item.mastery_req > 0 &&
             <span className={FY_MR_REQ}>MR {item.mastery_req}</span>}
         </div>
@@ -586,7 +591,7 @@ const CraftCard = memo(function CraftCard({ item, recipe, inventory, relicDrops,
       onClick={() => onOpen(item)}
     >
       {/* Col 1, rows 1-4: image block with star/wiki/name overlaid */}
-      <div className={`cc-image ${FY_CC_IMAGE}`}>
+      <div className={FY_CC_IMAGE}>
         <ItemImg imageName={item.image_name} category={item.category} size={78} />
         <button className={isTracked ? FY_CC_STAR_TRACKED : FY_CC_STAR}
           onClick={e => { e.stopPropagation(); onTrack(item); }}>{isTracked ? "★" : "☆"}</button>
@@ -604,8 +609,8 @@ const CraftCard = memo(function CraftCard({ item, recipe, inventory, relicDrops,
 
       {/* Col 1, row 6: vault / kuva / acquired badges */}
       <div className={FY_CC_BADGES}>
-        {item.vaulted === true  && <span className="vault-badge vault-yes">🔒 Vaulted</span>}
-        {item.vaulted === false && <span className="vault-badge vault-no">🔓 Unvaulted</span>}
+        {item.vaulted === true  && <span className={FY_VAULT_YES}>🔒 Vaulted</span>}
+        {item.vaulted === false && <span className={FY_VAULT_NO}>🔓 Unvaulted</span>}
         {isKuva && <span className={FY_TAG_KUVA} title="Lich/Sister">🔱</span>}
       </div>
 

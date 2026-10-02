@@ -60,24 +60,6 @@
 .inventory-image-toggle:hover input { border-color: var(--accent); }
 .inventory-image-toggle input:focus-visible { outline: 2px solid rgba(56,139,253,.45); outline-offset: 2px; }
 
-.cc-image img, .cc-image .img {
-  width: 88px !important; height: 96px !important;
-  object-fit: cover !important; border-radius: 0 !important; display: block !important;
-}
-.cc-image .img-fallback {
-  width: 88px !important; height: 96px !important; border-radius: 0 !important;
-}
-
-.vault-badge {
-  font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 3px;
-  white-space: nowrap; letter-spacing: .02em;
-}
-.vault-yes { color: #ff6b6b; background: rgba(255,107,107,.15); border: 1px solid rgba(255,107,107,.35); }
-.vault-no  { color: #4ecdc4; background: rgba(78,205,196,.12); border: 1px solid rgba(78,205,196,.3); }
-
-.relic-icon-wrap {
-  flex-shrink: 0; margin-right: 2px; position: relative; display: flex; cursor: help;
-}
 .relic-icon-wrap:hover::after {
   content: attr(title);
   position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
@@ -86,38 +68,11 @@
   padding: 4px 7px; border-radius: 5px; pointer-events: none;
   z-index: 100; margin-bottom: 4px; line-height: 1.5;
 }
-.relic-icon { flex-shrink: 0; opacity: .9; }
 /* ── Scrollbars ── */
 ::-webkit-scrollbar       { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-
-/* ── Market Helper ── */
-/* ── Rivens tab ── */
-.polarity-icon { width: 14px; height: 14px; vertical-align: middle; }
-@media (prefers-color-scheme: dark) { .polarity-icon { filter: invert(1); } }
-:root[data-theme="dark"]  .polarity-icon { filter: invert(1); }
-:root[data-theme="light"] .polarity-icon { filter: none; }
-.riven-card-meta { display: flex; gap: 0; font-size: 11px; color: var(--muted); }
-.riven-card-meta span { white-space: nowrap; }
-.riven-card-meta span + span::before { content: " · "; }
-
-/* ── Riven sell modal ── */
-.riven-toggle input { display: none; }
-.riven-toggle input:checked ~ .riven-toggle-track { background: var(--accent); }
-.riven-toggle input:checked ~ .riven-toggle-track .riven-toggle-thumb { left: 17px; }
-
-
-.craft-icon-card img, .craft-icon-card .img { width: 80px !important; height: 80px !important; object-fit: cover !important; }
-.craft-row-icon img, .craft-row-icon .img { width: 24px !important; height: 24px !important; object-fit: cover !important; border-radius: 3px !important; }
-
-/* ── Relic img size hooks (classes kept in JSX: relic-card-icon-only / relic-row-img / relic-list-*) ── */
-
-.relic-card-icon-only img { width: 52px !important; height: 52px !important; object-fit: contain !important; }
-
-.relic-list-list .relic-row-img img,
-.relic-list-list .relic-row-img .img { width: 24px !important; height: 24px !important; object-fit: contain !important; }
 
 /* ── Relic reward-box positional borders (nth-child has no Tailwind equivalent; class relic-rbox kept) ── */
 .relic-rbox:nth-child(3n)   { border-right: none; }
