@@ -286,7 +286,7 @@ const InvModCard = memo(function InvModCard({ unique_name, name, category, image
               <span className="mod-rank-value flex items-center justify-end gap-[.308em]">
                 <span className={r.count === 0 ? "mod-rank-count text-[.846em] font-bold tabular-nums text-right text-[rgba(139,148,158,0.3)]" : "mod-rank-count text-[.846em] font-bold tabular-nums text-right text-foreground"}>{r.count}</span>
                 {isRecent && rankDelta && (
-                  <span className={`mod-rank-delta ${rankDelta.delta > 0 ? "log-positive text-success bg-[rgba(63,185,80,0.12)]" : "log-negative text-danger bg-[rgba(248,81,73,0.12)]"} text-[.846em] font-semibold px-[.231em] rounded-[2px]`}>
+                  <span className={`mod-rank-delta ${rankDelta.delta > 0 ? "text-success bg-[rgba(63,185,80,0.12)]" : "text-danger bg-[rgba(248,81,73,0.12)]"} text-[.846em] font-semibold px-[.231em] rounded-[2px]`}>
                     {rankDelta.delta > 0 ? `+${rankDelta.delta}` : rankDelta.delta}
                   </span>
                 )}
