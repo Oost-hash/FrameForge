@@ -116,23 +116,6 @@
 .conn-overlay .conn-detail { color: #9ecaed; font-family: monospace; }
 @keyframes pulse-ocr { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
 
-.btn-monitor {
-  padding: 5px 12px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 12px;
-  transition: all .15s;
-}
-.btn-monitor.active { border-color: var(--green); color: var(--green); }
-.btn-monitor:hover  { border-color: var(--accent); color: var(--accent); }
-.btn-wf-connect { padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; font-size: 12px; transition: all .15s; }
-.btn-wf-connect:hover:not(:disabled) { border-color: #f0c040; color: #f0c040; }
-.btn-wf-connect.connected { border-color: #f0c040; color: #f0c040; cursor: default; }
-.btn-wf-connect:disabled { opacity: .6; cursor: wait; }
-
 /* Text scaling — transform on #root avoids the WebView2 scrollbar hit-test bug
    that css zoom on html causes (scrollbar renders correctly but can't be dragged
    to the bottom when zoom > 1). */
@@ -297,16 +280,6 @@
 }
 .search-box:focus { border-color: var(--accent); }
 
-.toggle-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--muted);
-  cursor: pointer;
-  white-space: nowrap;
-  font-size: 12px;
-}
-.toggle-label input { accent-color: var(--accent); }
 .item-count-label { color: var(--muted); font-size: 11px; white-space: nowrap; }
 
 /* ── Filter bar ── */
@@ -383,9 +356,6 @@
 
 /* ── Inventory card grid (see InventoryGrid.css) ── */
 
-/* ── Item list (legacy, kept for safety) ── */
-.item-list { flex: 1; overflow-y: auto; padding: 4px 0; }
-
 .empty-msg { padding: 40px 24px; color: var(--muted); text-align: center; line-height: 1.6; }
 
 /* ── View toggle (shared across Inventory / Foundry / Relics) ── */
@@ -441,41 +411,6 @@
 .inventory-column-control button:disabled,
 .inventory-list-text-control button:disabled { opacity: .35; cursor: default; }
 
-.item-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 16px;
-  border-bottom: 1px solid rgba(48,54,61,.5);
-  transition: background .1s;
-}
-.item-row:hover  { background: rgba(255,255,255,.03); }
-.item-zero       { opacity: .4; }
-.item-gained     { border-left: 2px solid var(--green); background: rgba(63,185,80,.04); }
-.item-lost       { border-left: 2px solid var(--red);   background: rgba(248,81,73,.04); }
-
-/* .item-img, .item-img-fallback removed — now in images.css */
-.item-name { flex: 1; color: var(--text); font-size: 13px; overflow: hidden; text-overflow: ellipsis; display: flex; flex-direction: column; justify-content: center; gap: 1px; }
-.item-rank-info { font-size: 10px; color: var(--accent); opacity: 0.85; white-space: nowrap; }
-
-.item-cat-badge {
-  font-size: 10px;
-  color: var(--muted);
-  background: rgba(255,255,255,.06);
-  padding: 1px 6px;
-  border-radius: 4px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.rank-badge {
-  font-size: 10px; font-weight: 600; flex-shrink: 0;
-  padding: 1px 7px; border-radius: 4px;
-  color: #c09040; background: rgba(192,144,64,.15);
-  border: 1px solid rgba(192,144,64,.35);
-  white-space: nowrap;
-}
-
 /* ── Module nav ── */
 .module-nav {
   width: 72px;
@@ -506,7 +441,6 @@
 }
 .module-btn:hover  { background: rgba(255,255,255,.06); color: var(--text); }
 .module-active     { color: var(--accent) !important; background: rgba(56,139,253,.12) !important; }
-.module-icon       { font-size: 20px; line-height: 1; }
 .module-label {
   font-size: 9px;
   font-weight: 600;
