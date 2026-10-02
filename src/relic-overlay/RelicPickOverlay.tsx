@@ -8,7 +8,7 @@ import { TAURI_COMMANDS, TAURI_EVENTS } from "../constants/tauri";
 import type { SettingsFile } from "../types/tauri";
 import type { RelicPickPayload, RelicPickRelic, RelicPickReward } from "../types/relics";
 import type { RelicPickLines, RelicPickPriority } from "../types/settings";
-import "./RelicPickOverlay.css";
+import "../styles/relic-overlay/RelicPickOverlay.css";
 
 const ERA_LABEL: Record<string, string> = {
   LITH: "Lith", MESO: "Meso", NEO: "Neo", AXI: "Axi", ALL: "All Eras",

@@ -4,7 +4,7 @@ import ItemImg from "../ItemImg";
 import { TAURI_COMMANDS } from "../constants/tauri";
 import type { WfmItemInfo, WfmItemOrders, WfmPublicOrder, WfmStatPoint } from "../types/market";
 import type { WfmCreateOrderArgs } from "../types/tauri";
-import "./ItemMarketPopup.css";
+import "../styles/market/ItemMarketPopup.css";
 
 async function invokeWfm<T>(command: string, args?: Record<string, unknown>): Promise<T> {
   try {

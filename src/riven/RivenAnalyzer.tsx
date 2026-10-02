@@ -5,7 +5,7 @@ import { checkRivenNow } from "../lib/rivenWindow";
 import { TAURI_COMMANDS, TAURI_EVENTS } from "../constants/tauri";
 import type { RivenAnalysis, RivenStat, SavedRiven } from "../types/rivens";
 import type { AnalyzeRivenArgs, SaveRivenRollArgs } from "../types/tauri";
-import "./RivenAnalyzer.css";
+import "../styles/riven/RivenAnalyzer.css";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

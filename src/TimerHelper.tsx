@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import "./TimerHelper.css";
+import "./styles/TimerHelper.css";
 import type { InventoryItem } from "./types/items";
 import type { WorldState, WsFissure, WsStorm } from "./types/worldstate";
 import { useWorldState } from "./worldstate";

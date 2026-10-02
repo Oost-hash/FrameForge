@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import ItemImg from "../ItemImg";
-import "./Syndicates.css";
+import "../styles/completionist/Syndicates.css";
 import type { InventoryItem } from "../types/items";
 import type { SyndicateFilters } from "../types/filters";
 import type { SyndicateItem, SyndicateStore } from "../types/syndicates";

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import ItemImg from "../ItemImg";
-import "./Weapons.css";
+import "../styles/completionist/Weapons.css";
 import type { InventoryItem, WeaponItem } from "../types/items";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

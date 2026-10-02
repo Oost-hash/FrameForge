@@ -24,7 +24,7 @@ async function saveOverlayRoll(
   await emit(TAURI_EVENTS.RIVEN_ROLL_SAVED).catch(() => {});
 }
 
-import "./RivenOverlayWindow.css";
+import "../styles/riven/RivenOverlayWindow.css";
 
 // No auto-hide — user dismisses with ✕ or the poll detects screen closure.
 // Only a very long emergency fallback (60 min) in case everything else fails.

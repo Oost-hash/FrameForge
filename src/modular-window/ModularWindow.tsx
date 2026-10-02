@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { ResizeHandle } from "../shared/ResizeHandle";
 import { TAURI_COMMANDS } from "../constants/tauri";
 import { TIMER_LABELS } from "../constants/timers";
-import "./ModularWindow.css";
+import "../styles/modular-window/ModularWindow.css";
 import { getTimerInfo, fmtMs, matchesWatch } from "../TimerHelper";
 import type { FissureWatch } from "../types/settings";
 import type { CatalogItem, InventoryItem, RecipeComponent, RecipeComponentStatus } from "../types/items";

@@ -6,7 +6,7 @@ import { TAURI_COMMANDS, TAURI_EVENTS } from "../constants/tauri";
 import type { WfmAuction, WfmItem, WfmManagedOrder, WfmWhisper } from "../types/market";
 import type { TradeCompletedEvent } from "../types/trades";
 import type { AddTradeArgs, WfmCloseOrderArgs, WfmCreateOrderArgs, WfmCredentials, WfmSaveCredentialsArgs, WfmSession, WfmSetAuctionVisibleArgs, WfmUpdateOrderArgs } from "../types/tauri";
-import "./WfmTrading.css";
+import "../styles/market/WfmTrading.css";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

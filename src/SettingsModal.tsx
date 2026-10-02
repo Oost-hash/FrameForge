@@ -15,7 +15,7 @@ import { OVERLAY_OFFSET_LIMIT, clampOverlayOffset } from "./types/settings";
 import type { FilterPresetModule, FilterPresetSettings } from "./types/filterPresets";
 import type { FoundryFilters, InventoryFilters, MarketFilters, RelicFilters } from "./types/filters";
 import type { SaveApiInventoryArgs } from "./types/tauri";
-import "./SettingsModal.css";
+import "./styles/SettingsModal.css";
 
 type SettingsTab = "general" | "overlays" | "market" | "filters" | "accessibility" | "data" | "debugging";
 type Setter<T> = Dispatch<SetStateAction<T>>;

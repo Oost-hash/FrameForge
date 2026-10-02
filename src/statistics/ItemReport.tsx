@@ -4,7 +4,7 @@ import { useCatalog } from "../hooks/useCatalog";
 import type { CatalogItem } from "../types/items";
 import type { SnapshotPoint, TrackedItem } from "../types/inventory";
 import { PREFERENCE_KEYS } from "../constants/preferences";
-import "./ItemReport.css";
+import "../styles/statistics/ItemReport.css";
 
 type Timeframe = "7" | "30" | "90" | "all";
 

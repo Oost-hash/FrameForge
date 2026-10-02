@@ -9,7 +9,7 @@ import type { CraftingJob, QuantityMap, ShallowRecipeComponent } from "../types/
 import type { RelicOverlayPriority } from "../types/settings";
 import type { PendingRelicRewards, RelicRewardsPayload } from "../types/tauri";
 import type { InventoryUpdate } from "../types/inventory";
-import "./Overlay.css";
+import "../styles/relic-overlay/Overlay.css";
 
 interface ComponentRow {
   unique_name: string;

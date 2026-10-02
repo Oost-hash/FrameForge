@@ -3,7 +3,7 @@ import ItemImg from "../ItemImg";
 import type { ViewMode } from "../types/ui";
 import { fmt, deltaClass, deltaText } from "../utils";
 import { openWiki } from "../lib/wiki";
-import "./InventoryGrid.css";
+import "../styles/inventory/InventoryGrid.css";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 

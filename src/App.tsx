@@ -55,8 +55,8 @@ import { formatUnixTime } from "./lib/formatters";
 import type { CatalogItem, CraftingJob, InventoryItem } from "./types/items";
 import type { ChangeLogEntry, ModCopy } from "./types/inventory";
 import type { BlobStatusPayload, SettingsFile, SettingsPatch, WarframeCredentials, WarframeInventoryRequest, WfmCredentials, WfmSession } from "./types/tauri";
-import "./App.css";
-import "./images.css";
+import "./styles/App.css";
+import "./styles/images.css";
 
 const _winLabel = getCurrentWindow().label;
 // Support all URL formats: query string (?overlay), hash (#overlay), or window label.
