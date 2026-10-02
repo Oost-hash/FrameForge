@@ -28,6 +28,7 @@ const ROW_LABEL_CLASS = "text-[13px] font-medium text-foreground";
 const ROW_DESC_CLASS = "text-[11px] leading-[1.4] text-muted";
 const SELECT_CLASS = "shrink-0 cursor-pointer rounded-[5px] border border-border bg-surface px-2 py-[3px] text-[12px] text-foreground [color-scheme:dark] hover:border-[rgba(56,139,253,.5)]";
 const STEP_BTN_CLASS = "flex min-w-0 cursor-pointer items-center justify-center border-0 border-border bg-[rgba(255,255,255,.03)] p-0 text-[6px] leading-none text-muted first:border-b hover:bg-[rgba(56,139,253,.18)] hover:text-accent focus-visible:outline focus-visible:outline-accent focus-visible:-outline-offset-1";
+const DEBUG_TABLE_CLASS = "debug-table grid grid-cols-[1fr_auto_auto_auto] items-center gap-x-2 gap-y-3";
 
 export interface SettingsModalProps {
   open: boolean;
@@ -744,7 +745,7 @@ export default function SettingsModal(props: SettingsModalProps) {
 
                 <div className="settings-section">
                   <div className="settings-section-title">Loggers</div>
-                  <div className="debug-table">
+                  <div className={DEBUG_TABLE_CLASS}>
 
                     {/* Inventory Snapshots */}
                     <div className={ROW_INFO_CLASS} style={{ opacity: memoryScannerEnabled ? 1 : 0.4 }}>
@@ -794,7 +795,7 @@ export default function SettingsModal(props: SettingsModalProps) {
 
                 <div className="settings-section">
                   <div className="settings-section-title">Diagnostics</div>
-                  <div className="debug-table">
+                  <div className={DEBUG_TABLE_CLASS}>
 
                     {/* Test Notification */}
                     <div className={ROW_INFO_CLASS}>
@@ -942,7 +943,7 @@ export default function SettingsModal(props: SettingsModalProps) {
 
                 <div className="settings-section">
                   <div className="settings-section-title">Relic Pick Overlay</div>
-                  <div className="debug-table">
+                  <div className={DEBUG_TABLE_CLASS}>
 
                     {/* OCR Era Test */}
                     <div className={ROW_INFO_CLASS}>
@@ -1019,7 +1020,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                 {/* ── Categorization Debug ── */}
                 <div className="settings-section">
                   <div className="settings-section-title">Categorization Debug</div>
-                  <div className="debug-table">
+                  <div className={DEBUG_TABLE_CLASS}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Unmatched Paths</span>
                       <span className={ROW_DESC_CLASS}>

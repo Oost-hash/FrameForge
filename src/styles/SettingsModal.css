@@ -3,14 +3,8 @@
 .settings-offset-input::-webkit-inner-spin-button,
 .settings-offset-input::-webkit-outer-spin-button { appearance: none; margin: 0; }
 
-.settings-filter-presets { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+/* Kept in CSS: descendant overrides of shared classes (isolate per plan). The
+   filter-presets section keeps `settings-filter-presets` and the debug wrappers
+   keep `debug-table` solely for these two rules. */
 .settings-filter-presets .inventory-presets-list { flex: 1; }
-.debug-table {
-  display: grid;
-  grid-template-columns: 1fr auto auto auto;
-  align-items: center;
-  column-gap: 8px;
-  row-gap: 12px;
-}
 .debug-table .btn-secondary { white-space: nowrap; text-align: center; }
-.debug-table-gap { grid-column: 1 / -1; height: 0; border-top: 1px solid rgba(48,54,61,.6); margin: 2px 0; }

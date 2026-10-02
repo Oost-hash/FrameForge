@@ -312,7 +312,7 @@ export default function FilterPresets<M extends FilterPresetModule>({ module, fi
     <button className="inventory-presets-icon inventory-presets-delete" onPointerDown={stopDrag} onClick={() => setDeleteId(preset.id)} aria-label={`Delete ${preset.name}`} title="Delete">×</button>
   </div>;
 
-  const manager = <section ref={popupRef} className={variant === "toolbar" ? "inventory-presets-popup" : "settings-filter-presets"} style={variant === "toolbar" ? { left: position.left, top: position.top, maxHeight: position.maxHeight } : undefined} role="dialog" aria-label={`${module} filter presets`}>
+  const manager = <section ref={popupRef} className={variant === "toolbar" ? "inventory-presets-popup" : "settings-filter-presets flex min-h-0 flex-1 flex-col"} style={variant === "toolbar" ? { left: position.left, top: position.top, maxHeight: position.maxHeight } : undefined} role="dialog" aria-label={`${module} filter presets`}>
         <header className="inventory-presets-header">
           <strong>Filter presets</strong>
           {variant === "toolbar" && <>
