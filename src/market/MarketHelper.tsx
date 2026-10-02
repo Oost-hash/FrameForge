@@ -133,6 +133,44 @@ const MOD_PLAT      = "flex items-center gap-[2px] text-[10px] text-accent white
 const MOD_PLAT_NA   = "flex items-center gap-[2px] text-[9px] text-muted whitespace-nowrap";
 const MODS_PAG      = "flex items-center gap-[10px] justify-center p-[8px] border-t border-border shrink-0";
 const MODS_INFO     = "text-[12px] text-muted";
+const RIV_TAB       = "flex-1 overflow-y-auto p-[10px] flex flex-col gap-[12px]";
+const RIV_SEC_HDR   = "text-[11px] font-semibold uppercase tracking-[.06em] text-muted pt-0 pr-0 pb-[6px] pl-[2px]";
+const RIV_LIST      = "flex flex-col gap-[6px]";
+const RIV_CARD      = "bg-[rgba(255,255,255,.04)] border rounded-[6px] px-[12px] py-[8px] flex flex-col gap-[4px]";
+const RIV_CARD_HDR  = "flex items-center gap-[8px]";
+const RIV_WEAPON    = "text-[13px] font-semibold text-foreground flex-1";
+const RIV_MOD_NAME  = "font-normal text-muted italic";
+const RIV_POLARITY  = "font-medium inline-flex items-center gap-[3px]";
+const RIV_META      = "text-[11px] text-muted ml-auto";
+const RIV_STATS     = "flex flex-wrap gap-[4px] mt-[2px]";
+const RIV_STAT      = "text-[11px] rounded-[3px] px-[6px] py-[1px]";
+const RIV_BUFF      = "bg-[rgba(46,160,67,.18)] text-[#3fb950]";
+const RIV_CURSE     = "bg-[rgba(248,81,73,.14)] text-[#f85149]";
+const RIV_SELL      = "bg-[rgba(56,139,253,.12)] border border-[rgba(56,139,253,.35)] text-accent text-[10px] font-semibold py-[2px] px-[8px] rounded-[3px] cursor-pointer transition-[background] duration-[100ms] whitespace-nowrap hover:bg-[rgba(56,139,253,.25)]";
+const RIV_OVERLAY   = "fixed inset-0 bg-[rgba(0,0,0,.6)] flex items-center justify-center z-[200]";
+const RIV_MODAL     = "bg-surface border border-border rounded-[10px] px-[20px] py-[18px] w-[360px] max-w-[calc(100vw_-_32px)] flex flex-col gap-[12px]";
+const RIV_M_TITLE   = "text-[14px] font-bold text-foreground flex items-center gap-[8px]";
+const RIV_M_CLOSE   = "bg-transparent border-0 text-muted text-[16px] cursor-pointer ml-auto px-[2px] transition-[color] duration-[100ms] hover:text-foreground";
+const RIV_M_WEAPON  = "text-[13px] font-semibold text-foreground";
+const RIV_M_META    = "text-[11px] text-muted";
+const RIV_M_STATS   = "flex flex-wrap gap-[4px]";
+const RIV_M_DIV     = "border-x-0 border-b-0 border-t border-border";
+const RIV_M_ROW     = "flex items-center gap-[8px]";
+const RIV_M_LABEL   = "text-[12px] text-muted min-w-[130px]";
+const RIV_M_INPUT   = "flex-1 w-0 bg-[rgba(0,0,0,.25)] border border-border rounded-[4px] text-foreground text-[12px] px-[8px] py-[4px] outline-none focus:border-accent";
+const RIV_M_NOTE    = "resize-none h-[48px]";
+const RIV_M_TOGROW  = "mt-[2px]";
+const RIV_TOG       = "inline-flex items-center gap-[6px] cursor-pointer select-none";
+const RIV_TOG_TRACK = "relative w-[32px] h-[17px] bg-[var(--border)] rounded-[9px] transition-[background] duration-[150ms] shrink-0";
+const RIV_TOG_THUMB = "absolute top-[2px] left-[2px] w-[13px] h-[13px] bg-white rounded-full transition-[left] duration-[150ms]";
+const RIV_TOG_LABEL = "text-[12px] text-foreground min-w-[44px]";
+const RIV_M_WARN    = "text-[11px] text-[#e3b341] bg-[rgba(227,179,65,.1)] border border-[rgba(227,179,65,.3)] rounded-[4px] px-[8px] py-[6px]";
+const RIV_M_ERR     = "text-[11px] text-danger bg-[rgba(248,81,73,.1)] border border-[rgba(248,81,73,.3)] rounded-[4px] px-[8px] py-[6px]";
+const RIV_SALE_TYPE = "flex gap-0 border border-border rounded-[5px] overflow-hidden";
+const RIV_SALE_BTN  = "border-0 bg-transparent py-[4px] px-[12px] text-[12px] cursor-pointer transition-[background,color] duration-[100ms]";
+const RIV_SALE_OFF  = `${RIV_SALE_BTN} text-muted hover:bg-[rgba(255,255,255,.06)] hover:text-foreground`;
+const RIV_SALE_ON   = `${RIV_SALE_BTN} bg-[var(--accent)] text-white`;
+const RIV_SUBMIT    = "bg-[rgba(56,139,253,.15)] border border-accent text-accent text-[12px] font-semibold py-[7px] px-[14px] rounded-[5px] cursor-pointer transition-[background] duration-[100ms] hover:enabled:bg-[rgba(56,139,253,.28)] disabled:opacity-50 disabled:cursor-default";
 
 // ─── Set card ─────────────────────────────────────────────────────────────────
 
@@ -1295,86 +1333,86 @@ function RivenSellModal({ riven, weaponName, disposition, category, onClose, onS
   }
 
   return (
-    <div className="riven-modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="riven-modal">
-        <div className="riven-modal-title">
+    <div className={RIV_OVERLAY} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className={RIV_MODAL}>
+        <div className={RIV_M_TITLE}>
           Post Riven Auction
-          <button className="riven-modal-close" onClick={onClose}>×</button>
+          <button className={RIV_M_CLOSE} onClick={onClose}>×</button>
         </div>
 
         <div>
-          <div className="riven-modal-weapon">{weaponName}{(() => { const mn = (riven.mod_name || rivenModName(riven)); return mn ? <> <span className="riven-mod-name">{mn.replace(/^./, c => c.toUpperCase())}</span></> : null; })()}</div>
-          <div className="riven-modal-meta">{category} · MR {riven.lvl_req ?? "?"} · Rank {riven.mod_rank} · {disposition.toFixed(2)}x · {riven.rerolls} roll{riven.rerolls !== 1 ? "s" : ""}{riven.polarity && POLARITY_DISPLAY[riven.polarity] ? <> · <img src={POLARITY_DISPLAY[riven.polarity].icon} className="polarity-icon" alt={POLARITY_DISPLAY[riven.polarity].name} /> {POLARITY_DISPLAY[riven.polarity].name}</> : ""}</div>
+          <div className={RIV_M_WEAPON}>{weaponName}{(() => { const mn = (riven.mod_name || rivenModName(riven)); return mn ? <> <span className={RIV_MOD_NAME}>{mn.replace(/^./, c => c.toUpperCase())}</span></> : null; })()}</div>
+          <div className={RIV_M_META}>{category} · MR {riven.lvl_req ?? "?"} · Rank {riven.mod_rank} · {disposition.toFixed(2)}x · {riven.rerolls} roll{riven.rerolls !== 1 ? "s" : ""}{riven.polarity && POLARITY_DISPLAY[riven.polarity] ? <> · <img src={POLARITY_DISPLAY[riven.polarity].icon} className="polarity-icon" alt={POLARITY_DISPLAY[riven.polarity].name} /> {POLARITY_DISPLAY[riven.polarity].name}</> : ""}</div>
         </div>
 
-        <div className="riven-modal-stats">
+        <div className={RIV_M_STATS}>
           {riven.buffs.map((b, i) => (
-            <span key={i} className="riven-stat riven-buff">{rivenStatLabel(b, true, disposition, category, riven.buffs.length, riven.curses.length, riven.mod_rank)}</span>
+            <span key={i} className={`${RIV_STAT} ${RIV_BUFF}`}>{rivenStatLabel(b, true, disposition, category, riven.buffs.length, riven.curses.length, riven.mod_rank)}</span>
           ))}
           {riven.curses.map((c, i) => (
-            <span key={i} className="riven-stat riven-curse">{rivenStatLabel(c, false, disposition, category, riven.buffs.length, riven.curses.length, riven.mod_rank)}</span>
+            <span key={i} className={`${RIV_STAT} ${RIV_CURSE}`}>{rivenStatLabel(c, false, disposition, category, riven.buffs.length, riven.curses.length, riven.mod_rank)}</span>
           ))}
         </div>
 
         {unmapped.length > 0 && (
-          <div className="riven-modal-warn">
+          <div className={RIV_M_WARN}>
             {unmapped.length} stat{unmapped.length > 1 ? "s" : ""} have no WFM attribute mapping and will be omitted from the listing.
           </div>
         )}
 
-        <hr className="riven-modal-divider" />
+        <hr className={RIV_M_DIV} />
 
-        <div className="riven-modal-row">
-          <span className="riven-modal-label">Type</span>
-          <div className="riven-sale-type">
-            <button className={`riven-sale-type-btn${saleType === "auction" ? " active" : ""}`}
+        <div className={RIV_M_ROW}>
+          <span className={RIV_M_LABEL}>Type</span>
+          <div className={RIV_SALE_TYPE}>
+            <button className={saleType === "auction" ? RIV_SALE_ON : RIV_SALE_OFF}
               onClick={() => setSaleType("auction")}>Auction</button>
-            <button className={`riven-sale-type-btn${saleType === "direct" ? " active" : ""}`}
+            <button className={saleType === "direct" ? RIV_SALE_ON : RIV_SALE_OFF}
               onClick={() => setSaleType("direct")}>Direct Sale</button>
           </div>
         </div>
 
         {saleType === "direct" ? (
-          <div className="riven-modal-row">
-            <span className="riven-modal-label">Selling price (plat)</span>
-            <input className="riven-modal-input" type="number" min={1} value={directPrice}
+          <div className={RIV_M_ROW}>
+            <span className={RIV_M_LABEL}>Selling price (plat)</span>
+            <input className={RIV_M_INPUT} type="number" min={1} value={directPrice}
               onChange={e => setDirectPrice(e.target.value)} />
           </div>
         ) : (<>
-          <div className="riven-modal-row">
-            <span className="riven-modal-label">Starting price (plat)</span>
-            <input className="riven-modal-input" type="number" min={1} value={startPrice}
+          <div className={RIV_M_ROW}>
+            <span className={RIV_M_LABEL}>Starting price (plat)</span>
+            <input className={RIV_M_INPUT} type="number" min={1} value={startPrice}
               onChange={e => setStartPrice(e.target.value)} />
           </div>
-          <div className="riven-modal-row">
-            <span className="riven-modal-label">Buyout price (opt.)</span>
-            <input className="riven-modal-input" type="number" min={1} placeholder="—"
+          <div className={RIV_M_ROW}>
+            <span className={RIV_M_LABEL}>Buyout price (opt.)</span>
+            <input className={RIV_M_INPUT} type="number" min={1} placeholder="—"
               value={buyoutPrice} onChange={e => setBuyoutPrice(e.target.value)} />
           </div>
-          <div className="riven-modal-row">
-            <span className="riven-modal-label">Min. reputation</span>
-            <input className="riven-modal-input" type="number" min={0} max={5} value={minRep}
+          <div className={RIV_M_ROW}>
+            <span className={RIV_M_LABEL}>Min. reputation</span>
+            <input className={RIV_M_INPUT} type="number" min={0} max={5} value={minRep}
               onChange={e => setMinRep(e.target.value)} />
           </div>
         </>)}
 
-        <div className="riven-modal-row">
-          <span className="riven-modal-label">Note (optional)</span>
-          <textarea className="riven-modal-input riven-modal-note" value={note}
+        <div className={RIV_M_ROW}>
+          <span className={RIV_M_LABEL}>Note (optional)</span>
+          <textarea className={`${RIV_M_INPUT} ${RIV_M_NOTE}`} value={note}
             onChange={e => setNote(e.target.value)} />
         </div>
-        <div className="riven-modal-row riven-modal-row-toggle">
-          <span className="riven-modal-label">Visible on WFM</span>
-          <label className="riven-toggle">
+        <div className={`${RIV_M_ROW} ${RIV_M_TOGROW}`}>
+          <span className={RIV_M_LABEL}>Visible on WFM</span>
+          <label className={`${RIV_TOG} riven-toggle`}>
             <input type="checkbox" checked={visible} onChange={e => setVisible(e.target.checked)} />
-            <span className="riven-toggle-track"><span className="riven-toggle-thumb" /></span>
-            <span className="riven-toggle-label">{visible ? "Visible" : "Hidden"}</span>
+            <span className={`${RIV_TOG_TRACK} riven-toggle-track`}><span className={`${RIV_TOG_THUMB} riven-toggle-thumb`} /></span>
+            <span className={RIV_TOG_LABEL}>{visible ? "Visible" : "Hidden"}</span>
           </label>
         </div>
 
-        {error && <div className="riven-modal-error">{error}</div>}
+        {error && <div className={RIV_M_ERR}>{error}</div>}
 
-        <button className="riven-modal-submit" onClick={handleSubmit} disabled={busy}>
+        <button className={RIV_SUBMIT} onClick={handleSubmit} disabled={busy}>
           {busy ? "Posting…" : saleType === "direct" ? "Post Direct Sale on warframe.market" : "Post Auction on warframe.market"}
         </button>
       </div>
@@ -1424,45 +1462,45 @@ function VeiledSellModal({ category, count, onClose, onSuccess }: VeiledSellModa
   }
 
   return (
-    <div className="riven-modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="riven-modal">
-        <div className="riven-modal-title">
+    <div className={RIV_OVERLAY} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className={RIV_MODAL}>
+        <div className={RIV_M_TITLE}>
           Sell Unrevealed Riven
-          <button className="riven-modal-close" onClick={onClose}>×</button>
+          <button className={RIV_M_CLOSE} onClick={onClose}>×</button>
         </div>
 
         <div>
-          <div className="riven-modal-weapon">{category} Riven Mod (Unrevealed)</div>
-          <div className="riven-modal-meta">{count} in inventory</div>
+          <div className={RIV_M_WEAPON}>{category} Riven Mod (Unrevealed)</div>
+          <div className={RIV_M_META}>{count} in inventory</div>
         </div>
 
-        <hr className="riven-modal-divider" />
+        <hr className={RIV_M_DIV} />
 
-        <div className="riven-modal-row">
-          <span className="riven-modal-label">Price per riven (plat)</span>
-          <input className="riven-modal-input" type="number" min={1} value={price}
+        <div className={RIV_M_ROW}>
+          <span className={RIV_M_LABEL}>Price per riven (plat)</span>
+          <input className={RIV_M_INPUT} type="number" min={1} value={price}
             onChange={e => setPrice(e.target.value)} />
         </div>
-        <div className="riven-modal-row">
-          <span className="riven-modal-label">Quantity to list</span>
-          <input className="riven-modal-input" type="number" min={1} max={count} value={quantity}
+        <div className={RIV_M_ROW}>
+          <span className={RIV_M_LABEL}>Quantity to list</span>
+          <input className={RIV_M_INPUT} type="number" min={1} max={count} value={quantity}
             onChange={e => setQuantity(e.target.value)} />
         </div>
-        <div className="riven-modal-row riven-modal-row-toggle">
-          <span className="riven-modal-label">Visible on WFM</span>
-          <label className="riven-toggle">
+        <div className={`${RIV_M_ROW} ${RIV_M_TOGROW}`}>
+          <span className={RIV_M_LABEL}>Visible on WFM</span>
+          <label className={`${RIV_TOG} riven-toggle`}>
             <input type="checkbox" checked={visible} onChange={e => setVisible(e.target.checked)} />
-            <span className="riven-toggle-track"><span className="riven-toggle-thumb" /></span>
-            <span className="riven-toggle-label">{visible ? "Visible" : "Hidden"}</span>
+            <span className={`${RIV_TOG_TRACK} riven-toggle-track`}><span className={`${RIV_TOG_THUMB} riven-toggle-thumb`} /></span>
+            <span className={RIV_TOG_LABEL}>{visible ? "Visible" : "Hidden"}</span>
           </label>
         </div>
 
         {!slug && (
-          <div className="riven-modal-warn">This riven type may not be individually listable on warframe.market.</div>
+          <div className={RIV_M_WARN}>This riven type may not be individually listable on warframe.market.</div>
         )}
-        {error && <div className="riven-modal-error">{error}</div>}
+        {error && <div className={RIV_M_ERR}>{error}</div>}
 
-        <button className="riven-modal-submit" onClick={handleSubmit} disabled={busy || !slug}>
+        <button className={RIV_SUBMIT} onClick={handleSubmit} disabled={busy || !slug}>
           {busy ? "Listing…" : "Create Sell Order on warframe.market"}
         </button>
       </div>
@@ -1512,22 +1550,22 @@ const RivensTab = memo(function RivensTab({ rivens, catalog, wfmUsername, onAuct
   const sellTargetCat  = sellTarget ? rivenCategory(sellTarget.item_type) : "";
 
   return (
-    <div className="rivens-tab">
+    <div className={RIV_TAB}>
 
 
       {unlocked.length > 0 && (
         <section>
-          <div className="rivens-section-header">Riven ({unlocked.length})</div>
-          <div className="rivens-list">
+          <div className={RIV_SEC_HDR}>Riven ({unlocked.length})</div>
+          <div className={RIV_LIST}>
             {unlocked.map((r, i) => {
               const weaponName = r.compat ? (pathToName[r.compat] ?? r.compat.split("/").pop() ?? r.compat) : "Unknown";
               const disp = r.compat ? (dispositions[r.compat] ?? 1.0) : 1.0;
               const cat  = rivenCategory(r.item_type);
               return (
-                <div key={r.item_id || i} className="riven-card">
-                  <div className="riven-card-header">
-                    <span className="riven-weapon">{weaponName}{(() => { const mn = (r.mod_name || rivenModName(r)); return mn ? <> <span className="riven-mod-name">{mn.replace(/^./, c => c.toUpperCase())}</span></> : null; })()}</span>
-                    <button className="riven-sell-btn" title={wfmUsername ? "Post auction on warframe.market" : "Login to WFM to sell"}
+                <div key={r.item_id || i} className={`${RIV_CARD} border-border`}>
+                  <div className={RIV_CARD_HDR}>
+                    <span className={RIV_WEAPON}>{weaponName}{(() => { const mn = (r.mod_name || rivenModName(r)); return mn ? <> <span className={RIV_MOD_NAME}>{mn.replace(/^./, c => c.toUpperCase())}</span></> : null; })()}</span>
+                    <button className={RIV_SELL} title={wfmUsername ? "Post auction on warframe.market" : "Login to WFM to sell"}
                       onClick={() => { if (wfmUsername) setSellTarget(r); else alert("Log in to warframe.market first (Market → Trading tab)."); }}>
                       Sell ↗
                     </button>
@@ -1539,15 +1577,15 @@ const RivensTab = memo(function RivensTab({ rivens, catalog, wfmUsername, onAuct
                     <span>{disp.toFixed(2)}x</span>
                     <span>{r.rerolls} roll{r.rerolls !== 1 ? "s" : ""}</span>
                     {r.polarity && POLARITY_DISPLAY[r.polarity] && (
-                      <span className="riven-polarity"><img src={POLARITY_DISPLAY[r.polarity].icon} className="polarity-icon" alt={POLARITY_DISPLAY[r.polarity].name} /> {POLARITY_DISPLAY[r.polarity].name}</span>
+                      <span className={RIV_POLARITY}><img src={POLARITY_DISPLAY[r.polarity].icon} className="polarity-icon" alt={POLARITY_DISPLAY[r.polarity].name} /> {POLARITY_DISPLAY[r.polarity].name}</span>
                     )}
                   </div>
-                  <div className="riven-stats">
+                  <div className={RIV_STATS}>
                     {r.buffs.map((b, j) => (
-                      <span key={j} className="riven-stat riven-buff">{rivenStatLabel(b, true, disp, cat, r.buffs.length, r.curses.length, r.mod_rank)}</span>
+                      <span key={j} className={`${RIV_STAT} ${RIV_BUFF}`}>{rivenStatLabel(b, true, disp, cat, r.buffs.length, r.curses.length, r.mod_rank)}</span>
                     ))}
                     {r.curses.map((c, j) => (
-                      <span key={j} className="riven-stat riven-curse">{rivenStatLabel(c, false, disp, cat, r.buffs.length, r.curses.length, r.mod_rank)}</span>
+                      <span key={j} className={`${RIV_STAT} ${RIV_CURSE}`}>{rivenStatLabel(c, false, disp, cat, r.buffs.length, r.curses.length, r.mod_rank)}</span>
                     ))}
                   </div>
                 </div>
@@ -1559,16 +1597,16 @@ const RivensTab = memo(function RivensTab({ rivens, catalog, wfmUsername, onAuct
 
       {revealed.length > 0 && (
         <section>
-          <div className="rivens-section-header">Revealed Riven ({revealed.length})</div>
-          <div className="rivens-list">
+          <div className={RIV_SEC_HDR}>Revealed Riven ({revealed.length})</div>
+          <div className={RIV_LIST}>
             {revealed.map((r, i) => {
               const cat = rivenCategory(r.item_type);
               const challenge = formatChallengeName(r.challenge_type, r.challenge_complication);
               return (
-                <div key={r.item_id || i} className="riven-card riven-revealed">
-                  <div className="riven-card-header">
-                    <span className="riven-weapon">{cat} Riven Mod</span>
-                    <span className="riven-meta riven-challenge">{challenge}</span>
+                <div key={r.item_id || i} className={`${RIV_CARD} border-[rgba(180,150,80,.4)]`}>
+                  <div className={RIV_CARD_HDR}>
+                    <span className={RIV_WEAPON}>{cat} Riven Mod</span>
+                    <span className={`${RIV_META} italic`}>{challenge}</span>
                   </div>
                 </div>
               );
@@ -1579,14 +1617,14 @@ const RivensTab = memo(function RivensTab({ rivens, catalog, wfmUsername, onAuct
 
       {unrevealed.length > 0 && (
         <section>
-          <div className="rivens-section-header">Unrevealed Riven ({unrevealed.reduce((s, r) => s + r.count, 0)})</div>
-          <div className="rivens-list">
+          <div className={RIV_SEC_HDR}>Unrevealed Riven ({unrevealed.reduce((s, r) => s + r.count, 0)})</div>
+          <div className={RIV_LIST}>
             {unrevealed.map((r, i) => (
-              <div key={i} className="riven-card riven-veiled">
-                <div className="riven-card-header">
-                  <span className="riven-weapon">{rivenCategory(r.item_type)} Riven Mod</span>
-                  {r.count > 1 && <span className="riven-meta">×{r.count}</span>}
-                  <button className="riven-sell-btn" title={wfmUsername ? "List sell order on warframe.market" : "Login to WFM to sell"}
+              <div key={i} className={`${RIV_CARD} border-border opacity-70`}>
+                <div className={RIV_CARD_HDR}>
+                  <span className={RIV_WEAPON}>{rivenCategory(r.item_type)} Riven Mod</span>
+                  {r.count > 1 && <span className={RIV_META}>×{r.count}</span>}
+                  <button className={RIV_SELL} title={wfmUsername ? "List sell order on warframe.market" : "Login to WFM to sell"}
                     onClick={() => { if (wfmUsername) setSellVeiled(r); else alert("Log in to warframe.market first (Market → Trading tab)."); }}>
                     Sell ↗
                   </button>
