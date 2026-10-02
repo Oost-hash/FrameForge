@@ -45,10 +45,10 @@ function toggle<T>(arr: T[], val: T): T[] {
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
 function PlatIcon({ size = 14 }: { size?: number }) {
-  return <img src="/platinum.webp" alt="plat" width={size} height={size} style={{ objectFit: "contain", flexShrink: 0 }} />;
+  return <img src="/platinum.webp" alt="plat" width={size} height={size} className="shrink-0 object-contain" />;
 }
 function DucatIcon({ size = 14 }: { size?: number }) {
-  return <img src="/ducats.webp" alt="ducat" width={size} height={size} style={{ objectFit: "contain", flexShrink: 0 }} />;
+  return <img src="/ducats.webp" alt="ducat" width={size} height={size} className="shrink-0 object-contain" />;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

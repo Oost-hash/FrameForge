@@ -56,11 +56,11 @@ function getDisplayRewards(relic: RelicPickRelic, lines: RelicPickLines, priorit
 
 function PlatIcon() {
   return <img src="/platinum.webp" alt="p" width={11} height={11}
-    style={{ objectFit: "contain", flexShrink: 0, verticalAlign: "middle", marginBottom: 1 }} />;
+    className="mb-px shrink-0 object-contain align-middle" />;
 }
 function DucatIcon() {
   return <img src="/ducats.webp" alt="d" width={11} height={11}
-    style={{ objectFit: "contain", flexShrink: 0, verticalAlign: "middle", marginBottom: 1 }} />;
+    className="mb-px shrink-0 object-contain align-middle" />;
 }
 
 export default function RelicPickOverlay() {

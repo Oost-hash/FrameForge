@@ -39,10 +39,10 @@ interface InventoryGridProps {
 // ─── Value + wiki helpers ─────────────────────────────────────────────────────
 
 function PlatIcon({ size = 11 }: { size?: number }) {
-  return <img src="/platinum.webp" alt="plat" width={size} height={size} style={{ objectFit: "contain", flexShrink: 0 }} />;
+  return <img src="/platinum.webp" alt="plat" width={size} height={size} className="shrink-0 object-contain" />;
 }
 function DucatIcon({ size = 11 }: { size?: number }) {
-  return <img src="/ducats.webp" alt="ducat" width={size} height={size} style={{ objectFit: "contain", flexShrink: 0 }} />;
+  return <img src="/ducats.webp" alt="ducat" width={size} height={size} className="shrink-0 object-contain" />;
 }
 
 function valueTitle(plat: number | null, ducats: number | null | undefined): string {
