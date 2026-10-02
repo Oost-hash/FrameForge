@@ -9,7 +9,7 @@ import type { CraftingJob, QuantityMap, ShallowRecipeComponent } from "../types/
 import type { RelicOverlayPriority } from "../types/settings";
 import type { PendingRelicRewards, RelicRewardsPayload } from "../types/tauri";
 import type { InventoryUpdate } from "../types/inventory";
-import "./Overlay.css";
+import "../styles/Overlay.css";
 
 // ── Tailwind class constants (formerly Overlay.css) ───────────────────────────
 // Note: :root vars + body transparency stay in Overlay.css (document context).
