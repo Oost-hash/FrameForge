@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { FOUNDRY_FILTERS_DEFAULT, INVENTORY_FILTERS_DEFAULT, MARKET_FILTERS_DEFAULT, RELIC_FILTERS_DEFAULT } from "../constants/filters";
 import type { FilterPreset, FilterPresetFiltersByModule, FilterPresetModule, FilterPresetSettings } from "../types/filterPresets";
 import type { FoundryFilters, InventoryFilters, MarketFilters, RelicFilters } from "../types/filters";
+import { FilterChip } from "./ui/FilterControls";
 
 type ModulePreset<M extends FilterPresetModule> = Extract<FilterPreset, { module: M }>;
 type CurrentFiltersByModule = {
@@ -306,7 +307,7 @@ export default function FilterPresets<M extends FilterPresetModule>({ module, fi
       <input ref={inputRef} value={name} onChange={event => setName(event.target.value)} aria-label="Preset name" />
       <button className="inventory-presets-icon" type="submit" disabled={!name.trim()} aria-label="Save preset name" title="Save">✓</button>
       <button className="inventory-presets-icon" type="button" onClick={() => { setEditingId(null); setName(""); }} aria-label="Cancel rename" title="Cancel">×</button>
-    </form> : <button className="fchip inventory-presets-name" onPointerDown={stopDrag} onClick={() => apply(preset)} title="Apply preset">{preset.name}</button>}
+    </form> : <FilterChip className="inventory-presets-name" onPointerDown={stopDrag} onClick={() => apply(preset)} title="Apply preset">{preset.name}</FilterChip>}
     <button className="inventory-presets-icon" onPointerDown={stopDrag} onClick={() => { setEditingId(preset.id); setSaving(false); setName(preset.name); }} aria-label={`Rename ${preset.name}`} title="Rename preset">✎</button>
     <button className="inventory-presets-icon" onPointerDown={stopDrag} onClick={() => togglePin(preset.id)} aria-label={`${preset.pinned ? "Unpin" : "Pin"} ${preset.name}`} title={preset.pinned ? "Unpin" : "Pin"}>{preset.pinned ? "●" : "○"}</button>
     <button className="inventory-presets-icon inventory-presets-delete" onPointerDown={stopDrag} onClick={() => setDeleteId(preset.id)} aria-label={`Delete ${preset.name}`} title="Delete">×</button>
@@ -363,9 +364,9 @@ export default function FilterPresets<M extends FilterPresetModule>({ module, fi
 
   if (variant === "settings") return manager;
   return <>
-    {pinnedPresets.map(preset => <button key={preset.id} className={`fchip inventory-preset-chip ${isPresetActive(preset) ? "fchip-on" : ""}`} onClick={() => apply(preset, true)}>{preset.name}</button>)}
-    <button ref={triggerRef} className={`fchip inventory-preset-custom ${open ? "fchip-on" : ""}`} onClick={() => open ? close() : setOpen(true)} aria-expanded={open} aria-haspopup="dialog">Custom</button>
-    <button className="fchip fchip-reset" onClick={clearFilters} disabled={!canClearFilters}>{filtersBeforeClear ? "Restore filters" : "Clear filters"}</button>
+    {pinnedPresets.map(preset => <FilterChip key={preset.id} className="inventory-preset-chip" active={isPresetActive(preset)} onClick={() => apply(preset, true)}>{preset.name}</FilterChip>)}
+    <FilterChip ref={triggerRef} className="inventory-preset-custom" active={open} onClick={() => open ? close() : setOpen(true)} aria-expanded={open} aria-haspopup="dialog">Custom</FilterChip>
+    <FilterChip reset onClick={clearFilters} disabled={!canClearFilters}>{filtersBeforeClear ? "Restore filters" : "Clear filters"}</FilterChip>
     {open && createPortal(manager, document.body)}
   </>;
 }

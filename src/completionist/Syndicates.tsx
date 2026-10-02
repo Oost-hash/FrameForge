@@ -4,6 +4,7 @@ import ItemImg from "../ItemImg";
 import type { InventoryItem } from "../types/items";
 import type { SyndicateFilters } from "../types/filters";
 import type { SyndicateItem, SyndicateStore } from "../types/syndicates";
+import { FilterChip } from "../shared/ui/FilterControls";
 
 // ── Completion status ─────────────────────────────────────────────────────────
 // "complete"  = built/owned final item (or mod/sigil in inventory)
@@ -289,9 +290,9 @@ export default function Syndicates({ inventory, filters, onFiltersChange }: Prop
           Missing only
         </button>
         {isFiltered && (
-          <button className="fchip fchip-reset" onClick={() => onFiltersChange({ ...filters, missingOnly: false, search: "" })}>
+          <FilterChip reset onClick={() => onFiltersChange({ ...filters, missingOnly: false, search: "" })}>
             Show All
-          </button>
+          </FilterChip>
         )}
       </div>
 

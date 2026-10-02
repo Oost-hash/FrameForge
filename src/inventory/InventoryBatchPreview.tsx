@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import InventoryGrid from "./InventoryGrid";
 import { ViewToggle } from "../shared/ViewToggle";
 import { ModalCloseButton } from "../shared/ui/ModalCloseButton";
+import { FilterChip } from "../shared/ui/FilterControls";
 import type { ViewMode } from "../types/ui";
 
 interface InventoryBatchPreviewProps {
@@ -87,11 +88,11 @@ export default function InventoryBatchPreview({ onClose }: InventoryBatchPreview
         </header>
         <div className="flex flex-wrap gap-1 border-b border-border px-3 py-2" aria-label="Preview state">
           {PREVIEW_STATES.map(([state, label]) => (
-            <button
+            <FilterChip
               key={state}
-              className={`fchip${previewState === state ? " fchip-on" : ""}`}
+              active={previewState === state}
               onClick={() => setPreviewState(state)}
-            >{label}</button>
+            >{label}</FilterChip>
           ))}
         </div>
         <InventoryGrid

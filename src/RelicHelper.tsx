@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { HelpTip } from "./shared/HelpTip";
 import FilterPresets from "./shared/FilterPresets";
 import { SecondaryButton } from "./shared/ui/ActionButton";
+import { EmptyMessage, FilterBar, FilterChip, FilterLabel, FilterSeparator, FoundrySearch } from "./shared/ui/FilterControls";
 import { PREFERENCE_KEYS } from "./constants/preferences";
 import { matchesSearchTerms, splitSearchTerms } from "./lib/search";
 import { RELIC_DROP_RATES, RELIC_REFINEMENT_LABELS, RELIC_REFINEMENT_ORDER } from "./constants/relics";
@@ -701,30 +702,30 @@ function PlannerTab({
       <div className={PL_CONTROLS}>
         <div className={PL_GROUP}>
           <span className={PL_LABEL}>Metric</span>
-          <button className={`fchip${metric === "plat"  ? " fchip-on" : ""}`} onClick={() => setMetric("plat")}>Platinum</button>
-          <button className={`fchip${metric === "ducat" ? " fchip-on" : ""}`} onClick={() => setMetric("ducat")}>Ducats</button>
+          <FilterChip active={metric === "plat"} onClick={() => setMetric("plat")}>Platinum</FilterChip>
+          <FilterChip active={metric === "ducat"} onClick={() => setMetric("ducat")}>Ducats</FilterChip>
         </div>
         <div className={PL_GROUP}>
           <span className={PL_LABEL}>Squad</span>
           {([1, 2, 3, 4] as const).map(n => (
-            <button key={n} className={`fchip${squadSize === n ? " fchip-on" : ""}`} onClick={() => setSquadSize(n)}>
+            <FilterChip key={n} active={squadSize === n} onClick={() => setSquadSize(n)}>
               {n === 1 ? "Solo" : `${n}p`}
-            </button>
+            </FilterChip>
           ))}
         </div>
         <div className={PL_GROUP}>
           <span className={PL_LABEL}>Era</span>
           {(["lith","meso","neo","axi"] as const).map(t => (
-            <button key={t} className={`fchip${tierFilter.includes(t) ? " fchip-on" : ""}`}
+            <FilterChip key={t} active={tierFilter.includes(t)}
               onClick={() => setTierFilter(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])}>
               {t[0].toUpperCase() + t.slice(1)}
-            </button>
+            </FilterChip>
           ))}
         </div>
         <div className={PL_GROUP}>
-          <button className={`fchip${vaultFilter === "unvaulted" ? " fchip-on" : ""}`} onClick={() => setVaultFilter(v => v === "unvaulted" ? "all" : "unvaulted")}>Unvaulted</button>
-          <button className={`fchip${vaultFilter === "vaulted"   ? " fchip-on" : ""}`} onClick={() => setVaultFilter(v => v === "vaulted"   ? "all" : "vaulted")}>Vaulted</button>
-          <button className={`fchip${ownedOnly ? " fchip-on" : ""}`} onClick={() => setOwnedOnly(v => !v)}>Owned Only</button>
+          <FilterChip active={vaultFilter === "unvaulted"} onClick={() => setVaultFilter(v => v === "unvaulted" ? "all" : "unvaulted")}>Unvaulted</FilterChip>
+          <FilterChip active={vaultFilter === "vaulted"} onClick={() => setVaultFilter(v => v === "vaulted" ? "all" : "vaulted")}>Vaulted</FilterChip>
+          <FilterChip active={ownedOnly} onClick={() => setOwnedOnly(v => !v)}>Owned Only</FilterChip>
         </div>
         <span className={PL_COUNT} style={{ marginLeft: "auto" }}>{plannerRows.length} relics</span>
       </div>
@@ -753,7 +754,7 @@ function PlannerTab({
       {/* Rows */}
       <div className={PL_LIST}>
         {plannerRows.length === 0 ? (
-          <div className="empty-msg">No relics match. Try turning off Owned Only.</div>
+          <EmptyMessage>No relics match. Try turning off Owned Only.</EmptyMessage>
         ) : plannerRows.map(({ drop, rewards, vals, evByTier, bestTier, totalOwned, vaulted }) => {
           const isOpen = expanded === drop.fullName;
           const gain   = evByTier.radiant - evByTier.intact;
@@ -959,36 +960,36 @@ export default function RelicHelper({ inventory, colorblindMode = false, filters
         />
       ) : (<>
       <div className="market-header">
-        <input
-          className="foundry-search" style={{ width: 220 }}
+        <FoundrySearch
+          style={{ width: 220 }}
           placeholder="Relic or item names (comma-separated)…"
           value={search} onChange={e => set("search", e.target.value)}
         />
-        <div className="filter-bar" style={{ border: "none", padding: 0, flex: 1, flexWrap: "wrap" }}>
+        <FilterBar style={{ border: "none", padding: 0, flex: 1, flexWrap: "wrap" }}>
           {(["Lith","Meso","Neo","Axi","Requiem"] as const).map(t => (
-            <button key={t} className={`fchip ${tiers.includes(t.toLowerCase()) ? "fchip-on" : ""}`}
-              onClick={() => set("tiers", toggle(tiers, t.toLowerCase()))}>{t}</button>
+            <FilterChip key={t} active={tiers.includes(t.toLowerCase())}
+              onClick={() => set("tiers", toggle(tiers, t.toLowerCase()))}>{t}</FilterChip>
           ))}
-          <span className="fbar-sep"/>
-          <button className={`fchip ${ownership.includes("owned")   ? "fchip-on" : ""}`} onClick={() => set("ownership", toggle(ownership, "owned"))}>Owned</button>
-          <button className={`fchip ${ownership.includes("notowned") ? "fchip-on" : ""}`} onClick={() => set("ownership", toggle(ownership, "notowned"))}>Not Owned</button>
-          <span className="fbar-sep"/>
-          <button className={`fchip ${vault.includes("vaulted")   ? "fchip-on" : ""}`} onClick={() => set("vault", toggle(vault, "vaulted"))}>Vaulted</button>
-          <button className={`fchip ${vault.includes("unvaulted") ? "fchip-on" : ""}`} onClick={() => set("vault", toggle(vault, "unvaulted"))}>Unvaulted</button>
-          <span className="fbar-sep"/>
-          <button className={`fchip ${completion.includes("complete")   ? "fchip-on" : ""}`} onClick={() => set("completion", toggle(completion, "complete"))}>Completed</button>
-          <button className={`fchip ${completion.includes("incomplete") ? "fchip-on" : ""}`} onClick={() => set("completion", toggle(completion, "incomplete"))}>Uncompleted</button>
-          <button className={`fchip ${ignoreFormaKuva ? "fchip-on" : ""}`} onClick={() => set("ignoreFormaKuva", !ignoreFormaKuva)} title="Treat Forma and Kuva rewards as always obtained when checking completion">Ignore Forma/Kuva</button>
-          <span className="fbar-sep"/>
+          <FilterSeparator />
+          <FilterChip active={ownership.includes("owned")} onClick={() => set("ownership", toggle(ownership, "owned"))}>Owned</FilterChip>
+          <FilterChip active={ownership.includes("notowned")} onClick={() => set("ownership", toggle(ownership, "notowned"))}>Not Owned</FilterChip>
+          <FilterSeparator />
+          <FilterChip active={vault.includes("vaulted")} onClick={() => set("vault", toggle(vault, "vaulted"))}>Vaulted</FilterChip>
+          <FilterChip active={vault.includes("unvaulted")} onClick={() => set("vault", toggle(vault, "unvaulted"))}>Unvaulted</FilterChip>
+          <FilterSeparator />
+          <FilterChip active={completion.includes("complete")} onClick={() => set("completion", toggle(completion, "complete"))}>Completed</FilterChip>
+          <FilterChip active={completion.includes("incomplete")} onClick={() => set("completion", toggle(completion, "incomplete"))}>Uncompleted</FilterChip>
+          <FilterChip active={ignoreFormaKuva} onClick={() => set("ignoreFormaKuva", !ignoreFormaKuva)} title="Treat Forma and Kuva rewards as always obtained when checking completion">Ignore Forma/Kuva</FilterChip>
+          <FilterSeparator />
           <FilterPresets module="relics" {...{ filters, onFiltersChange, filterPresets, onFilterPresetsChange, onOpenSettings }} />
-          <span className="fbar-sep"/>
-          <span className="fbar-label">Sort:</span>
-          <button className={`fchip ${sortMode === "count"  ? "fchip-on" : ""}`} onClick={() => set("sortMode", "count")}>Most Owned</button>
-          <button className={`fchip ${sortMode === "plat"   ? "fchip-on" : ""}`} onClick={() => set("sortMode", "plat")}>Avg Plat</button>
-          <button className={`fchip ${sortMode === "ducats" ? "fchip-on" : ""}`} onClick={() => set("sortMode", "ducats")}>Avg Ducats</button>
-          <button className={`fchip ${sortMode === "az"     ? "fchip-on" : ""}`} onClick={() => set("sortMode", "az")}>A–Z</button>
-          <button className={`fchip ${sortMode === "za"     ? "fchip-on" : ""}`} onClick={() => set("sortMode", "za")}>Z–A</button>
-          <span className="fbar-sep"/>
+          <FilterSeparator />
+          <FilterLabel>Sort:</FilterLabel>
+          <FilterChip active={sortMode === "count"} onClick={() => set("sortMode", "count")}>Most Owned</FilterChip>
+          <FilterChip active={sortMode === "plat"} onClick={() => set("sortMode", "plat")}>Avg Plat</FilterChip>
+          <FilterChip active={sortMode === "ducats"} onClick={() => set("sortMode", "ducats")}>Avg Ducats</FilterChip>
+          <FilterChip active={sortMode === "az"} onClick={() => set("sortMode", "az")}>A–Z</FilterChip>
+          <FilterChip active={sortMode === "za"} onClick={() => set("sortMode", "za")}>Z–A</FilterChip>
+          <FilterSeparator />
           {dropError && <SecondaryButton className="ml-1" onClick={() => loadDrops(true)}>↺ Retry</SecondaryButton>}
           <span className="ml-auto text-[11px] text-muted">
             {dropLoading ? "Loading…" : `${visibleDrops.length} relics · ${ownedCount} owned`}
@@ -1001,7 +1002,7 @@ export default function RelicHelper({ inventory, colorblindMode = false, filters
             { swatch: "rgba(63,185,80,.5)",  icon: "✓",  label: "Part owned",     desc: "Green box — blueprint or part in inventory" },
             { swatch: "rgba(240,192,64,.5)", icon: "✓✓", label: "Item complete",  desc: "Gold box — built warframe/weapon owned" },
           ]} />
-        </div>
+        </FilterBar>
       </div>
 
       {searchMatchesReward && (
@@ -1022,7 +1023,7 @@ export default function RelicHelper({ inventory, colorblindMode = false, filters
 
       <div className={`relic-list relic-list-${relicView} ${RL_LIST_CLS[relicView]}`}>
         {visibleDrops.length === 0 ? (
-          <div className="empty-msg">{dropLoading ? "Fetching drop data…" : "No relics match."}</div>
+          <EmptyMessage>{dropLoading ? "Fetching drop data…" : "No relics match."}</EmptyMessage>
         ) : pagedDrops.map(drop => (
           <RelicCard
             key={drop.fullName}

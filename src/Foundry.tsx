@@ -5,6 +5,7 @@ import { HelpTip } from "./shared/HelpTip";
 import { SecondaryButton } from "./shared/ui/ActionButton";
 import { CategoryButton, CAT_COUNT, CAT_TOTAL } from "./shared/ui/CategoryButton";
 import { ModalCloseButton } from "./shared/ui/ModalCloseButton";
+import { EmptyMessage, FilterBar, FilterChip, FilterSeparator, FoundrySearch } from "./shared/ui/FilterControls";
 import FilterPresets from "./shared/FilterPresets";
 import { PREFERENCE_KEYS } from "./constants/preferences";
 import { matchesSearchTerms, splitSearchTerms } from "./lib/search";
@@ -452,13 +453,13 @@ function RecipeModal({ item, recipe, inventory, isTracked, onTrack, onClose, cra
             </div>
             <div className={FY_MODAL_BODY}>
               {!recipe ? (
-                <div className="empty-msg">Loading…</div>
+                <EmptyMessage>Loading…</EmptyMessage>
               ) : recipe.length === 0 ? (
-                <div className="empty-msg">No recipe data.</div>
+                <EmptyMessage>No recipe data.</EmptyMessage>
               ) : mode === "tree" ? (
                 mergeComponents(recipe).map((node, i) => <TreeNode key={i} node={node} inventory={inventory} depth={0} />)
               ) : needs.length === 0 ? (
-                <div className="empty-msg">✓ You have everything needed.</div>
+                <EmptyMessage>✓ You have everything needed.</EmptyMessage>
               ) : (
                 <div className={FY_NEEDS_LIST}>
                   {needs.map(r => (
@@ -846,7 +847,7 @@ export default function Foundry({ inventory, refreshKey, crafting, subsummedWarf
       {/* ── Col 1: Category sidebar ── */}
       <div className={FY_SIDEBAR}>
         <div className={FY_SEARCH_WRAP}>
-          <input className="foundry-search" placeholder="Search (comma-separated)…" value={inputSearch}
+          <FoundrySearch placeholder="Search (comma-separated)…" value={inputSearch}
             onChange={e => setInputSearch(e.target.value)} />
         </div>
         {CRAFT_CATEGORIES.map(cat => (
@@ -862,22 +863,22 @@ export default function Foundry({ inventory, refreshKey, crafting, subsummedWarf
 
       {/* ── Col 2: Card grid ── */}
       <div className={FY_MAIN}>
-        <div className="filter-bar">
-          <button className={`fchip ${filterPrime    ? "fchip-on" : ""}`} onClick={() => set("filterPrime", !filterPrime)}>Prime</button>
-          <button className={`fchip ${filterNonPrime ? "fchip-on" : ""}`} onClick={() => set("filterNonPrime", !filterNonPrime)}>Non-Prime</button>
-          <button className={`fchip ${filterVaulted   ? "fchip-on" : ""}`} onClick={() => set("filterVaulted", !filterVaulted)}>🔒 Vaulted</button>
-          <button className={`fchip ${filterUnvaulted ? "fchip-on" : ""}`} onClick={() => set("filterUnvaulted", !filterUnvaulted)}>🔓 Unvaulted</button>
-          <span className="fbar-sep"/>
-          <button className={`fchip ${filterOwned     ? "fchip-on" : ""}`} onClick={() => set("filterOwned", !filterOwned)}>✓ Owned</button>
-          <button className={`fchip ${filterUnowned   ? "fchip-on" : ""}`} onClick={() => set("filterUnowned", !filterUnowned)}>✕ Unowned</button>
-          <button className={`fchip ${ignoreFormaKuva ? "fchip-on" : ""}`} onClick={() => set("ignoreFormaKuva", !ignoreFormaKuva)} title="Treat Forma and Kuva as always owned when filtering">Ignore Forma/Kuva</button>
-          <button className={`fchip ${filterReady     ? "fchip-on" : ""}`} onClick={() => set("filterReady", !filterReady)}>⚡ Ready</button>
-          <span className="fbar-sep"/>
-          <button className={`fchip ${filterMastered  ? "fchip-on" : ""}`} onClick={() => onFiltersChange({ ...filters, filterMastered: !filterMastered, filterUnmastered: false })}>★ Mastered</button>
-          <button className={`fchip ${filterUnmastered? "fchip-on" : ""}`} onClick={() => onFiltersChange({ ...filters, filterUnmastered: !filterUnmastered, filterMastered: false })}>☆ Unmastered</button>
-          <span className="fbar-sep"/>
-          <button className={`fchip ${filterLvlCap   ? "fchip-on" : ""}`} onClick={() => onFiltersChange({ ...filters, filterLvlCap: !filterLvlCap, ...(!filterLvlCap ? { activeCat: "All" } : {}) })}>Lvl &gt; 30</button>
-          <span className="fbar-sep"/>
+        <FilterBar>
+          <FilterChip active={filterPrime} onClick={() => set("filterPrime", !filterPrime)}>Prime</FilterChip>
+          <FilterChip active={filterNonPrime} onClick={() => set("filterNonPrime", !filterNonPrime)}>Non-Prime</FilterChip>
+          <FilterChip active={filterVaulted} onClick={() => set("filterVaulted", !filterVaulted)}>🔒 Vaulted</FilterChip>
+          <FilterChip active={filterUnvaulted} onClick={() => set("filterUnvaulted", !filterUnvaulted)}>🔓 Unvaulted</FilterChip>
+          <FilterSeparator />
+          <FilterChip active={filterOwned} onClick={() => set("filterOwned", !filterOwned)}>✓ Owned</FilterChip>
+          <FilterChip active={filterUnowned} onClick={() => set("filterUnowned", !filterUnowned)}>✕ Unowned</FilterChip>
+          <FilterChip active={ignoreFormaKuva} onClick={() => set("ignoreFormaKuva", !ignoreFormaKuva)} title="Treat Forma and Kuva as always owned when filtering">Ignore Forma/Kuva</FilterChip>
+          <FilterChip active={filterReady} onClick={() => set("filterReady", !filterReady)}>⚡ Ready</FilterChip>
+          <FilterSeparator />
+          <FilterChip active={filterMastered} onClick={() => onFiltersChange({ ...filters, filterMastered: !filterMastered, filterUnmastered: false })}>★ Mastered</FilterChip>
+          <FilterChip active={filterUnmastered} onClick={() => onFiltersChange({ ...filters, filterUnmastered: !filterUnmastered, filterMastered: false })}>☆ Unmastered</FilterChip>
+          <FilterSeparator />
+          <FilterChip active={filterLvlCap} onClick={() => onFiltersChange({ ...filters, filterLvlCap: !filterLvlCap, ...(!filterLvlCap ? { activeCat: "All" } : {}) })}>Lvl &gt; 30</FilterChip>
+          <FilterSeparator />
           <FilterPresets module="foundry" {...{ filters, onFiltersChange, filterPresets, onFilterPresetsChange, onOpenSettings }} />
           <span className="ml-auto text-[11px] text-muted">{visible.length} items</span>
           <ViewToggle view={craftView} onChange={v => { setCraftView(v); localStorage.setItem(PREFERENCE_KEYS.FOUNDRY_VIEW, v); }} />
@@ -890,13 +891,13 @@ export default function Foundry({ inventory, refreshKey, crafting, subsummedWarf
             { icon: "⚒",  label: "⚒ Building", desc: "Currently crafting in the Foundry" },
             { icon: "MR", label: "MR{n}",       desc: "Required Mastery Rank to use" },
           ]} />
-        </div>
+        </FilterBar>
 
         <div className={craftGridClass(craftView)}>
           {visible.length === 0 && (
-            <div className="empty-msg">
+            <EmptyMessage>
               {craftable.length === 0 ? "No recipes loaded — refresh item list first." : "No items match."}
-            </div>
+            </EmptyMessage>
           )}
           {pagedItems.map(item => (
             <CraftCard

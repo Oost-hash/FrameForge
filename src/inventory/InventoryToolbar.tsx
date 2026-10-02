@@ -6,6 +6,7 @@ import { ViewToggle } from "../shared/ViewToggle";
 import type { ViewMode } from "../types/ui";
 import type { FilterPresetModule, FilterPresetSettings } from "../types/filterPresets";
 import FilterPresets from "../shared/FilterPresets";
+import { FilterBar, FilterChip, FilterLabel, FilterSeparator } from "../shared/ui/FilterControls";
 
 const TOOLBAR = "flex items-center gap-[12px] px-[16px] py-[10px] border-b border-border shrink-0";
 const ITEM_COUNT_LABEL = "text-muted text-[11px] whitespace-nowrap";
@@ -51,30 +52,30 @@ export default function InventoryToolbar({
           onChange={search => onFiltersChange(previous => ({ ...previous, search }))}
         />
       </div>
-      <div className="filter-bar">
-        <button className={`fchip ${filterOwned ? "fchip-on" : ""}`} onClick={() => onFiltersChange(previous => ({ ...previous, filterOwned: !previous.filterOwned }))}>Owned</button>
-        <button className={`fchip ${filterRecent ? "fchip-on" : ""}`} onClick={onToggleRecent}>Changed recently</button>
-        <button className={`fchip ${filterPrime ? "fchip-on" : ""}`} onClick={() => onFiltersChange(previous => ({ ...previous, filterPrime: !previous.filterPrime }))}>Prime</button>
-        <button className={`fchip ${filterVaulted ? "fchip-on" : ""}`} onClick={() => onFiltersChange(previous => ({ ...previous, filterVaulted: !previous.filterVaulted }))}>🔒 Vaulted</button>
-        <button className={`fchip ${filterUnvaulted ? "fchip-on" : ""}`} onClick={() => onFiltersChange(previous => ({ ...previous, filterUnvaulted: !previous.filterUnvaulted }))}>🔓 Unvaulted</button>
-        <button className={`fchip ${filterTradeable ? "fchip-on" : ""}`} aria-pressed={filterTradeable} onClick={() => onFiltersChange(previous => ({ ...previous, filterTradeable: !previous.filterTradeable }))}>Tradeable</button>
-        <button className={`fchip ${filterDucats ? "fchip-on" : ""}`} aria-pressed={filterDucats} onClick={() => onFiltersChange(previous => ({ ...previous, filterDucats: !previous.filterDucats }))}>Ducats</button>
+      <FilterBar>
+        <FilterChip active={filterOwned} onClick={() => onFiltersChange(previous => ({ ...previous, filterOwned: !previous.filterOwned }))}>Owned</FilterChip>
+        <FilterChip active={filterRecent} onClick={onToggleRecent}>Changed recently</FilterChip>
+        <FilterChip active={filterPrime} onClick={() => onFiltersChange(previous => ({ ...previous, filterPrime: !previous.filterPrime }))}>Prime</FilterChip>
+        <FilterChip active={filterVaulted} onClick={() => onFiltersChange(previous => ({ ...previous, filterVaulted: !previous.filterVaulted }))}>🔒 Vaulted</FilterChip>
+        <FilterChip active={filterUnvaulted} onClick={() => onFiltersChange(previous => ({ ...previous, filterUnvaulted: !previous.filterUnvaulted }))}>🔓 Unvaulted</FilterChip>
+        <FilterChip active={filterTradeable} aria-pressed={filterTradeable} onClick={() => onFiltersChange(previous => ({ ...previous, filterTradeable: !previous.filterTradeable }))}>Tradeable</FilterChip>
+        <FilterChip active={filterDucats} aria-pressed={filterDucats} onClick={() => onFiltersChange(previous => ({ ...previous, filterDucats: !previous.filterDucats }))}>Ducats</FilterChip>
         {showRankFilters && <>
-          <span className="fbar-sep" />
-          <span className="fbar-label">Rank:</span>
-          <button className={`fchip ${filterRank === "unranked" ? "fchip-on" : ""}`} onClick={() => onFiltersChange(previous => ({ ...previous, filterRank: previous.filterRank === "unranked" ? null : "unranked" }))}>Unranked</button>
+          <FilterSeparator />
+          <FilterLabel>Rank:</FilterLabel>
+          <FilterChip active={filterRank === "unranked"} onClick={() => onFiltersChange(previous => ({ ...previous, filterRank: previous.filterRank === "unranked" ? null : "unranked" }))}>Unranked</FilterChip>
           {availableRanks.map(rank => (
-            <button key={rank} className={`fchip ${filterRank === rank ? "fchip-on" : ""}`} onClick={() => onFiltersChange(previous => ({ ...previous, filterRank: previous.filterRank === rank ? null : rank }))}>R{rank}</button>
+            <FilterChip key={rank} active={filterRank === rank} onClick={() => onFiltersChange(previous => ({ ...previous, filterRank: previous.filterRank === rank ? null : rank }))}>R{rank}</FilterChip>
           ))}
         </>}
-        <span className="fbar-sep" />
+        <FilterSeparator />
         <FilterPresets module="inventory" {...{ filters, onFiltersChange, filterPresets, onFilterPresetsChange, onOpenSettings }} />
-        <span className="fbar-sep" />
-        <span className="fbar-label">Sort:</span>
-        <button className={`fchip ${sortMode === "qty-desc" ? "fchip-on" : ""}`} onClick={() => onFiltersChange(previous => ({ ...previous, sortMode: "qty-desc" }))}>Qty ↓</button>
-        <button className={`fchip ${sortMode === "qty-asc" ? "fchip-on" : ""}`} onClick={() => onFiltersChange(previous => ({ ...previous, sortMode: "qty-asc" }))}>Qty ↑</button>
-        <button className={`fchip ${sortMode === "name-asc" ? "fchip-on" : ""}`} onClick={() => onFiltersChange(previous => ({ ...previous, sortMode: "name-asc" }))}>A-Z</button>
-        <button className={`fchip ${sortMode === "name-desc" ? "fchip-on" : ""}`} onClick={() => onFiltersChange(previous => ({ ...previous, sortMode: "name-desc" }))}>Z-A</button>
+        <FilterSeparator />
+        <FilterLabel>Sort:</FilterLabel>
+        <FilterChip active={sortMode === "qty-desc"} onClick={() => onFiltersChange(previous => ({ ...previous, sortMode: "qty-desc" }))}>Qty ↓</FilterChip>
+        <FilterChip active={sortMode === "qty-asc"} onClick={() => onFiltersChange(previous => ({ ...previous, sortMode: "qty-asc" }))}>Qty ↑</FilterChip>
+        <FilterChip active={sortMode === "name-asc"} onClick={() => onFiltersChange(previous => ({ ...previous, sortMode: "name-asc" }))}>A-Z</FilterChip>
+        <FilterChip active={sortMode === "name-desc"} onClick={() => onFiltersChange(previous => ({ ...previous, sortMode: "name-desc" }))}>Z-A</FilterChip>
         <span className={`${ITEM_COUNT_LABEL} ml-auto`}>{itemCount} item{itemCount !== 1 ? "s" : ""}{itemCount === 1000 ? " (capped)" : ""}</span>
         <ViewToggle
           view={view === "text-cards" ? "cards" : view === "list-compact" ? "list" : view}
@@ -117,7 +118,7 @@ export default function InventoryToolbar({
           { swatch: "rgba(63,185,80,.5)", label: "Green border", desc: "Item recently gained" },
           { swatch: "rgba(248,81,73,.5)", label: "Red border", desc: "Item recently lost or consumed" },
         ]} />
-      </div>
+      </FilterBar>
     </>
   );
 }

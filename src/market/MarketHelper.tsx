@@ -4,6 +4,7 @@ import ItemImg from "../ItemImg";
 import { listen } from "@tauri-apps/api/event";
 import { HelpTip } from "../shared/HelpTip";
 import FilterPresets from "../shared/FilterPresets";
+import { EmptyMessage, FilterBar, FilterChip, FilterLabel, FilterSeparator, FoundrySearch } from "../shared/ui/FilterControls";
 import WfmTrading from "./WfmTrading";
 import ItemMarketPopup from "./ItemMarketPopup";
 import { matchesSearchTerms, splitSearchTerms } from "../lib/search";
@@ -624,41 +625,41 @@ export default function MarketHelper({ inventory, refreshKey, crafting, onWfmLog
 
       {activeMarketTab === "sets" && <>
       <div className={MK_HEADER}>
-        <input className="foundry-search" style={{ width: 200 }} placeholder="Search sets (comma-separated)…"
+        <FoundrySearch style={{ width: 200 }} placeholder="Search sets (comma-separated)…"
           value={search} onChange={e => set("search", e.target.value)} />
-        <div className="filter-bar" style={{ border: "none", padding: 0, flex: 1, flexWrap: "wrap" }}>
-          <button className={`fchip ${ownership.includes("owned")    ? "fchip-on" : ""}`} onClick={() => set("ownership", toggle(ownership, "owned"))}>Owned</button>
-          <button className={`fchip ${ownership.includes("notowned") ? "fchip-on" : ""}`} onClick={() => set("ownership", toggle(ownership, "notowned"))}>Not Owned</button>
-          <span className="fbar-sep"/>
-          <button className={`fchip ${conditions.includes("dupes")     ? "fchip-on" : ""}`} onClick={() => set("conditions", toggle(conditions, "dupes"))}>Dupes</button>
-          <button className={`fchip ${conditions.includes("itemowned") ? "fchip-on" : ""}`} onClick={() => set("conditions", toggle(conditions, "itemowned"))}>Item Owned</button>
-          <button className={`fchip ${conditions.includes("fullset")   ? "fchip-on" : ""}`} onClick={() => set("conditions", toggle(conditions, "fullset"))}>Full Set</button>
-          <button className={`fchip ${conditions.includes("hasparts")  ? "fchip-on" : ""}`} onClick={() => set("conditions", toggle(conditions, "hasparts"))}>Has Parts</button>
-          <span className="fbar-sep"/>
-          <button className={`fchip ${vault.includes("vaulted")   ? "fchip-on" : ""}`} onClick={() => set("vault", toggle(vault, "vaulted"))}>Vaulted</button>
-          <button className={`fchip ${vault.includes("unvaulted") ? "fchip-on" : ""}`} onClick={() => set("vault", toggle(vault, "unvaulted"))}>Unvaulted</button>
-          <span className="fbar-sep"/>
+        <FilterBar style={{ border: "none", padding: 0, flex: 1, flexWrap: "wrap" }}>
+          <FilterChip active={ownership.includes("owned")} onClick={() => set("ownership", toggle(ownership, "owned"))}>Owned</FilterChip>
+          <FilterChip active={ownership.includes("notowned")} onClick={() => set("ownership", toggle(ownership, "notowned"))}>Not Owned</FilterChip>
+          <FilterSeparator />
+          <FilterChip active={conditions.includes("dupes")} onClick={() => set("conditions", toggle(conditions, "dupes"))}>Dupes</FilterChip>
+          <FilterChip active={conditions.includes("itemowned")} onClick={() => set("conditions", toggle(conditions, "itemowned"))}>Item Owned</FilterChip>
+          <FilterChip active={conditions.includes("fullset")} onClick={() => set("conditions", toggle(conditions, "fullset"))}>Full Set</FilterChip>
+          <FilterChip active={conditions.includes("hasparts")} onClick={() => set("conditions", toggle(conditions, "hasparts"))}>Has Parts</FilterChip>
+          <FilterSeparator />
+          <FilterChip active={vault.includes("vaulted")} onClick={() => set("vault", toggle(vault, "vaulted"))}>Vaulted</FilterChip>
+          <FilterChip active={vault.includes("unvaulted")} onClick={() => set("vault", toggle(vault, "unvaulted"))}>Unvaulted</FilterChip>
+          <FilterSeparator />
           <FilterPresets module="market" {...{ filters, onFiltersChange, filterPresets, onFilterPresetsChange, onOpenSettings }} />
-          <span className="fbar-sep"/>
-          <span className="fbar-label">Sort:</span>
-          <button className={`fchip ${sortMode === "plat"   ? "fchip-on" : ""}`} onClick={() => set("sortMode", "plat")}>Most Plat</button>
-          <button className={`fchip ${sortMode === "ducats" ? "fchip-on" : ""}`} onClick={() => set("sortMode", "ducats")}>Most Ducats</button>
-          <button className={`fchip ${sortMode === "az"     ? "fchip-on" : ""}`} onClick={() => set("sortMode", "az")}>A–Z</button>
-          <button className={`fchip ${sortMode === "za"     ? "fchip-on" : ""}`} onClick={() => set("sortMode", "za")}>Z–A</button>
-          <span className="fbar-sep"/>
+          <FilterSeparator />
+          <FilterLabel>Sort:</FilterLabel>
+          <FilterChip active={sortMode === "plat"} onClick={() => set("sortMode", "plat")}>Most Plat</FilterChip>
+          <FilterChip active={sortMode === "ducats"} onClick={() => set("sortMode", "ducats")}>Most Ducats</FilterChip>
+          <FilterChip active={sortMode === "az"} onClick={() => set("sortMode", "az")}>A–Z</FilterChip>
+          <FilterChip active={sortMode === "za"} onClick={() => set("sortMode", "za")}>Z–A</FilterChip>
+          <FilterSeparator />
           <span className="ml-auto text-[11px] text-muted">{visibleSets.length} sets</span>
           <HelpTip items={[
             { swatch: "rgba(240,192,64,.5)", icon: "✓", label: "Complete set", desc: "Gold border + ✓ — all parts in inventory" },
             { icon: "+",  label: "+ Dupes",    desc: "Extra copies of at least one part" },
             { icon: "⚒",  label: "⚒ Building", desc: "Item is currently crafting in Foundry" },
           ]} />
-        </div>
+        </FilterBar>
       </div>
 
       <div className={MK_SUMMARY}>
         <DucatIcon size={13} />
         <span><strong>{fmt(totalDucats)}</strong> total ducats (owned parts)</span>
-        <span className="fbar-sep"/>
+        <FilterSeparator />
         <DucatIcon size={13} />
         <span><strong style={{ color: "#f0c040" }}>{fmt(dupeDucats)}</strong> from dupes</span>
         {wfmItems.length === 0 && <span style={{ color: "var(--muted)", fontSize: 11 }}>· Connecting to warframe.market…</span>}
@@ -667,7 +668,7 @@ export default function MarketHelper({ inventory, refreshKey, crafting, onWfmLog
 
       <div className={MK_GRID}>
         {visibleSets.length === 0 ? (
-          <div className="empty-msg" style={{ gridColumn: "1/-1" }}>No sets match. Adjust filters or own some prime parts first.</div>
+          <EmptyMessage style={{ gridColumn: "1/-1" }}>No sets match. Adjust filters or own some prime parts first.</EmptyMessage>
         ) : visibleSets.map(([setKey, parts]) => {
           const setNormalKey = normalizeForWfm(setKey + " Set");
           const setUrl       = wfmLookup.get(setNormalKey) ?? setNormalKey;
@@ -796,28 +797,28 @@ function ModsTab({ catalog: allCatalog, inventory, wfmLookup, prices, modCopiesM
   return (
     <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
       <div className={MK_HEADER}>
-        <input className="foundry-search" style={{ width: 200 }} placeholder="Search mods &amp; arcanes…"
+        <FoundrySearch style={{ width: 200 }} placeholder="Search mods &amp; arcanes…"
           value={search} onChange={e => setSearch(e.target.value)} />
-        <div className="filter-bar" style={{ border: "none", padding: 0, flex: 1, flexWrap: "wrap" }}>
-          <button className={`fchip ${catFilter === "all"     ? "fchip-on" : ""}`} onClick={() => setCatFilter("all")}>All</button>
-          <button className={`fchip ${catFilter === "mods"    ? "fchip-on" : ""}`} onClick={() => setCatFilter("mods")}>Mods</button>
-          <button className={`fchip ${catFilter === "arcanes" ? "fchip-on" : ""}`} onClick={() => setCatFilter("arcanes")}>Arcanes</button>
-          <span className="fbar-sep"/>
-          <button className={`fchip ${ownFilter === "all"      ? "fchip-on" : ""}`} onClick={() => setOwnFilter("all")}>All</button>
-          <button className={`fchip ${ownFilter === "owned"    ? "fchip-on" : ""}`} onClick={() => setOwnFilter("owned")}>Owned</button>
-          <button className={`fchip ${ownFilter === "notowned" ? "fchip-on" : ""}`} onClick={() => setOwnFilter("notowned")}>Not Owned</button>
-          <span className="fbar-sep"/>
-          <span className="fbar-label">Sort:</span>
-          <button className={`fchip ${sortMode === "qty"  ? "fchip-on" : ""}`} onClick={() => setSortMode("qty")}>Most Owned</button>
-          <button className={`fchip ${sortMode === "plat" ? "fchip-on" : ""}`} onClick={() => setSortMode("plat")}>Most Plat</button>
-          <button className={`fchip ${sortMode === "az"   ? "fchip-on" : ""}`} onClick={() => setSortMode("az")}>A–Z</button>
-          <button className={`fchip ${sortMode === "za"   ? "fchip-on" : ""}`} onClick={() => setSortMode("za")}>Z–A</button>
-        </div>
+        <FilterBar style={{ border: "none", padding: 0, flex: 1, flexWrap: "wrap" }}>
+          <FilterChip active={catFilter === "all"} onClick={() => setCatFilter("all")}>All</FilterChip>
+          <FilterChip active={catFilter === "mods"} onClick={() => setCatFilter("mods")}>Mods</FilterChip>
+          <FilterChip active={catFilter === "arcanes"} onClick={() => setCatFilter("arcanes")}>Arcanes</FilterChip>
+          <FilterSeparator />
+          <FilterChip active={ownFilter === "all"} onClick={() => setOwnFilter("all")}>All</FilterChip>
+          <FilterChip active={ownFilter === "owned"} onClick={() => setOwnFilter("owned")}>Owned</FilterChip>
+          <FilterChip active={ownFilter === "notowned"} onClick={() => setOwnFilter("notowned")}>Not Owned</FilterChip>
+          <FilterSeparator />
+          <FilterLabel>Sort:</FilterLabel>
+          <FilterChip active={sortMode === "qty"} onClick={() => setSortMode("qty")}>Most Owned</FilterChip>
+          <FilterChip active={sortMode === "plat"} onClick={() => setSortMode("plat")}>Most Plat</FilterChip>
+          <FilterChip active={sortMode === "az"} onClick={() => setSortMode("az")}>A–Z</FilterChip>
+          <FilterChip active={sortMode === "za"} onClick={() => setSortMode("za")}>Z–A</FilterChip>
+        </FilterBar>
       </div>
 
       <div className={MK_SUMMARY}>
         <span><strong>{ownedCount.toLocaleString()}</strong> owned · <strong>{catalog.length.toLocaleString()}</strong> total</span>
-        <span className="fbar-sep"/>
+        <FilterSeparator />
         <span style={{ color: "var(--muted)" }}>{filtered.length.toLocaleString()} shown</span>
       </div>
 
@@ -873,15 +874,15 @@ function ModsTab({ catalog: allCatalog, inventory, wfmLookup, prices, modCopiesM
           );
         })}
         {pageItems.length === 0 && (
-          <div className="empty-msg" style={{ padding: 24, gridColumn: "1/-1" }}>No items match the current filters.</div>
+          <EmptyMessage style={{ padding: 24, gridColumn: "1/-1" }}>No items match the current filters.</EmptyMessage>
         )}
       </div>
 
       {totalPages > 1 && (
         <div className={MODS_PAG}>
-          <button className="fchip" disabled={page === 0} onClick={() => setPage(p => p - 1)}>‹ Prev</button>
+          <FilterChip disabled={page === 0} onClick={() => setPage(p => p - 1)}>‹ Prev</FilterChip>
           <span className={MODS_INFO}>Page {page + 1} of {totalPages} · {filtered.length} items</span>
-          <button className="fchip" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>Next ›</button>
+          <FilterChip disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>Next ›</FilterChip>
         </div>
       )}
     </div>

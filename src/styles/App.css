@@ -48,25 +48,6 @@
 
 /* ── Main ── */
 
-/* ── Filter bar ── */
-.filter-bar {
-  display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
-  padding: 4px 12px 4px; flex-shrink: 0;
-  border-bottom: 1px solid var(--border); background: var(--bg);
-}
-.fchip {
-  padding: 2px 9px; border-radius: 12px; border: 1px solid var(--border);
-  background: none; color: var(--muted); cursor: pointer; font-size: 11px;
-  white-space: nowrap; transition: all .12s;
-}
-.fchip:hover { border-color: rgba(255,255,255,.25); color: var(--text); }
-.fchip-on    { border-color: var(--accent); color: var(--accent); background: rgba(56,139,253,.1); }
-.fchip-reset { border-color: rgba(255,255,255,.2); color: var(--text); }
-.fchip-reset:hover { border-color: rgba(255,255,255,.4); }
-.fchip-reset:disabled { border-color: var(--border); color: var(--muted); opacity: .55; cursor: default; }
-.fbar-sep   { width: 1px; height: 14px; background: var(--border); flex-shrink: 0; margin: 0 2px; }
-.fbar-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
-
 /* ── Inventory filter presets ── */
 .inventory-preset-chip { max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
 .inventory-presets-popup {
@@ -116,8 +97,6 @@
 
 /* ── Inventory card grid (see InventoryGrid.css) ── */
 
-.empty-msg { padding: 40px 24px; color: var(--muted); text-align: center; line-height: 1.6; }
-
 /* ── Image toggle (inventory): checkbox input + pseudo rules ── */
 
 .inventory-image-toggle input {
@@ -135,13 +114,6 @@
 .inventory-image-toggle input:checked::before { transform: rotate(-45deg) scale(1); }
 .inventory-image-toggle:hover input { border-color: var(--accent); }
 .inventory-image-toggle input:focus-visible { outline: 2px solid rgba(56,139,253,.45); outline-offset: 2px; }
-
-.foundry-search {
-  width: 100%; box-sizing: border-box;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
-  color: var(--text); font-size: 12px; padding: 4px 8px; outline: none;
-}
-.foundry-search:focus { border-color: var(--accent); }
 
 .cc-image img, .cc-image .img {
   width: 88px !important; height: 96px !important;

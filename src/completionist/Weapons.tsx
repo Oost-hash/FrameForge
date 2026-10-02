@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import ItemImg from "../ItemImg";
 import type { InventoryItem, WeaponItem } from "../types/items";
+import { FilterChip } from "../shared/ui/FilterControls";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -193,9 +194,9 @@ export default function Weapons({ inventory, activeTab, onTabChange }: Props) {
           Unmastered only
         </button>
         {isFiltered && (
-          <button className="fchip fchip-reset" onClick={() => { setSearch(""); setUnmasteredOnly(false); }}>
+          <FilterChip reset onClick={() => { setSearch(""); setUnmasteredOnly(false); }}>
             Show All
-          </button>
+          </FilterChip>
         )}
       </div>
 
