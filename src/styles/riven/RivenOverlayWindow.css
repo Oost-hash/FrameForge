@@ -1,4 +1,8 @@
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* In the Tailwind `base` layer so utilities can override it; an unlayered
+   universal reset outranks every margin/padding utility. */
+@layer base {
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+}
 
 body { background: transparent; overflow: hidden; }
 
