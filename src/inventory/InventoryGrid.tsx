@@ -57,6 +57,37 @@ const INV_CARD_SIDE_ROW =
   "absolute top-[.462em] right-[.538em] z-[2] flex flex-row items-center gap-[.308em]";
 const INV_WIKI_BTN =
   "cursor-pointer rounded-[4px] border border-[rgba(56,139,253,0.4)] bg-[rgba(0,0,0,0.4)] px-[.6em] py-[.3em] text-[.769em] font-bold leading-[1.3] text-[#6ea8fe] transition-[background] duration-100 hover:bg-[rgba(56,139,253,0.25)] hover:text-[#a8c8ff]";
+const INV_ROW_ICON =
+  "inv-row-icon relative flex h-[var(--inventory-list-icon-wrap-size,30px)] w-[var(--inventory-list-icon-wrap-size,30px)] shrink-0 items-center";
+const INV_ROW_NAME =
+  "inv-row-name min-w-0 flex-1 text-[1em] font-medium text-foreground whitespace-nowrap overflow-hidden text-ellipsis";
+const INV_ROW_CAT =
+  "inv-row-cat w-[10em] shrink-0 text-[.846em] text-muted text-right uppercase tracking-[.03em] max-[900px]:hidden";
+const INV_ROW_QTY =
+  "inv-row-qty flex w-[5em] shrink-0 items-center justify-end gap-[4px] text-right text-[1.077em] font-bold text-foreground max-[900px]:w-[4em]";
+const INV_ROW_VALUES =
+  "inv-row-values flex shrink-0 items-center justify-start gap-[4px] w-[7.385em] max-[900px]:w-auto";
+const INV_FOUNDRY_ROW = "inv-foundry-icon-row absolute right-[-6px] top-[-4px] text-[9px]";
+
+function invRowFavClass(view: ViewMode, isFavorite: boolean): string {
+  const size = view === "list" ? "text-[14px]" : "text-[11px]";
+  const color = isFavorite
+    ? "text-[#f0c040]"
+    : "text-[rgba(255,255,255,0.25)] hover:text-[rgba(240,192,64,0.8)]";
+  return `inv-fav-star-row shrink-0 cursor-pointer border-0 bg-transparent p-0 leading-none transition-colors duration-100 ${size} ${color}`;
+}
+
+function invCardRowClass(view: ViewMode): string {
+  return view === "list"
+    ? "relative flex w-full min-w-0 flex-row items-center gap-[12px] px-[16px] py-[.615em] min-h-[3.385em] self-stretch border border-border border-b-[rgba(48,54,61,0.35)] bg-surface cursor-default transition-[border-color] duration-[120ms] hover:border-[rgba(56,139,253,0.5)] max-[900px]:gap-[6px] max-[900px]:px-[8px]"
+    : "relative flex w-full min-w-0 flex-row items-center gap-[8px] px-[12px] py-[.308em] min-h-[2.308em] self-stretch border border-border border-b-[rgba(48,54,61,0.35)] bg-surface cursor-default transition-[border-color] duration-[120ms] hover:border-[rgba(56,139,253,0.5)] max-[900px]:gap-[6px] max-[900px]:px-[8px]";
+}
+
+function invWikiRowClass(view: ViewMode): string {
+  return view === "list"
+    ? "inv-wiki-row shrink-0 cursor-pointer border border-[rgba(56,139,253,0.3)] bg-transparent px-[7px] py-[4px] text-[.769em] font-bold leading-[1.3] text-[#6ea8fe] transition-all duration-100 hover:bg-[rgba(56,139,253,0.2)] hover:text-[#a8c8ff]"
+    : "inv-wiki-row shrink-0 cursor-pointer border border-[rgba(56,139,253,0.3)] bg-transparent px-[5px] py-[2px] text-[.769em] font-bold leading-[1.3] text-[#6ea8fe] transition-all duration-100 hover:bg-[rgba(56,139,253,0.2)] hover:text-[#a8c8ff]";
+}
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -192,19 +223,19 @@ const InvModCard = memo(function InvModCard({ unique_name, name, category, image
   }
   if (view === "list" || view === "list-compact") {
     return (
-      <div key={unique_name} className={`${baseClass} inv-card-row ${INV_CARD_BASE}`}>
-        <button className={`inv-fav-star-row ${isFavorite ? "active" : ""}`}
+      <div key={unique_name} className={`${baseClass} inv-card-row ${invCardRowClass(view)}`}>
+        <button className={invRowFavClass(view, isFavorite)}
           title={isFavorite ? "Remove from Modular Window" : "Add to Modular Window"}
           aria-label={isFavorite ? "Remove from Modular Window" : "Add to Modular Window"}
           onClick={e => { e.stopPropagation(); onToggleFavorite(unique_name); }}>
           {isFavorite ? "★" : "☆"}
         </button>
-        {view === "list" && <div className="inv-row-icon"><ItemImg imageName={image_name ?? undefined} category={category} size={28} /></div>}
-        <div className="inv-row-name">{name}</div>
-        <ValueChips plat={plat} ducats={ducats} className="inv-row-values" />
-        <div className="inv-row-cat">{category}</div>
-        <div className="inv-row-qty">{fmt(total)}</div>
-        <WikiButton name={name} className="inv-wiki-row" />
+        {view === "list" && <div className={INV_ROW_ICON}><ItemImg imageName={image_name ?? undefined} category={category} size={28} /></div>}
+        <div className={INV_ROW_NAME}>{name}</div>
+        <ValueChips plat={plat} ducats={ducats} className={INV_ROW_VALUES} />
+        <div className={INV_ROW_CAT}>{category}</div>
+        <div className={INV_ROW_QTY}>{fmt(total)}</div>
+        <WikiButton name={name} className={invWikiRowClass(view)} />
       </div>
     );
   }
@@ -301,30 +332,30 @@ const InvCard = memo(function InvCard({
   }
   if (view === "list" || view === "list-compact") {
     return (
-      <div className={`${baseClass} inv-card-row ${INV_CARD_BASE}`}>
-        <button className={`inv-fav-star-row ${isFavorite ? "active" : ""}`}
+      <div className={`${baseClass} inv-card-row ${invCardRowClass(view)}`}>
+        <button className={invRowFavClass(view, isFavorite)}
           title={isFavorite ? "Remove from Modular Window" : "Add to Modular Window"}
           aria-label={isFavorite ? "Remove from Modular Window" : "Add to Modular Window"}
           onClick={e => { e.stopPropagation(); onToggleFavorite(unique_name); }}>
           {isFavorite ? "★" : "☆"}
         </button>
         {view === "list" && (
-          <div className="inv-row-icon">
+          <div className={INV_ROW_ICON}>
             <ItemImg imageName={image_name ?? undefined} category={category} size={28} />
-            {craftJobName && <span className="inv-foundry-icon-row" title={`Building — ${craftJobName}`}>⚒</span>}
+            {craftJobName && <span className={INV_FOUNDRY_ROW} title={`Building — ${craftJobName}`}>⚒</span>}
           </div>
         )}
-        <div className="inv-row-name">
+        <div className={INV_ROW_NAME}>
           {name}
           {isRecent && <span className="item-updated">{recentLabel}</span>}
         </div>
-        <ValueChips plat={plat} ducats={ducats} className="inv-row-values" />
-        <div className="inv-row-cat">{category}</div>
-        <div className="inv-row-qty">
+        <ValueChips plat={plat} ducats={ducats} className={INV_ROW_VALUES} />
+        <div className={INV_ROW_CAT}>{category}</div>
+        <div className={INV_ROW_QTY}>
           {fmt(qty)}
           {isRecent && recentDelta != null && <span className={`item-delta ${deltaClass(recentDelta)}`}>{deltaText(recentDelta)}</span>}
         </div>
-        <WikiButton name={name} className="inv-wiki-row" />
+        <WikiButton name={name} className={invWikiRowClass(view)} />
       </div>
     );
   }

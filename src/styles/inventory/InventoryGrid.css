@@ -16,20 +16,6 @@
 .item-grid-cards .inv-card-img-wrap .img-fallback { width: var(--inventory-card-image-size, 56px) !important; height: var(--inventory-card-image-size, 56px) !important; }
 .item-grid-cards .inv-card-img-wrap .img-fallback { font-size: 1.508em !important; }
 
-.inv-row-values {
-  display: flex; align-items: center; gap: 4px; flex-shrink: 0;
-  /* Fixed column right after the name so chips start at a constant x and
-     qty/cat/wiki keep their positions on every row. */
-  width: 96px; justify-content: flex-start;
-}
-.inv-wiki-row {
-  background: none; cursor: pointer;
-  border: 1px solid rgba(56,139,253,.3);
-  font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 3px;
-  color: #6ea8fe; flex-shrink: 0; line-height: 1.3; transition: all .1s;
-}
-.inv-wiki-row:hover { background: rgba(56,139,253,.2); color: #a8c8ff; }
-
 /* ── Mod rank breakdown card ───────────────────────────────────────────────── */
 
 .inv-card-mod { align-items: flex-start; }
@@ -87,57 +73,13 @@
 .item-grid-icons .inv-card-icon-only .img { width: 56px !important; height: 56px !important; }
 
 /* list + list-compact */
-.inv-card-row {
-  display: flex; flex-direction: row; align-items: center;
-  gap: 8px; padding: .308em 12px; border-radius: 0;
-  border-bottom: 1px solid rgba(48,54,61,.35);
-  min-height: 2.308em;
-}
-.inv-fav-star-row {
-  background: none; border: none; cursor: pointer;
-  font-size: 11px; color: rgba(255,255,255,.25); padding: 0; flex-shrink: 0;
-  line-height: 1; transition: color .1s;
-}
-.inv-fav-star-row:hover { color: rgba(240,192,64,.8); }
-.inv-fav-star-row.active { color: #f0c040; }
-.inv-row-icon { width: 22px; height: 22px; flex-shrink: 0; position: relative; display: flex; align-items: center; }
 .inv-row-icon img, .inv-row-icon .img { width: 20px !important; height: 20px !important; }
-.inv-foundry-icon-row { position: absolute; top: -4px; right: -6px; font-size: 9px; }
-.inv-row-name { flex: 1; min-width: 0; font-size: 1em; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.inv-row-cat  { width: 10em; flex-shrink: 0; font-size: .846em; color: var(--muted); text-align: right; text-transform: uppercase; letter-spacing: .03em; }
-.inv-row-qty  { width: 5em; flex-shrink: 0; text-align: right; font-size: 1.077em; font-weight: 700; color: var(--text); display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
-.item-grid-list .inv-row-values,
-.item-grid-list-compact .inv-row-values { width: 7.385em; }
-.item-grid-list .inv-price,
-.item-grid-list-compact .inv-price { font-size: .846em; }
-.item-grid-list .inv-wiki-row,
-.item-grid-list-compact .inv-wiki-row { font-size: .769em; }
+.item-grid-list .inv-row-icon img,
+.item-grid-list .inv-row-icon .img { width: var(--inventory-list-icon-size, 28px) !important; height: var(--inventory-list-icon-size, 28px) !important; }
 .item-grid-list .item-updated,
 .item-grid-list-compact .item-updated { font-size: .846em; }
 .item-grid-list .item-delta,
 .item-grid-list-compact .item-delta { font-size: .857em; }
-
-.item-grid-list .inv-card-row {
-  gap: 12px;
-  min-height: 3.385em;
-  padding: .615em 16px;
-}
-.item-grid-list .inv-fav-star-row { font-size: 14px; }
-.item-grid-list .inv-row-icon { width: var(--inventory-list-icon-wrap-size, 30px); height: var(--inventory-list-icon-wrap-size, 30px); }
-.item-grid-list .inv-row-icon img,
-.item-grid-list .inv-row-icon .img { width: var(--inventory-list-icon-size, 28px) !important; height: var(--inventory-list-icon-size, 28px) !important; }
-.item-grid-list .inv-wiki-row { padding: 4px 7px; }
-
-@media (max-width: 900px) {
-  .item-grid-list .inv-card-row,
-  .item-grid-list-compact .inv-card-row { gap: 6px; padding-inline: 8px; }
-  .item-grid-list .inv-row-cat,
-  .item-grid-list-compact .inv-row-cat { display: none; }
-  .item-grid-list .inv-row-values,
-  .item-grid-list-compact .inv-row-values { width: auto; }
-  .item-grid-list .inv-row-qty,
-  .item-grid-list-compact .inv-row-qty { width: 4em; }
-}
 
 /* ── Loading skeleton ──────────────────────────────────────────────────────── */
 
