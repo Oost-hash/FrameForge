@@ -79,6 +79,45 @@ function flattenRecipeCounts(comps: RecipeComponent[], multiplier: number, out: 
   }
 }
 
+// ─── Market classes (Tailwind) ───────────────────────────────────────────────
+const MK_TABS       = "flex gap-[2px] px-[10px] py-[6px] border-b border-border shrink-0";
+const MK_TAB        = "text-[12px] px-[14px] py-[3px] rounded-[4px] cursor-pointer transition-[background,color,border-color] duration-[100ms] border";
+const MK_TAB_OFF    = `${MK_TAB} border-[rgba(48,54,61,.6)] bg-transparent text-muted hover:bg-[rgba(255,255,255,.06)] hover:text-foreground`;
+const MK_TAB_ON     = `${MK_TAB} border-accent bg-[rgba(56,139,253,.15)] text-accent`;
+const MK_BADGE      = "inline-flex items-center justify-center bg-danger text-white text-[10px] font-bold rounded-[10px] min-w-[16px] h-[16px] px-[4px] ml-[4px] align-middle";
+const MK_HELPER     = "flex-1 flex flex-col overflow-hidden min-h-0";
+const MK_PLACEHOLDER = "flex items-center justify-center flex-1 text-muted text-[13px]";
+const MK_HEADER     = "flex items-center gap-[8px] px-[10px] py-[6px] border-b border-border shrink-0 flex-wrap";
+const MK_SUMMARY    = "flex items-center gap-[6px] px-[12px] py-[4px] bg-[rgba(255,255,255,.02)] border-b border-border shrink-0 text-[11px] text-muted";
+const MK_GRID       = "flex-1 overflow-y-auto overflow-x-hidden p-[10px] grid grid-cols-[repeat(auto-fill,minmax(min(280px,100%),1fr))] gap-[10px] content-start items-start min-h-0 columns-2 max-[600px]:columns-1";
+const MK_CARD       = "flex border rounded-[8px] overflow-hidden min-h-[90px] min-w-0 h-[148px] self-start mb-[6px] [break-inside:avoid]";
+const MK_CARD_LEFT  = "w-[90px] shrink-0 flex flex-col items-center gap-[3px] py-[8px] px-[5px] border-r border-border rounded-l-[8px] bg-[rgba(255,255,255,.02)]";
+const MK_CARD_CLICK = "cursor-pointer transition-[background] duration-[120ms] hover:bg-[rgba(255,255,255,.05)]";
+const MK_SET_NAME   = "text-[9px] font-semibold text-center leading-[1.3] text-foreground";
+const MK_SET_BADGES = "flex flex-col gap-[2px] items-center w-full";
+const MK_MSET       = "text-[8px] font-bold py-[1px] px-[5px] rounded-[8px] whitespace-nowrap";
+const MK_MSET_OK    = `${MK_MSET} text-success bg-[rgba(63,185,80,.12)]`;
+const MK_MSET_PARTS = `${MK_MSET} text-muted bg-[rgba(255,255,255,.06)]`;
+const MK_MSET_DUPES = `${MK_MSET} text-[#f0c040] bg-[rgba(240,192,64,.12)]`;
+const MK_PRICE_BOX  = "mt-auto pt-[4px] flex flex-col items-center gap-[2px]";
+const MK_SET_PRICE  = "flex items-center gap-[3px] text-[13px] font-bold mt-[4px] text-[#c8a8ff]";
+const MK_PRICE_BIG  = "text-[13px] font-bold text-[#b39ddb]";
+const MK_PRICE_LBL  = "text-[8px] text-muted";
+const MK_PRICE_SPIN = "text-[9px] text-muted";
+const MK_PRICE_NA   = "text-[9px] text-muted";
+const MK_CARD_RIGHT = "flex-1 min-w-0 flex flex-col overflow-hidden rounded-r-[8px]";
+const MK_PART       = "flex-1 flex items-center gap-[5px] px-[8px] border-b border-[rgba(48,54,61,.28)] min-h-[24px] min-w-0 last:border-b-0 last-of-type:border-b-0";
+const MK_PART_CLICK = "cursor-pointer transition-[background] duration-[100ms] hover:bg-[rgba(56,139,253,.08)]";
+const MK_DCAT       = "text-[10px] text-[#f0c040] font-semibold min-w-[20px] shrink-0 tabular-nums";
+const MK_SEP        = "text-[10px] text-[rgba(255,255,255,.18)] shrink-0";
+const MK_PLATV      = "text-[10px] text-[#b39ddb] font-semibold min-w-[24px] shrink-0 tabular-nums";
+const MK_NAME       = "flex-1 text-[10px] text-foreground truncate min-w-0";
+const MK_QTY        = "text-[11px] font-bold min-w-[18px] text-center shrink-0 rounded-[3px] px-[3px]";
+const MK_QTY_ZERO   = "text-danger bg-[rgba(248,81,73,.12)]";
+const MK_QTY_ONE    = "text-foreground bg-[rgba(255,255,255,.06)]";
+const MK_QTY_DUPE   = "text-[#f0c040] bg-[rgba(240,192,64,.15)]";
+const MK_TOTALS     = "mt-auto px-[8px] text-[9px] text-muted bg-[rgba(255,255,255,.02)] flex items-center gap-[3px] border-t border-[rgba(48,54,61,.3)] min-h-[20px] shrink-0";
+
 // ─── Set card ─────────────────────────────────────────────────────────────────
 
 interface SetPart { item: CatalogItem; qty: number; required_count: number; sellMedian?: number; loading: boolean; urlName: string; }
@@ -99,64 +138,64 @@ function SetCard({ setKey, parts, parentItem, setPrice, setPriceLoading, pricesF
   );
 
   return (
-    <div className={`market-card${isComplete ? " market-card-complete" : ""}`}>
-      <div className={`market-card-left${onCardClick ? " market-card-clickable" : ""}`} onClick={onCardClick} title={onCardClick ? "View orders & prices" : undefined}>
+    <div className={`${MK_CARD} ${isComplete ? "border-[rgba(63,185,80,.4)]" : "border-border"}`}>
+      <div className={`${MK_CARD_LEFT}${onCardClick ? ` ${MK_CARD_CLICK}` : ""}`} onClick={onCardClick} title={onCardClick ? "View orders & prices" : undefined}>
         <div style={{ position: "relative", display: "inline-block" }}>
           <ItemImg imageName={parentItem?.image_name} size={64} fallbackText="P" />
           {isCrafting && (
             <span style={{ position: "absolute", top: -4, right: -6, fontSize: 13 }} title="Building in Foundry">⚒</span>
           )}
         </div>
-        <div className="market-set-name">{setKey}</div>
-        <div className="market-set-badges">
-          {isComplete && <span className="mset-badge mset-complete">✓ Complete</span>}
-          {!isComplete && <span className="mset-badge mset-parts">{ownedCount}/{parts.length}</span>}
-          {hasDupes && <span className="mset-badge mset-dupes">+ Dupes</span>}
+        <div className={MK_SET_NAME}>{setKey}</div>
+        <div className={MK_SET_BADGES}>
+          {isComplete && <span className={MK_MSET_OK}>✓ Complete</span>}
+          {!isComplete && <span className={MK_MSET_PARTS}>{ownedCount}/{parts.length}</span>}
+          {hasDupes && <span className={MK_MSET_DUPES}>+ Dupes</span>}
         </div>
-        <div className="market-set-price-box">
+        <div className={MK_PRICE_BOX}>
           {/* Prices are re-fetched periodically, so testing `loading` before the
               value blanks a known price back to "…" on every refresh. */}
           {setPrice?.sell_median ? (
-            <div className="market-set-price">
+            <div className={MK_SET_PRICE}>
               <PlatIcon size={16} />
-              <span className="market-price-big">{fmtPt(setPrice.sell_median)}</span>
-              <span className="market-price-lbl">set</span>
+              <span className={MK_PRICE_BIG}>{fmtPt(setPrice.sell_median)}</span>
+              <span className={MK_PRICE_LBL}>set</span>
             </div>
           ) : setPriceLoading ? (
-            <span className="market-price-spin">…</span>
+            <span className={MK_PRICE_SPIN}>…</span>
           ) : pricesFetched ? (
-            <span className="market-price-na">—</span>
+            <span className={MK_PRICE_NA}>—</span>
           ) : null}
         </div>
       </div>
 
-      <div className="market-card-right">
+      <div className={MK_CARD_RIGHT}>
         {parts.map(part => {
           const qty      = part.qty;
-          const qtyClass = qty === 0 ? "mqty-zero" : qty === 1 ? "mqty-one" : "mqty-dupe";
+          const qtyClass = qty === 0 ? MK_QTY_ZERO : qty === 1 ? MK_QTY_ONE : MK_QTY_DUPE;
           const canClick = !!onPartClick;
           return (
             <div
               key={part.item.unique_name}
-              className={`market-part-row${qty === 0 ? " part-missing" : ""}${canClick ? " market-part-clickable" : ""}`}
+              className={`${MK_PART}${qty === 0 ? " opacity-40" : ""}${canClick ? ` ${MK_PART_CLICK}` : ""}`}
               onClick={canClick ? () => onPartClick(part.urlName, part.item.name, part.item.image_name ?? undefined) : undefined}
               title={canClick ? "View orders & prices" : undefined}
             >
               <DucatIcon size={12} />
-              <span className="mpart-ducat-val">{part.item.ducats ?? "—"}</span>
-              <span className="mpart-sep">/</span>
+              <span className={MK_DCAT}>{part.item.ducats ?? "—"}</span>
+              <span className={MK_SEP}>/</span>
               <PlatIcon size={12} />
-              <span className="mpart-plat-val">
+              <span className={MK_PLATV}>
                 {part.sellMedian ? fmtPt(part.sellMedian) : part.loading ? "…" : "—"}
               </span>
-              <span className="mpart-sep">/</span>
-              <span className="mpart-name">{partLabel(part.item.name, setKey)}</span>
-              <span className={`mpart-qty ${qtyClass}`}>{qty}</span>
+              <span className={MK_SEP}>/</span>
+              <span className={MK_NAME}>{partLabel(part.item.name, setKey)}</span>
+              <span className={`${MK_QTY} ${qtyClass}`}>{qty}</span>
             </div>
           );
         })}
         {totalDucats > 0 && (
-          <div className="mpart-totals"><DucatIcon size={11} /> {fmt(totalDucats)} ducats total</div>
+          <div className={MK_TOTALS}><DucatIcon size={11} /> {fmt(totalDucats)} ducats total</div>
         )}
       </div>
     </div>
@@ -471,22 +510,22 @@ export default function MarketHelper({ inventory, refreshKey, crafting, onWfmLog
   }, [sets, inventory, ownership, conditions, vault, sortMode, search, parentItems, prices, wfmLookup, recipeCountMap]);
 
   return (
-    <div className="market-helper">
+    <div className={MK_HELPER}>
       {/* ── Market tab strip ── */}
-      <div className="market-tab-strip">
-        <button className={activeMarketTab === "trading" ? "active" : ""} onClick={() => { set("activeMarketTab", "trading"); setWfmBadge(0); }}>
-          Trading {wfmBadge > 0 && <span className="market-tab-badge">{wfmBadge}</span>}
+      <div className={MK_TABS}>
+        <button className={activeMarketTab === "trading" ? MK_TAB_ON : MK_TAB_OFF} onClick={() => { set("activeMarketTab", "trading"); setWfmBadge(0); }}>
+          Trading {wfmBadge > 0 && <span className={MK_BADGE}>{wfmBadge}</span>}
         </button>
-        <button className={activeMarketTab === "sets" ? "active" : ""} onClick={() => set("activeMarketTab", "sets")}>
+        <button className={activeMarketTab === "sets" ? MK_TAB_ON : MK_TAB_OFF} onClick={() => set("activeMarketTab", "sets")}>
           Prime Sets
         </button>
-        <button className={activeMarketTab === "mods" ? "active" : ""} onClick={() => set("activeMarketTab", "mods")}>
+        <button className={activeMarketTab === "mods" ? MK_TAB_ON : MK_TAB_OFF} onClick={() => set("activeMarketTab", "mods")}>
           Mods &amp; Arcanes
         </button>
-        <button className={activeMarketTab === "rivens" ? "active" : ""} onClick={() => set("activeMarketTab", "rivens")}>
+        <button className={activeMarketTab === "rivens" ? MK_TAB_ON : MK_TAB_OFF} onClick={() => set("activeMarketTab", "rivens")}>
           Rivens
         </button>
-        <button className={activeMarketTab === "sisters" ? "active" : ""} onClick={() => set("activeMarketTab", "sisters")}>
+        <button className={activeMarketTab === "sisters" ? MK_TAB_ON : MK_TAB_OFF} onClick={() => set("activeMarketTab", "sisters")}>
           Variants
         </button>
       </div>
@@ -524,13 +563,13 @@ export default function MarketHelper({ inventory, refreshKey, crafting, onWfmLog
       )}
 
       {activeMarketTab === "sisters" && (
-        <div className="market-placeholder">
+        <div className={MK_PLACEHOLDER}>
           <p>Sisters / Tenet weapons market coming soon.</p>
         </div>
       )}
 
       {activeMarketTab === "sets" && <>
-      <div className="market-header">
+      <div className={MK_HEADER}>
         <input className="foundry-search" style={{ width: 200 }} placeholder="Search sets (comma-separated)…"
           value={search} onChange={e => set("search", e.target.value)} />
         <div className="filter-bar" style={{ border: "none", padding: 0, flex: 1, flexWrap: "wrap" }}>
@@ -562,7 +601,7 @@ export default function MarketHelper({ inventory, refreshKey, crafting, onWfmLog
         </div>
       </div>
 
-      <div className="market-summary">
+      <div className={MK_SUMMARY}>
         <DucatIcon size={13} />
         <span><strong>{fmt(totalDucats)}</strong> total ducats (owned parts)</span>
         <span className="fbar-sep"/>
@@ -572,7 +611,7 @@ export default function MarketHelper({ inventory, refreshKey, crafting, onWfmLog
         {wfmItems.length > 0 && <span style={{ color: "var(--green)", fontSize: 11 }}>· {wfmItems.length.toLocaleString()} items from warframe.market</span>}
       </div>
 
-      <div className="market-grid">
+      <div className={MK_GRID}>
         {visibleSets.length === 0 ? (
           <div className="empty-msg" style={{ gridColumn: "1/-1" }}>No sets match. Adjust filters or own some prime parts first.</div>
         ) : visibleSets.map(([setKey, parts]) => {
@@ -702,7 +741,7 @@ function ModsTab({ catalog: allCatalog, inventory, wfmLookup, prices, modCopiesM
 
   return (
     <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
-      <div className="market-header">
+      <div className={MK_HEADER}>
         <input className="foundry-search" style={{ width: 200 }} placeholder="Search mods &amp; arcanes…"
           value={search} onChange={e => setSearch(e.target.value)} />
         <div className="filter-bar" style={{ border: "none", padding: 0, flex: 1, flexWrap: "wrap" }}>
@@ -722,7 +761,7 @@ function ModsTab({ catalog: allCatalog, inventory, wfmLookup, prices, modCopiesM
         </div>
       </div>
 
-      <div className="market-summary">
+      <div className={MK_SUMMARY}>
         <span><strong>{ownedCount.toLocaleString()}</strong> owned · <strong>{catalog.length.toLocaleString()}</strong> total</span>
         <span className="fbar-sep"/>
         <span style={{ color: "var(--muted)" }}>{filtered.length.toLocaleString()} shown</span>
@@ -774,7 +813,7 @@ function ModsTab({ catalog: allCatalog, inventory, wfmLookup, prices, modCopiesM
                 )}
                 {price != null
                   ? <span className="mod-plat-cell"><PlatIcon size={10} />{fmtPt(price)}</span>
-                  : <span className="mod-plat-cell market-price-na">—</span>}
+                  : <span className={`mod-plat-cell ${MK_PRICE_NA}`}>—</span>}
               </div>
             </div>
           );
@@ -1440,7 +1479,7 @@ const RivensTab = memo(function RivensTab({ rivens, catalog, wfmUsername, onAuct
 
   if (rivens.length === 0) {
     return (
-      <div className="market-placeholder">
+      <div className={MK_PLACEHOLDER}>
         <p>No rivens found. Inventory blob must be captured at least once while Warframe is running.</p>
       </div>
     );
