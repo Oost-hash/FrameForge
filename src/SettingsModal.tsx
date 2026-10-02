@@ -34,6 +34,10 @@ const DEBUG_TABLE_CLASS = "debug-table grid grid-cols-[1fr_auto_auto_auto] items
 const SECTION_CLASS = "border-b border-[rgba(48,54,61,.6)] px-5 py-3 last:border-b-0";
 const SECTION_TITLE_CLASS = "mb-2.5 text-[10px] font-bold uppercase tracking-[.07em] text-muted";
 const SECTION_MSG_CLASS = "mt-2 text-[11px] text-green";
+const TOGGLE_BUTTON_CLASS = "min-w-16";
+const toggleButtonClass = (active: boolean) => TOGGLE_BUTTON_CLASS + (active ? " border-accent! bg-[rgba(56,139,253,.15)]!" : "");
+const disabledClass = (disabled: boolean, debugOpacity = false) => disabled ? debugOpacity ? " opacity-40 pointer-events-none" : " opacity-[.45] pointer-events-none" : "";
+const clearButtonClass = (hasData: boolean) => hasData ? "border-[var(--red)]! text-[var(--red)]!" : "";
 
 export interface SettingsModalProps {
   open: boolean;
@@ -72,13 +76,14 @@ function FactoryResetButton() {
   const [confirm, setConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
   if (!confirm) return <DangerButton onClick={() => setConfirm(true)}>Factory Reset</DangerButton>;
-  return <div style={{ display: "flex", gap: 8, alignItems: "center" }}><span style={{ fontSize: 12, color: "var(--red)" }}>Are you sure? This cannot be undone.</span><DangerButton disabled={resetting} onClick={() => { setResetting(true); invoke("factory_reset").catch(() => setResetting(false)); }}>{resetting ? "Resetting…" : "Yes, reset"}</DangerButton><SecondaryButton onClick={() => setConfirm(false)}>Cancel</SecondaryButton></div>;
+  return <div className="flex items-center gap-2"><span className="text-[12px] text-[var(--red)]">Are you sure? This cannot be undone.</span><DangerButton disabled={resetting} onClick={() => { setResetting(true); invoke("factory_reset").catch(() => setResetting(false)); }}>{resetting ? "Resetting…" : "Yes, reset"}</DangerButton><SecondaryButton onClick={() => setConfirm(false)}>Cancel</SecondaryButton></div>;
 }
 
 function BulkPriceRefreshButton() {
   const [state, setState] = useState<"idle" | "loading" | "ok" | "err">("idle");
   const label = state === "loading" ? "Fetching…" : state === "ok" ? "Done!" : state === "err" ? "Failed" : "Refresh Now";
-  return <SecondaryButton disabled={state === "loading"} style={{ minWidth: 100, borderColor: state === "ok" ? "var(--accent)" : state === "err" ? "#e05252" : undefined }} onClick={() => { setState("loading"); invoke("refresh_bulk_prices").then(() => { setState("ok"); setTimeout(() => setState("idle"), 3000); }).catch(() => { setState("err"); setTimeout(() => setState("idle"), 4000); }); }}>{label}</SecondaryButton>;
+  const stateClass = { idle: "", loading: "", ok: "border-accent!", err: "border-[#e05252]!" }[state];
+  return <SecondaryButton className={`min-w-[100px] ${stateClass}`} disabled={state === "loading"} onClick={() => { setState("loading"); invoke("refresh_bulk_prices").then(() => { setState("ok"); setTimeout(() => setState("idle"), 3000); }).catch(() => { setState("err"); setTimeout(() => setState("idle"), 4000); }); }}>{label}</SecondaryButton>;
 }
 
 export default function SettingsModal(props: SettingsModalProps) {
@@ -130,7 +135,7 @@ export default function SettingsModal(props: SettingsModalProps) {
       </div>
     );
     return (
-      <div className={ROW_CLASS} style={{ marginTop: 8, opacity: disabled ? 0.45 : 1, pointerEvents: disabled ? "none" : "auto" }}>
+      <div className={`${ROW_CLASS} mt-2${disabledClass(disabled)}`}>
         <div className={ROW_INFO_CLASS}>
           <span className={ROW_LABEL_CLASS}>Position offset</span>
           <span className={ROW_DESC_CLASS}>Moves the overlay this many pixels from its built-in spot. 0 keeps the current placement.</span>
@@ -200,15 +205,15 @@ export default function SettingsModal(props: SettingsModalProps) {
                 </div>
 
                 {/* Memory Scanner */}
-                <div className={SECTION_CLASS} style={{ borderColor: memoryScannerEnabled ? "rgba(240,192,64,.3)" : undefined }}>
+                <div className={`${SECTION_CLASS}${memoryScannerEnabled ? " border-[rgba(240,192,64,.3)]" : ""}`}>
                   <div className={`${SECTION_TITLE_CLASS} flex items-center gap-2`}>
                     Memory Scanner
-                    <span style={{ fontSize: 10, background: "rgba(240,192,64,.15)", color: "#f0c040", border: "1px solid rgba(240,192,64,.35)", borderRadius: 3, padding: "1px 6px", fontWeight: 700 }}>
+                    <span className="rounded-[3px] border border-[rgba(240,192,64,.35)] bg-[rgba(240,192,64,.15)] px-[6px] py-px text-[10px] font-bold text-[#f0c040]">
                       EULA GREY AREA
                     </span>
                   </div>
-                  <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 8, lineHeight: 1.5 }}>
-                    Reads live inventory, crafting jobs, and mod ranks from Warframe's process memory via <code style={{ fontSize: 10 }}>ReadProcessMemory</code>. DE has historically tolerated read-only tools, but has not given explicit permission. Enable at your own risk.
+                  <div className="mb-2 text-[11px] leading-[1.5] text-muted">
+                    Reads live inventory, crafting jobs, and mod ranks from Warframe's process memory via <code className="text-[10px]">ReadProcessMemory</code>. DE has historically tolerated read-only tools, but has not given explicit permission. Enable at your own risk.
                   </div>
                   <div className={ROW_CLASS}>
                     <div>
@@ -216,7 +221,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_DESC_CLASS}>Required for live inventory, quantity tracking, and mod ranks</span>
                     </div>
                     <SecondaryButton
-                      style={{ minWidth: 64, background: memoryScannerEnabled ? "rgba(240,192,64,.15)" : undefined, borderColor: memoryScannerEnabled ? "#f0c040" : undefined, color: memoryScannerEnabled ? "#f0c040" : undefined }}
+                      className={`${TOGGLE_BUTTON_CLASS}${memoryScannerEnabled ? " border-[#f0c040]! bg-[rgba(240,192,64,.15)]! text-[#f0c040]!" : ""}`}
                         onClick={() => setMemoryScannerEnabled(v => !v)}
                     >
                       {memoryScannerEnabled ? "On" : "Off"}
@@ -228,17 +233,13 @@ export default function SettingsModal(props: SettingsModalProps) {
                 <div className={SECTION_CLASS}>
                   <div className={`${SECTION_TITLE_CLASS} flex items-center gap-2`}>
                     Warframe API
-                    <span style={{ fontSize: 10, background: "rgba(240,192,64,.15)", color: "#f0c040", border: "1px solid rgba(240,192,64,.35)", borderRadius: 3, padding: "1px 6px", fontWeight: 700 }}>
+                    <span className="rounded-[3px] border border-[rgba(240,192,64,.35)] bg-[rgba(240,192,64,.15)] px-[6px] py-px text-[10px] font-bold text-[#f0c040]">
                       SUSPENDED
                     </span>
                   </div>
-                  <div style={{
-                    fontSize: 11, color: "var(--muted)", lineHeight: 1.6,
-                    background: "rgba(240,192,64,.06)", border: "1px solid rgba(240,192,64,.25)",
-                    borderRadius: 6, padding: "8px 10px",
-                  }}>
-                    <strong style={{ color: "#f0c040" }}>Temporarily unavailable.</strong>
-                    {" "}This feature connects to an undocumented DE endpoint (<code style={{ fontSize: 10 }}>api.warframe.com/api/inventory.php</code>).
+                  <div className="rounded-[6px] border border-[rgba(240,192,64,.25)] bg-[rgba(240,192,64,.06)] px-[10px] py-2 text-[11px] leading-[1.6] text-muted">
+                    <strong className="text-[#f0c040]">Temporarily unavailable.</strong>
+                    {" "}This feature connects to an undocumented DE endpoint (<code className="text-[10px]">api.warframe.com/api/inventory.php</code>).
                     {" "}DE confirmed third-party tools run at your own risk but could not clarify whether this specific endpoint is permitted.
                     {" "}The feature is disabled until we receive clearer guidance.
                   </div>
@@ -247,20 +248,12 @@ export default function SettingsModal(props: SettingsModalProps) {
                 {/* Account Login */}
                 <div className={SECTION_CLASS}>
                   <div className={SECTION_TITLE_CLASS}>Account Login</div>
-                  <div style={{
-                    fontSize: 11, color: "var(--muted)", lineHeight: 1.6,
-                    background: "rgba(255,100,100,.07)", border: "1px solid rgba(255,100,100,.2)",
-                    borderRadius: 6, padding: "8px 10px",
-                  }}>
-                    <strong style={{ color: "#ff8080" }}>Login is temporarily unavailable.</strong>
+                  <div className="rounded-[6px] border border-[rgba(255,100,100,.2)] bg-[rgba(255,100,100,.07)] px-[10px] py-2 text-[11px] leading-[1.6] text-muted">
+                    <strong className="text-[#ff8080]">Login is temporarily unavailable.</strong>
                     {" "}Digital Extremes encrypted their login API in March 2026, which blocked all third-party tools — including FrameForge — from authenticating on your behalf.
                     {" "}PC players are not affected: inventory is synced automatically while the game is running.
                   </div>
-                  <div style={{
-                    marginTop: 8, fontSize: 11, color: "var(--muted)", lineHeight: 1.6,
-                    background: "rgba(100,180,255,.06)", border: "1px solid rgba(100,180,255,.18)",
-                    borderRadius: 6, padding: "8px 10px",
-                  }}>
+                  <div className="mt-2 rounded-[6px] border border-[rgba(100,180,255,.18)] bg-[rgba(100,180,255,.06)] px-[10px] py-2 text-[11px] leading-[1.6] text-muted">
                     FrameForge is actively exploring ways to restore inventory access for console and non-PC players.
                     {" "}Follow the project for updates.
                   </div>
@@ -275,7 +268,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_DESC_CLASS}>Detach the Modular Window into its own floating window.</span>
                     </div>
                     <SecondaryButton
-                      style={{ minWidth: 64, background: modularPopout ? "rgba(56,139,253,.15)" : undefined, borderColor: modularPopout ? "var(--accent)" : undefined }}
+                      className={toggleButtonClass(modularPopout)}
                       onClick={() => {
                         const next = !modularPopout;
                         setModularPopout(next);
@@ -295,9 +288,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                 <div className={SECTION_CLASS}>
                   <div className={SECTION_TITLE_CLASS}>Relic Reward Overlay</div>
                   {overlayStatus && (
-                    <div style={{ fontSize: 12, padding: '4px 8px', marginBottom: 6,
-                      background: 'rgba(255,255,255,0.05)', borderRadius: 4,
-                      color: '#9ecaed', fontFamily: 'monospace' }}>
+                    <div className="mb-[6px] rounded-[4px] bg-[rgba(255,255,255,.05)] px-2 py-1 font-mono text-[12px] text-[#9ecaed]">
                       {overlayStatus}
                     </div>
                   )}
@@ -307,7 +298,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_DESC_CLASS}>Auto-shows reward cards when a Void Fissure screen is detected.</span>
                     </div>
                     <SecondaryButton
-                      style={{ minWidth: 64, background: overlayEnabled ? "rgba(56,139,253,.15)" : undefined, borderColor: overlayEnabled ? "var(--accent)" : undefined }}
+                      className={toggleButtonClass(overlayEnabled)}
                       onClick={() => {
                         const next = !overlayEnabled;
                         setOverlayEnabled(next);
@@ -320,7 +311,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       }}
                     >{overlayEnabled ? "On" : "Off"}</SecondaryButton>
                   </div>
-                  <div className={ROW_CLASS} style={{ marginTop: 8 }}>
+                  <div className={ROW_CLASS + " mt-2"}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Pick priority</span>
                       <span className={ROW_DESC_CLASS}>Which card the overlay highlights as the best pick.</span>
@@ -343,12 +334,12 @@ export default function SettingsModal(props: SettingsModalProps) {
                     </select>
                   </div>
                   {offsetRow("relicX", "relicY", !overlayEnabled)}
-                  <div className={ROW_CLASS} style={{ marginTop: 8 }}>
+                  <div className={ROW_CLASS + " mt-2"}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Show Outline</span>
                       <span className={ROW_DESC_CLASS}>Toggle a dashed outline of the overlay at its current position.</span>
                     </div>
-                    <SecondaryButton style={{ minWidth: 64, background: outlineReward ? "rgba(56,139,253,.15)" : undefined, borderColor: outlineReward ? "var(--accent)" : undefined }}
+                    <SecondaryButton className={toggleButtonClass(outlineReward)}
                       onClick={() => {
                         if (outlineReward) { hideRewardOutline().catch(() => {}); setOutlineReward(false); }
                         else { showRewardOutline().catch(() => {}); setOutlineReward(true); }
@@ -365,7 +356,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_DESC_CLASS}>Show the relic pick overlay when opening the relic selection screen.</span>
                     </div>
                     <SecondaryButton
-                      style={{ minWidth: 64, background: relicPickEnabled ? "rgba(56,139,253,.15)" : undefined, borderColor: relicPickEnabled ? "var(--accent)" : undefined }}
+                      className={toggleButtonClass(relicPickEnabled)}
                       onClick={() => {
                         const next = !relicPickEnabled;
                         setRelicPickEnabled(next);
@@ -375,7 +366,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       }}
                     >{relicPickEnabled ? "On" : "Off"}</SecondaryButton>
                   </div>
-                  <div className={ROW_CLASS} style={{ marginTop: 8, opacity: relicPickEnabled ? 1 : 0.45, pointerEvents: relicPickEnabled ? "auto" : "none" }}>
+                  <div className={`${ROW_CLASS} mt-2${disabledClass(!relicPickEnabled)}`}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Recommendation Base</span>
                       <span className={ROW_DESC_CLASS}>How relics are ranked in the overlay.</span>
@@ -392,7 +383,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       ))}
                     </select>
                   </div>
-                  <div className={ROW_CLASS} style={{ marginTop: 8, opacity: relicPickEnabled ? 1 : 0.45, pointerEvents: relicPickEnabled ? "auto" : "none" }}>
+                  <div className={`${ROW_CLASS} mt-2${disabledClass(!relicPickEnabled)}`}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Shown Lines Per Relic</span>
                       <span className={ROW_DESC_CLASS}>How much reward detail to show per relic card.</span>
@@ -410,12 +401,12 @@ export default function SettingsModal(props: SettingsModalProps) {
                     </select>
                   </div>
                   {offsetRow("relicPickX", "relicPickY", !relicPickEnabled)}
-                  <div className={ROW_CLASS} style={{ marginTop: 8 }}>
+                  <div className={`${ROW_CLASS} mt-2`}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Show Outline</span>
                       <span className={ROW_DESC_CLASS}>Toggle a dashed outline of the overlay at its current position.</span>
                     </div>
-                    <SecondaryButton style={{ minWidth: 64, background: outlinePick ? "rgba(56,139,253,.15)" : undefined, borderColor: outlinePick ? "var(--accent)" : undefined }}
+                    <SecondaryButton className={toggleButtonClass(outlinePick)}
                       onClick={() => {
                         if (outlinePick) { hidePickOutline().catch(() => {}); setOutlinePick(false); }
                         else { showPickOutline().catch(() => {}); setOutlinePick(true); }
@@ -432,7 +423,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_DESC_CLASS}>Show the riven overlay when a riven card screen is detected.</span>
                     </div>
                     <SecondaryButton
-                      style={{ minWidth: 64, background: rivenEnabled ? "rgba(56,139,253,.15)" : undefined, borderColor: rivenEnabled ? "var(--accent)" : undefined }}
+                      className={toggleButtonClass(rivenEnabled)}
                       onClick={() => {
                         const next = !rivenEnabled;
                         setRivenEnabled(next);
@@ -443,12 +434,12 @@ export default function SettingsModal(props: SettingsModalProps) {
                     >{rivenEnabled ? "On" : "Off"}</SecondaryButton>
                   </div>
                   {offsetRow("rivenX", "rivenY", !rivenEnabled)}
-                  <div className={ROW_CLASS} style={{ marginTop: 8 }}>
+                  <div className={`${ROW_CLASS} mt-2`}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Show</span>
                       <span className={ROW_DESC_CLASS}>Show the riven overlay at its current position.</span>
                     </div>
-                    <SecondaryButton style={{ minWidth: 64, background: rivenShown ? "rgba(56,139,253,.15)" : undefined, borderColor: rivenShown ? "var(--accent)" : undefined }}
+                    <SecondaryButton className={toggleButtonClass(rivenShown)}
                       onClick={() => {
                         if (rivenShown) { hideRivenOverlay().catch(() => {}); setRivenShown(false); }
                         else { showRivenOverlay().catch(() => {}); setRivenShown(true); }
@@ -458,7 +449,7 @@ export default function SettingsModal(props: SettingsModalProps) {
 
                 {/* Relic Overlay — Memory Trigger */}
                 <div className={SECTION_CLASS}>
-                  <div className={SECTION_TITLE_CLASS}>Memory Trigger <span style={{ fontSize: 11, opacity: 0.55, fontWeight: 400, marginLeft: 6 }}>in development</span></div>
+                  <div className={SECTION_TITLE_CLASS}>Memory Trigger <span className="ml-[6px] text-[11px] font-normal opacity-[.55]">in development</span></div>
                   <div className={ROW_CLASS}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Use memory scan</span>
@@ -469,7 +460,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       </span>
                     </div>
                     <SecondaryButton
-                      style={{ minWidth: 64, background: memTriggerEnabled ? "rgba(56,139,253,.15)" : undefined, borderColor: memTriggerEnabled ? "var(--accent)" : undefined }}
+                      className={toggleButtonClass(memTriggerEnabled)}
                       onClick={() => {
                         const next = !memTriggerEnabled;
                         setMemTriggerEnabled(next);
@@ -498,18 +489,17 @@ export default function SettingsModal(props: SettingsModalProps) {
                 <div className={SECTION_CLASS}>
                   <div className={SECTION_TITLE_CLASS}>Status Automation</div>
                   {!wfmLoggedIn && (
-                    <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 10, lineHeight: 1.5,
-                      padding: "6px 10px", background: "rgba(255,255,255,.04)", borderRadius: 5 }}>
+                    <div className="mb-2.5 rounded-[5px] bg-[rgba(255,255,255,.04)] px-[10px] py-[6px] text-[11px] leading-[1.5] text-muted">
                       Log in to warframe.market in the <strong>Market</strong> tab to enable these features.
                     </div>
                   )}
-                  <div className={ROW_CLASS} style={{ opacity: wfmLoggedIn ? 1 : 0.45, pointerEvents: wfmLoggedIn ? "auto" : "none" }}>
+                  <div className={ROW_CLASS + disabledClass(!wfmLoggedIn)}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Go Invisible on startup</span>
                       <span className={ROW_DESC_CLASS}>When FrameForge opens, immediately set your WFM status to Invisible.</span>
                     </div>
                     <SecondaryButton
-                      style={{ minWidth: 64, background: wfmInvisibleOnStart ? "rgba(56,139,253,.15)" : undefined, borderColor: wfmInvisibleOnStart ? "var(--accent)" : undefined }}
+                      className={toggleButtonClass(wfmInvisibleOnStart)}
                       onClick={() => {
                         const next = !wfmInvisibleOnStart;
                         setWfmInvisibleOnStart(next);
@@ -520,13 +510,13 @@ export default function SettingsModal(props: SettingsModalProps) {
                     >{wfmInvisibleOnStart ? "On" : "Off"}</SecondaryButton>
                   </div>
 
-                  <div className={ROW_CLASS} style={{ marginTop: 8, opacity: wfmLoggedIn ? 1 : 0.45, pointerEvents: wfmLoggedIn ? "auto" : "none" }}>
+                  <div className={`${ROW_CLASS} mt-2${disabledClass(!wfmLoggedIn)}`}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Go Invisible on close</span>
                       <span className={ROW_DESC_CLASS}>Before FrameForge exits (X button or taskbar close), set your WFM status to Invisible.</span>
                     </div>
                     <SecondaryButton
-                      style={{ minWidth: 64, background: wfmInvisibleOnClose ? "rgba(56,139,253,.15)" : undefined, borderColor: wfmInvisibleOnClose ? "var(--accent)" : undefined }}
+                      className={toggleButtonClass(wfmInvisibleOnClose)}
                       onClick={() => {
                         const next = !wfmInvisibleOnClose;
                         setWfmInvisibleOnClose(next);
@@ -537,7 +527,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                     >{wfmInvisibleOnClose ? "On" : "Off"}</SecondaryButton>
                   </div>
 
-                  <div className={ROW_CLASS} style={{ marginTop: 8, opacity: wfmLoggedIn ? 1 : 0.45, pointerEvents: wfmLoggedIn ? "auto" : "none" }}>
+                  <div className={`${ROW_CLASS} mt-2${disabledClass(!wfmLoggedIn)}`}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Auto-invisible timer</span>
                       <span className={ROW_DESC_CLASS}>
@@ -545,7 +535,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                         <input
                           type="number" min={1} max={480} value={wfmAutoInvisibleMins}
                           disabled={!wfmAutoInvisible}
-                          style={{ width: 48, fontSize: 12, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 4, color: "var(--text)", padding: "1px 4px", textAlign: "center" }}
+                          className="w-12 rounded-[4px] border border-border bg-surface px-1 py-px text-center text-[12px] text-foreground"
                           onChange={e => {
                             const v = Math.max(1, Math.min(480, parseInt(e.target.value) || 30));
                             setWfmAutoInvisibleMins(v);
@@ -557,7 +547,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       </span>
                     </div>
                     <SecondaryButton
-                      style={{ minWidth: 64, background: wfmAutoInvisible ? "rgba(56,139,253,.15)" : undefined, borderColor: wfmAutoInvisible ? "var(--accent)" : undefined }}
+                      className={toggleButtonClass(wfmAutoInvisible)}
                       onClick={() => {
                         const next = !wfmAutoInvisible;
                         setWfmAutoInvisible(next);
@@ -569,13 +559,13 @@ export default function SettingsModal(props: SettingsModalProps) {
                 </div>
                 <div className={SECTION_CLASS}>
                   <div className={SECTION_TITLE_CLASS}>Sale Automation</div>
-                  <div className={ROW_CLASS} style={{ opacity: wfmLoggedIn ? 1 : 0.45, pointerEvents: wfmLoggedIn ? "auto" : "none" }}>
+                  <div className={ROW_CLASS + disabledClass(!wfmLoggedIn)}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Record automatic sales</span>
                       <span className={ROW_DESC_CLASS}>Record automatically detected sales in your warframe.market statistics. When off, FrameForge only reduces or removes the listing. Recorded sales cannot be undone from FrameForge.</span>
                     </div>
                     <SecondaryButton
-                      style={{ minWidth: 64, background: wfmRecordSales ? "rgba(56,139,253,.15)" : undefined, borderColor: wfmRecordSales ? "var(--accent)" : undefined }}
+                      className={toggleButtonClass(wfmRecordSales)}
                       onClick={() => {
                         const next = !wfmRecordSales;
                         setWfmRecordSales(next);
@@ -603,12 +593,12 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <option value="relics">Relic Browser</option>
                     </select>
                   </div>
-                  <div className={ROW_CLASS} style={{ marginTop: 12 }}>
+                  <div className={ROW_CLASS + " mt-3"}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Restore previous filters on active preset click</span>
                       <span className={ROW_DESC_CLASS}>When clicking an active pinned preset again, restore the filters from before it was applied instead of clearing filters.</span>
                     </div>
-                    <SecondaryButton style={{ minWidth: 64, background: filterPresets.restorePreviousFiltersOnPresetClick ? "rgba(56,139,253,.15)" : undefined, borderColor: filterPresets.restorePreviousFiltersOnPresetClick ? "var(--accent)" : undefined }} onClick={() => setFilterPresets(current => ({ ...current, restorePreviousFiltersOnPresetClick: !current.restorePreviousFiltersOnPresetClick }))}>{filterPresets.restorePreviousFiltersOnPresetClick ? "On" : "Off"}</SecondaryButton>
+                    <SecondaryButton className={toggleButtonClass(filterPresets.restorePreviousFiltersOnPresetClick)} onClick={() => setFilterPresets(current => ({ ...current, restorePreviousFiltersOnPresetClick: !current.restorePreviousFiltersOnPresetClick }))}>{filterPresets.restorePreviousFiltersOnPresetClick ? "On" : "Off"}</SecondaryButton>
                   </div>
                 </div>
                 {settingsFilterModule === "inventory" && <FilterPresets variant="settings" module="inventory" filters={inventoryFilters} onFiltersChange={setInventoryFilters} filterPresets={filterPresets} onFilterPresetsChange={setFilterPresets} />}
@@ -627,7 +617,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_DESC_CLASS}>Adds ✓ / ✓✓ symbols to relic reward boxes so status doesn't rely on color alone.</span>
                     </div>
                     <SecondaryButton
-                      style={{ minWidth: 64, background: colorblindMode ? "rgba(56,139,253,.15)" : undefined, borderColor: colorblindMode ? "var(--accent)" : undefined }}
+                      className={toggleButtonClass(colorblindMode)}
                       onClick={() => {
                         const next = !colorblindMode;
                         setColorblindMode(next);
@@ -637,13 +627,13 @@ export default function SettingsModal(props: SettingsModalProps) {
                       }}
                     >{colorblindMode ? "On" : "Off"}</SecondaryButton>
                   </div>
-                  <div className={ROW_CLASS} style={{ marginTop: 8 }}>
+                  <div className={ROW_CLASS + " mt-2"}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Text Size</span>
                       <span className={ROW_DESC_CLASS}>{Math.round(textScale * 100)}%</span>
                     </div>
                     <input type="range" min="0.8" max="2.0" step="0.1" value={textScale}
-                      style={{ width: 120 }}
+                      className="w-[120px]"
                       onChange={e => {
                         const v = parseFloat(e.target.value);
                         setTextScale(v);
@@ -653,14 +643,14 @@ export default function SettingsModal(props: SettingsModalProps) {
                         saveAllSettings();
                       }} />
                   </div>
-                  <div className={ROW_CLASS} style={{ marginTop: 8 }}>
+                  <div className={ROW_CLASS + " mt-2"}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Clock Format</span>
-                      <span className={ROW_DESC_CLASS}>How times are displayed throughout the app.{clockFormat === "auto" ? ` System locale: ${systemLocale}` : ""}</span>
+                      <span className={ROW_DESC_CLASS}>How times are displayed throughout the app.{clockFormat === "auto" ? " System locale: " + systemLocale : ""}</span>
                     </div>
-                    <div style={{ display: "flex", gap: 4 }}>
+                    <div className="flex gap-1">
                       {CLOCK_FORMAT_OPTIONS.map(f => (
-                        <SecondaryButton key={f} style={{ minWidth: 44, background: clockFormat === f ? "rgba(56,139,253,.15)" : undefined, borderColor: clockFormat === f ? "var(--accent)" : undefined }}
+                        <SecondaryButton key={f} className={"min-w-11" + (clockFormat === f ? " border-accent! bg-[rgba(56,139,253,.15)]!" : "")}
                           onClick={() => {
                             setClockFormat(f);
                             settingsRef.current = { ...settingsRef.current, clockFormat: f };
@@ -715,14 +705,14 @@ export default function SettingsModal(props: SettingsModalProps) {
                            invoke(TAURI_COMMANDS.SAVE_API_INVENTORY, args).catch(() => {});
                             setItemsRefreshKey(k => k + 1);
                           setClearMsg("Cache cleared.");
-                        } catch (e) { setClearMsg(`Error: ${e}`); }
+                        } catch (e) { setClearMsg("Error: " + e); }
                       }}
                     >Clear Cache</DangerButton>
                   </div>
                   {clearMsg && <div className={SECTION_MSG_CLASS}>{clearMsg}</div>}
                 </div>
-                <div className={SECTION_CLASS} style={{ borderColor: "rgba(224,82,82,.3)" }}>
-                  <div className={SECTION_TITLE_CLASS} style={{ color: "var(--red)" }}>Factory Reset</div>
+                <div className={SECTION_CLASS + " border-[rgba(224,82,82,.3)]"}>
+                  <div className={SECTION_TITLE_CLASS + " text-[var(--red)]"}>Factory Reset</div>
                   <div className={ROW_CLASS}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Reset Everything</span>
@@ -741,36 +731,36 @@ export default function SettingsModal(props: SettingsModalProps) {
                   <div className={DEBUG_TABLE_CLASS}>
 
                     {/* Inventory Snapshots */}
-                    <div className={ROW_INFO_CLASS} style={{ opacity: memoryScannerEnabled ? 1 : 0.4 }}>
+                    <div className={ROW_INFO_CLASS + disabledClass(!memoryScannerEnabled, true)}>
                       <span className={ROW_LABEL_CLASS}>Inventory Snapshots</span>
                       <span className={ROW_DESC_CLASS}>Saves a JSON snapshot on each memory scan.</span>
                     </div>
-                    <SecondaryButton style={{ opacity: memoryScannerEnabled ? 1 : 0.4, pointerEvents: memoryScannerEnabled ? "auto" : "none" }}
+                    <SecondaryButton className={disabledClass(!memoryScannerEnabled, true)}
                       onClick={() => invoke("open_debug_folder", { which: "blobs" }).catch(() => {})}>Go To Folder</SecondaryButton>
                     <SecondaryButton
-                      style={{ background: blobLogEnabled ? "rgba(56,139,253,.15)" : undefined, borderColor: blobLogEnabled ? "var(--accent)" : undefined, opacity: memoryScannerEnabled ? 1 : 0.4, pointerEvents: memoryScannerEnabled ? "auto" : "none" }}
+                      className={toggleButtonClass(blobLogEnabled) + disabledClass(!memoryScannerEnabled, true)}
                         onClick={() => setBlobLogEnabled(v => !v)}>{blobLogEnabled ? "On" : "Off"}</SecondaryButton>
                     <SecondaryButton
-                      style={{ color: blobLogSize > 0 ? "var(--red)" : undefined, borderColor: blobLogSize > 0 ? "var(--red)" : undefined, opacity: memoryScannerEnabled ? 1 : 0.4, pointerEvents: memoryScannerEnabled ? "auto" : "none" }}
+                      className={clearButtonClass(blobLogSize > 0) + disabledClass(!memoryScannerEnabled, true)}
                       disabled={blobLogSize === 0}
                       onClick={async () => { await invoke("clear_debug_data", { which: "blobs" }); setBlobLogSize(0); }}
-                    >{blobLogSize > 0 ? `Clear (${formatBytes(blobLogSize)})` : "Clear"}</SecondaryButton>
+                    >{blobLogSize > 0 ? "Clear (" + formatBytes(blobLogSize) + ")" : "Clear"}</SecondaryButton>
 
                     {/* API Responses */}
-                    <div className={ROW_INFO_CLASS} style={{ opacity: companionApiEnabled ? 1 : 0.4 }}>
+                    <div className={ROW_INFO_CLASS + disabledClass(!companionApiEnabled, true)}>
                       <span className={ROW_LABEL_CLASS}>API Responses</span>
                       <span className={ROW_DESC_CLASS}>Records raw DE API responses on each inventory fetch.</span>
                     </div>
-                    <SecondaryButton style={{ opacity: companionApiEnabled ? 1 : 0.4, pointerEvents: companionApiEnabled ? "auto" : "none" }}
+                    <SecondaryButton className={disabledClass(!companionApiEnabled, true)}
                       onClick={() => invoke("open_debug_folder", { which: "api_logs" }).catch(() => {})}>Go To Folder</SecondaryButton>
                     <SecondaryButton
-                      style={{ background: apiLogEnabled ? "rgba(56,139,253,.15)" : undefined, borderColor: apiLogEnabled ? "var(--accent)" : undefined, opacity: companionApiEnabled ? 1 : 0.4, pointerEvents: companionApiEnabled ? "auto" : "none" }}
+                      className={toggleButtonClass(apiLogEnabled) + disabledClass(!companionApiEnabled, true)}
                         onClick={() => setApiLogEnabled(v => !v)}>{apiLogEnabled ? "On" : "Off"}</SecondaryButton>
                     <SecondaryButton
-                      style={{ color: apiLogSize > 0 ? "var(--red)" : undefined, borderColor: apiLogSize > 0 ? "var(--red)" : undefined, opacity: companionApiEnabled ? 1 : 0.4, pointerEvents: companionApiEnabled ? "auto" : "none" }}
+                      className={clearButtonClass(apiLogSize > 0) + disabledClass(!companionApiEnabled, true)}
                       disabled={apiLogSize === 0}
                       onClick={async () => { await invoke("clear_debug_data", { which: "api_logs" }); setApiLogSize(0); }}
-                    >{apiLogSize > 0 ? `Clear (${formatBytes(apiLogSize)})` : "Clear"}</SecondaryButton>
+                    >{apiLogSize > 0 ? "Clear (" + formatBytes(apiLogSize) + ")" : "Clear"}</SecondaryButton>
 
                   </div>
                 </div>
@@ -795,7 +785,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>Test Notification</span>
                       <span className={ROW_DESC_CLASS}>
                         Send a desktop notification now, to check the OS delivers them at all.
-                        {notifyTestResult && <span style={{ display: "block", marginTop: 2, color: notifyTestResult.startsWith("Sent") ? "var(--green)" : "var(--red)", fontSize: 11 }}>{notifyTestResult}</span>}
+                        {notifyTestResult && <span className={"mt-0.5 block text-[11px] " + (notifyTestResult.startsWith("Sent") ? "text-green" : "text-[var(--red)]")}>{notifyTestResult}</span>}
                       </span>
                     </div>
                     <div />{/* Go To Folder placeholder */}
@@ -818,7 +808,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                     <div />{/* Go To Folder placeholder */}
                     <SecondaryButton onClick={async () => {
                       try { alert(await invoke<string>("get_overlay_session_log")); }
-                      catch (e) { alert(`Error: ${e}`); }
+                      catch (e) { alert("Error: " + e); }
                     }}>View</SecondaryButton>
                     <SecondaryButton onClick={async () => {
                       try {
@@ -828,7 +818,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                           setTimeout(() => setOverlayLogCopied(false), 1500);
                         }).catch(() => {});
                       }
-                      catch (e) { alert(`Error: ${e}`); }
+                      catch (e) { alert("Error: " + e); }
                     }}>{overlayLogCopied ? "✓ Copied" : "Copy"}</SecondaryButton>
 
                     {/* Auto-capture */}
@@ -838,7 +828,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                     </div>
                     <SecondaryButton onClick={() => invoke("open_debug_folder", { which: "diag" }).catch(() => {})}>Go To Folder</SecondaryButton>
                     <SecondaryButton
-                      style={{ background: autoDiagEnabled ? "rgba(56,139,253,.15)" : undefined, borderColor: autoDiagEnabled ? "var(--accent)" : undefined }}
+                      className={toggleButtonClass(autoDiagEnabled)}
                       onClick={() => {
                         const next = !autoDiagEnabled;
                         setAutoDiagEnabled(next);
@@ -847,17 +837,17 @@ export default function SettingsModal(props: SettingsModalProps) {
                         saveAllSettings();
                       }}>{autoDiagEnabled ? "On" : "Off"}</SecondaryButton>
                     <SecondaryButton
-                      style={{ color: diagFolderSize > 0 ? "var(--red)" : undefined, borderColor: diagFolderSize > 0 ? "var(--red)" : undefined }}
+                      className={clearButtonClass(diagFolderSize > 0)}
                       disabled={diagFolderSize === 0}
                       onClick={async () => { await invoke("clear_diag_folder"); setDiagFolderSize(0); }}
-                    >{diagFolderSize > 0 ? `Clear (${formatBytes(diagFolderSize)})` : "Clear"}</SecondaryButton>
+                    >{diagFolderSize > 0 ? "Clear (" + formatBytes(diagFolderSize) + ")" : "Clear"}</SecondaryButton>
 
                     {/* Manual Capture */}
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Manual Capture</span>
                       <span className={ROW_DESC_CLASS}>
                         Take a diagnostic screenshot + scan log right now.
-                        {diagPath && <span style={{ display: "block", marginTop: 2, color: "var(--green)", fontSize: 11 }}>Saved.</span>}
+                        {diagPath && <span className="mt-0.5 block text-[11px] text-green">Saved.</span>}
                       </span>
                     </div>
                     <SecondaryButton onClick={() => invoke("open_debug_folder", { which: "manual_capture" }).catch(() => {})}>Go To Folder</SecondaryButton>
@@ -887,10 +877,10 @@ export default function SettingsModal(props: SettingsModalProps) {
                         .finally(() => setMemoryProbing(false));
                     }}>{memoryProbing ? "Running…" : "Run"}</SecondaryButton>
                     <SecondaryButton
-                      style={{ color: probeSize > 0 ? "var(--red)" : undefined, borderColor: probeSize > 0 ? "var(--red)" : undefined }}
+                      className={clearButtonClass(probeSize > 0)}
                       disabled={probeSize === 0}
                       onClick={async () => { await invoke("clear_debug_data", { which: "probe" }); setProbeSize(0); }}
-                    >{probeSize > 0 ? `Clear (${formatBytes(probeSize)})` : "Clear"}</SecondaryButton>
+                    >{probeSize > 0 ? "Clear (" + formatBytes(probeSize) + ")" : "Clear"}</SecondaryButton>
 
                     {/* Raw Memory Record */}
                     <div className={ROW_INFO_CLASS}>
@@ -905,10 +895,10 @@ export default function SettingsModal(props: SettingsModalProps) {
                           .catch(e => alert("Error: " + String(e)));
                       }}>{rawScanning ? "Stop" : "Record"}</ActionButton>
                     <SecondaryButton
-                      style={{ color: rawScanSize > 0 ? "var(--red)" : undefined, borderColor: rawScanSize > 0 ? "var(--red)" : undefined }}
+                      className={clearButtonClass(rawScanSize > 0)}
                       disabled={rawScanSize === 0 || rawScanning}
                       onClick={async () => { await invoke("clear_debug_data", { which: "raw_scan" }); setRawScanSize(0); }}
-                    >{rawScanSize > 0 ? `Clear (${formatBytes(rawScanSize)})` : "Clear"}</SecondaryButton>
+                    >{rawScanSize > 0 ? "Clear (" + formatBytes(rawScanSize) + ")" : "Clear"}</SecondaryButton>
 
                     {/* Memory Relic Debug */}
                     <div className={ROW_INFO_CLASS}>
@@ -943,7 +933,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>OCR Era Detect</span>
                       <span className={ROW_DESC_CLASS}>
                         Reads the top-left quarter of the Warframe window and reports which fissure era OCR finds.
-                        {relicPickOcrResult && <span style={{ display: "block", marginTop: 2, color: "var(--accent)", fontSize: 11 }}>{relicPickOcrResult}</span>}
+                        {relicPickOcrResult && <span className="mt-0.5 block text-[11px] text-accent">{relicPickOcrResult}</span>}
                       </span>
                     </div>
                     <div />
@@ -960,7 +950,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>Test Overlay</span>
                       <span className={ROW_DESC_CLASS}>
                         Manually fire the relic pick overlay with a specific era.
-                        {relicPickTestResult && <span style={{ display: "block", marginTop: 2, color: "var(--accent)", fontSize: 11 }}>{relicPickTestResult}</span>}
+                        {relicPickTestResult && <span className="mt-0.5 block text-[11px] text-accent">{relicPickTestResult}</span>}
                       </span>
                     </div>
                     <div />
@@ -993,16 +983,11 @@ export default function SettingsModal(props: SettingsModalProps) {
                     }}>Tail Log</SecondaryButton>
                     <div />
                     {eeLogTail && (
-                      <div style={{ gridColumn: "1 / -1", marginTop: 4 }}>
+                      <div className="col-[1_/_-1] mt-1">
                         <textarea
                           readOnly
                           value={eeLogTail}
-                          style={{
-                            width: "100%", height: 160, fontSize: 10, fontFamily: "monospace",
-                            background: "var(--bg)", border: "1px solid var(--border)",
-                            color: "var(--text)", borderRadius: 4, padding: 6,
-                            resize: "vertical", boxSizing: "border-box"
-                          }}
+                          className="box-border h-40 w-full resize-y rounded-[4px] border border-border bg-background p-[6px] font-mono text-[10px] text-foreground"
                         />
                       </div>
                     )}
@@ -1023,15 +1008,15 @@ export default function SettingsModal(props: SettingsModalProps) {
                     <SecondaryButton
                       onClick={() => invoke("open_debug_folder", { which: "unmatched_paths" }).catch(() => {})}>Go To Folder</SecondaryButton>
                     <SecondaryButton
-                      style={{ background: debugCatEnabled ? "rgba(56,139,253,.15)" : undefined, borderColor: debugCatEnabled ? "var(--accent)" : undefined }}
+                      className={toggleButtonClass(debugCatEnabled)}
                       onClick={() => invoke<boolean>("toggle_debug_categorization").then(setDebugCatEnabled).catch(() => {})}>
                       {debugCatEnabled ? "On" : "Off"}
                     </SecondaryButton>
                     <SecondaryButton
-                      style={{ color: unmatchedPathsSize > 0 ? "var(--red)" : undefined, borderColor: unmatchedPathsSize > 0 ? "var(--red)" : undefined }}
+                      className={clearButtonClass(unmatchedPathsSize > 0)}
                       disabled={unmatchedPathsSize === 0}
                       onClick={async () => { await invoke("clear_debug_data", { which: "unmatched_paths" }); setUnmatchedPathsSize(0); }}>
-                      {unmatchedPathsSize > 0 ? `Clear (${formatBytes(unmatchedPathsSize)})` : "Clear"}
+                      {unmatchedPathsSize > 0 ? "Clear (" + formatBytes(unmatchedPathsSize) + ")" : "Clear"}
                     </SecondaryButton>
                   </div>
                 </div>
@@ -1039,7 +1024,7 @@ export default function SettingsModal(props: SettingsModalProps) {
               </>}
 
               {/* ════ Shared About footer — always visible ════ */}
-              <div className={SECTION_CLASS} style={{ marginTop: "auto", borderTop: "1px solid var(--border)", borderBottom: "none" }}>
+              <div className={`${SECTION_CLASS} mt-auto border-t border-b-0 border-border`}>
                 <div className={ROW_CLASS}>
                   <div className={ROW_INFO_CLASS}>
                     <span className={ROW_LABEL_CLASS}>FrameForge</span>
