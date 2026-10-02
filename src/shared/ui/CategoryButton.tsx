@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 const CAT_BASE =
-  "flex items-center justify-between w-full px-[12px] py-[6px] bg-transparent border-l-2 border-l-transparent cursor-pointer text-left text-[13px] transition-[background,color] duration-100";
+  "flex items-center justify-between w-full px-[12px] py-[6px] bg-transparent border-0 border-l-2 border-l-transparent cursor-pointer text-left text-[13px] transition-[background,color] duration-100";
 const CAT_ON = "text-accent! bg-[rgba(56,139,253,.08)]! border-l-accent!";
 const CAT_OFF = "text-muted hover:bg-[rgba(255,255,255,.04)] hover:text-foreground";
 
