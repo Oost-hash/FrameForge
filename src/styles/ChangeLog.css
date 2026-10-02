@@ -61,7 +61,27 @@
 .log-search { display: flex; padding: 6px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .log-search-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 .log-list { flex: 1; min-height: 0; overflow-y: auto; padding: 0; }
-.log-item-row { cursor: default; }
+.log-item-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: .308em 12px;
+  min-height: 2.308em;
+  cursor: default;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  position: relative;
+  align-self: stretch;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid rgba(48,54,61,.35);
+  border-radius: 0;
+  transition: border-color .12s;
+}
 .log-row-arrival-wrap { display: grid; grid-template-rows: minmax(0, 0fr); overflow: hidden; opacity: 0; animation: log-row-arrive .16s ease-out both; }
 .log-row-arrival-wrap > .log-item-row { min-height: 30px; }
 .log-item-row.log-time-break { border-top: 3px solid var(--border); }

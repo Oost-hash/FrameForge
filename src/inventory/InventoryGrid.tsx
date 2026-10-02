@@ -25,6 +25,31 @@ const INV_SKELETON =
 
 const EMPTY_MSG = "px-6 py-10 text-center leading-[1.6] text-muted";
 
+const INV_CARD_BASE =
+  "relative flex w-full min-w-0 cursor-default flex-col items-center gap-[5px] self-stretch rounded-[9px] border border-border bg-surface px-2.5 pt-2.5 pb-3 transition-[border-color] duration-[120ms] hover:border-[rgba(56,139,253,0.5)]";
+const INV_CARD_BASE_EM =
+  "relative flex w-full min-w-0 cursor-default flex-col items-center gap-[.385em] self-stretch rounded-[9px] border border-border bg-surface px-[.769em] pt-[.769em] pb-[.923em] text-[length:var(--inventory-card-base-size,13px)] transition-[border-color] duration-[120ms] hover:border-[rgba(56,139,253,0.5)]";
+const INV_FAV_STAR =
+  "absolute left-[.538em] top-[.462em] z-[2] cursor-pointer border-0 bg-transparent p-0 text-[1.077em] leading-none transition-colors duration-100";
+const INV_FAV_STAR_ON = "text-[#f0c040]";
+const INV_FAV_STAR_OFF = "text-[rgba(255,255,255,0.25)] hover:text-[rgba(240,192,64,0.8)]";
+const INV_MASTERY_ROW = "flex h-[1.538em] w-full items-center justify-center";
+const INV_MASTERY_STAR = "text-[1.077em] leading-none text-[#f0c040]";
+const INV_MASTERY_RANK =
+  "rounded-[3px] bg-[rgba(255,255,255,0.06)] px-[.462em] py-[.154em] text-[.846em] font-semibold text-muted";
+const INV_CARD_IMG_WRAP =
+  "relative flex h-[var(--inventory-card-image-size,56px)] w-[var(--inventory-card-image-size,56px)] shrink-0 items-center justify-center";
+const INV_FOUNDRY_ICON =
+  "absolute right-[-.538em] top-[-.385em] text-[1em] drop-shadow-[0_0_3px_rgba(0,0,0,0.9)]";
+const INV_CARD_NAME =
+  "line-clamp-2 w-full overflow-hidden text-center text-[1em] font-medium leading-[1.35]";
+const INV_CARD_CAT =
+  "mt-[-1px] w-full overflow-hidden text-ellipsis whitespace-nowrap text-center text-[.769em] font-semibold uppercase tracking-[0.04em] text-[rgba(139,148,158,0.6)]";
+const INV_CARD_SIDE =
+  "absolute top-[.462em] right-[.538em] z-[2] flex flex-col items-end gap-[.308em]";
+const INV_WIKI_BTN =
+  "cursor-pointer rounded-[4px] border border-[rgba(56,139,253,0.4)] bg-[rgba(0,0,0,0.4)] px-[.6em] py-[.3em] text-[.769em] font-bold leading-[1.3] text-[#6ea8fe] transition-[background] duration-100 hover:bg-[rgba(56,139,253,0.25)] hover:text-[#a8c8ff]";
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 
@@ -105,8 +130,8 @@ function CardSide({ name, plat, ducats }: {
 }) {
   const showDucats = ducats != null && ducats > 0;
   return (
-    <div className="inv-card-side">
-      <WikiButton name={name} className="inv-wiki-btn" />
+    <div className={INV_CARD_SIDE}>
+      <WikiButton name={name} className={INV_WIKI_BTN} />
       {plat != null && <PriceChip kind="plat" value={plat} />}
       {showDucats && <PriceChip kind="ducat" value={ducats!} />}
     </div>
@@ -149,7 +174,7 @@ const InvModCard = memo(function InvModCard({ unique_name, name, category, image
 
   if (view === "icons") {
     return (
-      <div key={unique_name} className={`${baseClass} inv-card-icon-only`} role="img"
+      <div key={unique_name} className={`${baseClass} inv-card-icon-only ${INV_CARD_BASE}`} role="img"
         aria-label={`${name} ×${fmt(total)}${valueTitle(plat, ducats)}`}
         title={`${name} ×${fmt(total)}${valueTitle(plat, ducats)}`}>
         <ItemImg imageName={image_name ?? undefined} category={category} size={52} />
@@ -158,7 +183,7 @@ const InvModCard = memo(function InvModCard({ unique_name, name, category, image
   }
   if (view === "list" || view === "list-compact") {
     return (
-      <div key={unique_name} className={`${baseClass} inv-card-row`}>
+      <div key={unique_name} className={`${baseClass} inv-card-row ${INV_CARD_BASE}`}>
         <button className={`inv-fav-star-row ${isFavorite ? "active" : ""}`}
           title={isFavorite ? "Remove from Modular Window" : "Add to Modular Window"}
           aria-label={isFavorite ? "Remove from Modular Window" : "Add to Modular Window"}
@@ -175,20 +200,20 @@ const InvModCard = memo(function InvModCard({ unique_name, name, category, image
     );
   }
   return (
-    <div key={unique_name} className={`${baseClass} inv-card-mod`}>
+    <div key={unique_name} className={`${baseClass} inv-card-mod ${INV_CARD_BASE_EM}`}>
       <button
-        className={`inv-fav-star ${isFavorite ? "active" : ""}`}
+        className={[INV_FAV_STAR, isFavorite ? INV_FAV_STAR_ON : INV_FAV_STAR_OFF].join(" ")}
         title={isFavorite ? "Remove from Modular Window" : "Add to Modular Window"}
         aria-label={isFavorite ? "Remove from Modular Window" : "Add to Modular Window"}
         onClick={e => { e.stopPropagation(); onToggleFavorite(unique_name); }}
       >{isFavorite ? "★" : "☆"}</button>
       {view !== "text-cards" && (
-        <div className="inv-card-img-wrap">
+        <div className={`inv-card-img-wrap ${INV_CARD_IMG_WRAP}`}>
           <ItemImg imageName={image_name ?? undefined} category={category} size={48} />
         </div>
       )}
-      <div className="inv-card-name">{name}</div>
-      <div className="inv-card-cat">{category}</div>
+      <div className={`inv-card-name ${INV_CARD_NAME}`}>{name}</div>
+      <div className={INV_CARD_CAT}>{category}</div>
       <div className="mod-rank-table">
         {ranks.map(r => {
           const rankDelta = rankDeltas?.find(rd => rd.rank === r.rank);
@@ -258,7 +283,7 @@ const InvCard = memo(function InvCard({
 
   if (view === "icons") {
     return (
-      <div className={`${baseClass} inv-card-icon-only`} role="img"
+      <div className={`${baseClass} inv-card-icon-only ${INV_CARD_BASE}`} role="img"
         aria-label={`${name} (${fmt(qty)})${valueTitle(plat, ducats)}`}
         title={`${name} (${fmt(qty)})${valueTitle(plat, ducats)}`}>
         <ItemImg imageName={image_name ?? undefined} category={category} size={52} />
@@ -267,7 +292,7 @@ const InvCard = memo(function InvCard({
   }
   if (view === "list" || view === "list-compact") {
     return (
-      <div className={`${baseClass} inv-card-row`}>
+      <div className={`${baseClass} inv-card-row ${INV_CARD_BASE}`}>
         <button className={`inv-fav-star-row ${isFavorite ? "active" : ""}`}
           title={isFavorite ? "Remove from Modular Window" : "Add to Modular Window"}
           aria-label={isFavorite ? "Remove from Modular Window" : "Add to Modular Window"}
@@ -295,31 +320,31 @@ const InvCard = memo(function InvCard({
     );
   }
   return (
-    <div className={baseClass}>
+    <div className={`${baseClass} ${INV_CARD_BASE_EM}`}>
       <button
-        className={`inv-fav-star ${isFavorite ? "active" : ""}`}
+        className={[INV_FAV_STAR, isFavorite ? INV_FAV_STAR_ON : INV_FAV_STAR_OFF].join(" ")}
         title={isFavorite ? "Remove from Modular Window" : "Add to Modular Window"}
         aria-label={isFavorite ? "Remove from Modular Window" : "Add to Modular Window"}
         onClick={e => { e.stopPropagation(); onToggleFavorite(unique_name); }}
       >{isFavorite ? "★" : "☆"}</button>
-      <div className="inv-mastery-row">
+      <div className={INV_MASTERY_ROW}>
         {isMastered
-          ? <span className="inv-mastery-star" title="Mastered">★</span>
+          ? <span className={INV_MASTERY_STAR} title="Mastered">★</span>
           : showRank
-            ? <span className="inv-mastery-rank" title={`Rank ${masteryRank}`}>R{masteryRank}</span>
+            ? <span className={INV_MASTERY_RANK} title={`Rank ${masteryRank}`}>R{masteryRank}</span>
             : null}
       </div>
       {view !== "text-cards" && (
-        <div className="inv-card-img-wrap">
+        <div className={`inv-card-img-wrap ${INV_CARD_IMG_WRAP}`}>
           <ItemImg imageName={image_name ?? undefined} category={category} size={56} />
-          {craftJobName && <span className="inv-foundry-icon" title={`Building — ${craftJobName}`}>⚒</span>}
+          {craftJobName && <span className={INV_FOUNDRY_ICON} title={`Building — ${craftJobName}`}>⚒</span>}
         </div>
       )}
-      <div className="inv-card-name">
+      <div className={`inv-card-name ${INV_CARD_NAME}`}>
         {name}
         {isRecent && <span className="item-updated">{recentLabel}</span>}
       </div>
-      <div className="inv-card-cat">{category}</div>
+      <div className={INV_CARD_CAT}>{category}</div>
       <div className={`inv-card-qty ${isZero ? "inv-card-qty-zero" : ""}`}>
         {fmt(qty)}
         {isRecent && recentDelta != null && (
@@ -376,7 +401,7 @@ export default memo(function InventoryGrid({
          onContextMenu={onContextMenu}>
       {loading ? (
         Array.from({ length: 20 }, (_, i) => (
-          <div key={i} className={`inv-card ${INV_SKELETON}`} />
+          <div key={i} className={`inv-card ${INV_CARD_BASE} ${INV_SKELETON}`} />
         ))
       ) : items.length === 0 ? (
         <div className={EMPTY_MSG} style={{gridColumn:"1/-1"}}>

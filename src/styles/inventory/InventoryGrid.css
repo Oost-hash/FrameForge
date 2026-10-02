@@ -1,94 +1,7 @@
 /* ── Card base ─────────────────────────────────────────────────────────────── */
 
-.inv-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  padding: 10px 10px 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  cursor: default;
-  transition: border-color .12s;
-  min-width: 0;
-  position: relative;
-  align-self: stretch;
-  justify-self: stretch;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.item-grid-cards .inv-card,
-.item-grid-text-cards .inv-card {
-  padding: .769em .769em .923em;
-  gap: .385em;
-  font-size: var(--inventory-card-base-size, 13px);
-}
-
-.inv-fav-star {
-  position: absolute;
-  top: .462em;
-  left: .538em;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1.077em;
-  color: rgba(255,255,255,.25);
-  line-height: 1;
-  padding: 0;
-  z-index: 2;
-  transition: color .1s;
-}
-.inv-fav-star:hover { color: rgba(240,192,64,.8); }
-.inv-fav-star.active { color: #f0c040; }
-.inv-card:hover { border-color: rgba(56, 139, 253, .5); }
-.inv-card-zero  { opacity: .35; }
-.inv-card-gained { border-left: 2px solid var(--green); background: rgba(63,185,80,.04); }
-.inv-card-lost   { border-left: 2px solid var(--red);   background: rgba(248,81,73,.04); }
-.inv-card-mixed  { border-left: 2px solid #e0973e; background: rgba(224,151,62,.04); }
-
-/* ── Mastery row ───────────────────────────────────────────────────────────── */
-
-.inv-mastery-row  { height: 1.538em; display: flex; align-items: center; justify-content: center; width: 100%; }
-.inv-mastery-star { font-size: 1.077em; color: #f0c040; line-height: 1; }
-.inv-mastery-rank { font-size: .846em; font-weight: 600; color: var(--muted); background: rgba(255,255,255,.06); border-radius: 3px; padding: .154em .462em; }
-
-/* ── Image + foundry icon ──────────────────────────────────────────────────── */
-
-.inv-card-img-wrap { position: relative; width: var(--inventory-card-image-size, 56px); height: var(--inventory-card-image-size, 56px); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-.item-grid-cards .inv-card-img-wrap .img,
-.item-grid-cards .inv-card-img-wrap .img-fallback { width: var(--inventory-card-image-size, 56px) !important; height: var(--inventory-card-image-size, 56px) !important; }
-.item-grid-cards .inv-card-img-wrap .img-fallback { font-size: 1.508em !important; }
-.inv-foundry-icon  { position: absolute; top: -.385em; right: -.538em; font-size: 1em; filter: drop-shadow(0 0 3px rgba(0,0,0,.9)); }
-
-/* ── Card text ─────────────────────────────────────────────────────────────── */
-
-.inv-card-name {
-  font-size: 1em; font-weight: 500; text-align: center;
-  line-height: 1.35; overflow: hidden;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  width: 100%;
-}
-.inv-card-cat {
-  font-size: .769em; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
-  color: rgba(139,148,158,.6); text-align: center; width: 100%;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  margin-top: -1px;
-}
-.inv-card-meta { display: flex; gap: 3px; flex-wrap: wrap; justify-content: center; }
 .inv-card-qty      { font-size: 1.231em; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: .313em; }
 .inv-card-qty-zero { color: var(--muted); }
-
-/* ── Value chips + wiki button ─────────────────────────────────────────────── */
-
-/* Card view: wiki with plat/ducats stacked below, pinned top-right. Absolute,
-   so cards keep identical content flow whether or not values exist. */
-.inv-card-side {
-  position: absolute; top: .462em; right: .538em;
-  display: flex; flex-direction: column; align-items: flex-end; gap: .308em;
-  z-index: 2;
-}
 
 .inv-price {
   display: inline-flex; align-items: center; gap: 2px;
@@ -99,13 +12,9 @@
 .inv-price-plat  { color: #b39ddb; background: rgba(179,157,219,.10); }
 .inv-price-ducat { color: #f0c040; background: rgba(240,192,64,.10); }
 
-.inv-wiki-btn {
-  font-size: .769em; font-weight: 700; padding: .3em .6em; border-radius: 4px;
-  border: 1px solid rgba(56,139,253,.4); background: rgba(0,0,0,.4);
-  color: #6ea8fe; cursor: pointer; line-height: 1.3;
-  transition: background .1s;
-}
-.inv-wiki-btn:hover { background: rgba(56,139,253,.25); color: #a8c8ff; }
+.item-grid-cards .inv-card-img-wrap .img,
+.item-grid-cards .inv-card-img-wrap .img-fallback { width: var(--inventory-card-image-size, 56px) !important; height: var(--inventory-card-image-size, 56px) !important; }
+.item-grid-cards .inv-card-img-wrap .img-fallback { font-size: 1.508em !important; }
 
 .inv-row-values {
   display: flex; align-items: center; gap: 4px; flex-shrink: 0;
