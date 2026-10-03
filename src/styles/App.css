@@ -38,10 +38,6 @@
   overflow: hidden;
 }
 
-/* ── Main ── */
-
-/* ── Inventory card grid (see InventoryGrid.css) ── */
-
 /* ── Image toggle (inventory): checkbox input + pseudo rules ── */
 
 .inventory-image-toggle input {
