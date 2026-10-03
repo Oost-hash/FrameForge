@@ -1,5 +1,3 @@
-import "./Report.css";
-
 export default function Sparkline({ values, empty }: { values: number[]; empty: string }) {
   const W = 300, H = 60;
   const pt = 6, pb = 6, pl = 2, pr = 2;
@@ -7,7 +5,7 @@ export default function Sparkline({ values, empty }: { values: number[]; empty: 
   const cH = H - pt - pb;
 
   if (values.length === 0) {
-    return <div className="report-chart-empty">{empty}</div>;
+    return <div className="flex h-[60px] items-center justify-center rounded-[4px] bg-[rgba(0,0,0,.1)] text-[11px] italic text-muted">{empty}</div>;
   }
 
   const min = Math.min(...values);
@@ -20,7 +18,7 @@ export default function Sparkline({ values, empty }: { values: number[]; empty: 
 
   if (values.length === 1) {
     return (
-      <svg viewBox={`0 0 ${W} ${H}`} className="report-chart-svg" preserveAspectRatio="none">
+      <svg viewBox={`0 0 ${W} ${H}`} className="block h-[60px] w-full rounded-[4px] bg-[rgba(0,0,0,.15)]" preserveAspectRatio="none">
         <line
           x1={pl} y1={H / 2} x2={pl + cW} y2={H / 2}
           stroke="var(--accent)" strokeWidth="1" strokeOpacity="0.4" strokeDasharray="4 3"
@@ -34,7 +32,7 @@ export default function Sparkline({ values, empty }: { values: number[]; empty: 
   const fillPts = `${pl},${pt + cH} ${linePts} ${pl + cW},${pt + cH}`;
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="report-chart-svg" preserveAspectRatio="none">
+    <svg viewBox={`0 0 ${W} ${H}`} className="block h-[60px] w-full rounded-[4px] bg-[rgba(0,0,0,.15)]" preserveAspectRatio="none">
       <polygon points={fillPts} fill="var(--accent)" fillOpacity="0.12" />
       <polyline
         points={linePts}
