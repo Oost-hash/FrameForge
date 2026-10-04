@@ -484,8 +484,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className="settings-row-desc">Briefly show a completed arbitration run's numbers over the game. Runs are recorded either way.</span>
                     </div>
                     <button
-                      className="btn-secondary"
-                      style={{ minWidth: 64, background: arbOverlayEnabled ? "rgba(56,139,253,.15)" : undefined, borderColor: arbOverlayEnabled ? "var(--accent)" : undefined }}
+                      className={`btn-secondary min-w-16 ${arbOverlayEnabled ? "border-accent bg-accent/15" : ""}`}
                       onClick={() => {
                         const next = !arbOverlayEnabled;
                         setArbOverlayEnabled(next);
@@ -1030,7 +1029,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className="settings-row-label">Test Arbitration Summary Overlay</span>
                       <span className="settings-row-desc">
                         Fire the post-run overlay with a sample run. Ignores the enable setting.
-                        {arbOverlayTestResult && <span style={{ display: "block", marginTop: 2, color: "var(--accent)", fontSize: 11 }}>{arbOverlayTestResult}</span>}
+                        {arbOverlayTestResult && <span className="mt-0.5 block text-11 text-accent">{arbOverlayTestResult}</span>}
                       </span>
                     </div>
                     <div />

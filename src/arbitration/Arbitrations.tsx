@@ -39,9 +39,9 @@ export default function Arbitrations(props: Props) {
   const [tab, setTab] = useState<"schedule" | "history">("schedule");
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="flex shrink-0 gap-[2px] border-b border-border px-[12px] py-[6px]">
-        <button className={`cursor-pointer rounded-[4px] border border-[rgba(48,54,61,.6)] bg-transparent px-[14px] py-[3px] text-[12px] text-muted transition-[background,color,border-color] duration-100 hover:bg-[rgba(255,255,255,.06)] hover:text-foreground ${tab === "schedule" ? "border-accent bg-[rgba(56,139,253,.15)] text-accent" : ""}`} onClick={() => setTab("schedule")}>Schedule</button>
-        <button className={`cursor-pointer rounded-[4px] border border-[rgba(48,54,61,.6)] bg-transparent px-[14px] py-[3px] text-[12px] text-muted transition-[background,color,border-color] duration-100 hover:bg-[rgba(255,255,255,.06)] hover:text-foreground ${tab === "history" ? "border-accent bg-[rgba(56,139,253,.15)] text-accent" : ""}`} onClick={() => setTab("history")}>Run history</button>
+      <div className="flex shrink-0 gap-0.5 border-b border-border px-3 py-1.5">
+        <button className={`cursor-pointer rounded-4 border border-border/60 bg-transparent px-3.5 py-0.75 text-12 text-muted transition-[background,color,border-color] duration-100 hover:bg-white/6 hover:text-foreground ${tab === "schedule" ? "border-accent bg-accent/15 text-accent" : ""}`} onClick={() => setTab("schedule")}>Schedule</button>
+        <button className={`cursor-pointer rounded-4 border border-border/60 bg-transparent px-3.5 py-0.75 text-12 text-muted transition-[background,color,border-color] duration-100 hover:bg-white/6 hover:text-foreground ${tab === "history" ? "border-accent bg-accent/15 text-accent" : ""}`} onClick={() => setTab("history")}>Run history</button>
       </div>
       {tab === "schedule" ? <Schedule {...props} /> : <ArbitrationHistory clockFormat={props.clockFormat} systemLocale={props.systemLocale} />}
     </div>
@@ -106,8 +106,8 @@ function Schedule({
 
   if (!schedule) {
     return error
-      ? <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-[8px]"><div className="flex items-center gap-[8px] px-[16px] py-[8px] text-[12px] text-danger">{error} <button className="cursor-pointer rounded-[3px] border border-danger bg-transparent px-[8px] py-[1px] text-[11px] text-danger" onClick={fetchSchedule}>Retry</button></div></div>
-      : <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-[8px]"><div className="px-[16px] py-[12px] text-center text-[12px] text-muted">Loading arbitration schedule…</div></div>;
+      ? <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-2"><div className="flex items-center gap-2 px-4 py-2 text-12 text-danger">{error} <button className="cursor-pointer rounded-3 border border-danger bg-transparent px-2 py-px text-11 text-danger" onClick={fetchSchedule}>Retry</button></div></div>
+      : <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-2"><div className="px-4 py-3 text-center text-12 text-muted">Loading arbitration schedule…</div></div>;
   }
 
   const nowSec = now / 1000;
@@ -127,7 +127,7 @@ function Schedule({
 
   const star = (e: ScheduleEntry) => (
     <button
-      className={`shrink-0 cursor-pointer border-0 bg-transparent px-[2px] py-0 text-[14px] leading-none text-muted transition-colors duration-100 hover:text-[#f0c040] ${isFav(e) ? "text-[#f0c040]" : ""}`}
+      className={`shrink-0 cursor-pointer border-0 bg-transparent px-0.5 py-0 text-14 leading-none text-muted transition-colors duration-100 hover:text-ducat ${isFav(e) ? "text-ducat" : ""}`}
       onClick={() => void toggleFavorite(e.node_id)}
       title={isFav(e) ? "Unfavorite node" : "Favorite node"}
     >★</button>
@@ -143,16 +143,16 @@ function Schedule({
 
   let lastDay = "";
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-[8px]">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-2">
       {stale && (
-        <div className="flex items-center gap-[8px] border-b border-b-[rgba(240,192,64,.25)] bg-[rgba(240,192,64,.08)] px-[16px] py-[6px] text-[11px] text-[#f0c040]" title={schedule.warning ?? error}>
+        <div className="flex items-center gap-2 border-b border-b-ducat/25 bg-ducat/8 px-4 py-1.5 text-11 text-ducat" title={schedule.warning ?? error}>
           Showing the last schedule that loaded; refreshing failed.
-          <button className="cursor-pointer rounded-[3px] border border-[#f0c040] bg-transparent px-[8px] py-[1px] text-[11px] text-[#f0c040]" onClick={fetchSchedule}>Retry</button>
+          <button className="cursor-pointer rounded-3 border border-ducat bg-transparent px-2 py-px text-11 text-ducat" onClick={fetchSchedule}>Retry</button>
         </div>
       )}
 
-      <div className="flex items-center gap-[10px] border-b border-border px-[16px] py-[6px] text-[11px] text-muted">
-        <label className="flex items-center gap-[6px]">
+      <div className="flex items-center gap-2.5 border-b border-border px-4 py-1.5 text-11 text-muted">
+        <label className="flex items-center gap-1.5">
           Alert me
           <input
             type="number"
@@ -162,7 +162,7 @@ function Schedule({
             onChange={e => setLeadDraft(e.target.value)}
             onBlur={commitLead}
             onKeyDown={e => { if (e.key === "Enter") e.currentTarget.blur(); }}
-            className="w-[52px] rounded-[3px] border border-border bg-surface px-[4px] py-[2px] text-[11px] text-foreground"
+            className="w-13 rounded-3 border border-border bg-surface px-1 py-0.5 text-11 text-foreground"
           />
           minutes before an alerting node starts
         </label>
@@ -170,34 +170,34 @@ function Schedule({
         {!alertsOn && <span>Star a node or pick a tier to be alerted.</span>}
       </div>
       {permissionDenied && (
-        <div className="px-[16px] py-[4px] text-[11px] text-[#f0c040]">FrameForge cannot send notifications. Check its permission in your system settings.</div>
+        <div className="px-4 py-1 text-11 text-ducat">FrameForge cannot send notifications. Check its permission in your system settings.</div>
       )}
 
-      <div className="sticky top-0 z-[1] flex items-center gap-[8px] border-b border-b-[rgba(48,54,61,.4)] bg-surface px-[16px] pt-[6px] pb-[3px] text-[10px] font-bold uppercase tracking-[.04em] text-muted">Now</div>
+      <div className="sticky top-0 z-1 flex items-center gap-2 border-b border-b-border/40 bg-surface px-4 pt-1.5 pb-0.75 text-10 font-bold uppercase tracking-0.04 text-muted">Now</div>
       {current ? (
-        <div className={`flex items-center gap-[10px] border-b border-b-[rgba(48,54,61,.35)] py-[12px] pr-[16px] pl-[8px] ${isFav(current) ? "bg-[rgba(240,192,64,.08)] hover:bg-[rgba(240,192,64,.14)]" : byTier(current) ? "bg-[rgba(56,139,253,.07)] hover:bg-[rgba(56,139,253,.12)]" : ""}`} title={alertTitle(current)}>
+        <div className={`flex items-center gap-2.5 border-b border-b-border/35 py-3 pr-4 pl-2 ${isFav(current) ? "bg-ducat/8 hover:bg-ducat/14" : byTier(current) ? "bg-accent/7 hover:bg-accent/12" : ""}`} title={alertTitle(current)}>
           {star(current)}
           <div className="min-w-0 flex-1">
-            <div className={`text-[16px] font-semibold ${isFav(current) ? "text-[#f0c040]" : "text-foreground"}`}>{name(current)}</div>
-            <div className="shrink-0 overflow-hidden text-ellipsis whitespace-nowrap text-[11px] text-muted">{detail(current)}</div>
+            <div className={`text-16 font-semibold ${isFav(current) ? "text-ducat" : "text-foreground"}`}>{name(current)}</div>
+            <div className="shrink-0 overflow-hidden text-ellipsis whitespace-nowrap text-11 text-muted">{detail(current)}</div>
           </div>
           <div className="text-right">
-            <div className="min-w-[80px] shrink-0 text-right text-[18px] font-bold tabular-nums text-foreground">{fmtMs(current.end * 1000 - now)}</div>
-            <div className="shrink-0 overflow-hidden text-ellipsis whitespace-nowrap text-[10px] text-muted">remaining</div>
+            <div className="min-w-20 shrink-0 text-right text-18 font-bold tabular-nums text-foreground">{fmtMs(current.end * 1000 - now)}</div>
+            <div className="shrink-0 overflow-hidden text-ellipsis whitespace-nowrap text-10 text-muted">remaining</div>
           </div>
         </div>
       ) : (
-        <div className="px-[16px] py-[12px] text-center text-[12px] text-muted">No arbitration in the schedule for this hour.</div>
+        <div className="px-4 py-3 text-center text-12 text-muted">No arbitration in the schedule for this hour.</div>
       )}
 
-      <div className="flex shrink-0 flex-wrap items-center gap-[12px] px-[16px]">
+      <div className="flex shrink-0 flex-wrap items-center gap-3 px-4">
         <TierSelect label="Show tiers" selected={tierFilter} onChange={onTierFilterChange} />
         <span className="w-px self-stretch bg-border opacity-60" aria-hidden="true" />
-        <span className="flex items-center gap-[6px]">
-          <span className="text-[11px] text-muted">Show</span>
+        <span className="flex items-center gap-1.5">
+          <span className="text-11 text-muted">Show</span>
           <span className="relative flex items-center">
             <select
-              className="cursor-pointer appearance-none rounded-[3px] border border-border bg-surface py-[3px] pr-[18px] pl-[6px] text-[11px] text-foreground hover:border-accent focus-visible:outline focus-visible:outline-1 focus-visible:outline-accent focus-visible:outline-offset-0"
+              className="cursor-pointer appearance-none rounded-3 border border-border bg-surface py-0.75 pr-4.5 pl-1.5 text-11 text-foreground hover:border-accent focus-visible:outline-1 focus-visible:outline-accent focus-visible:outline-offset-0"
               value={clampScheduleDays(scheduleDays)}
               onChange={e => onScheduleDaysChange(Number(e.target.value))}
             >
@@ -205,28 +205,28 @@ function Schedule({
                 <option key={d} value={d}>{d} days</option>
               ))}
             </select>
-            <span className="pointer-events-none absolute right-[6px] text-[11px] text-muted" aria-hidden="true">▾</span>
+            <span className="pointer-events-none absolute right-1.5 text-11 text-muted" aria-hidden="true">▾</span>
           </span>
         </span>
-        <span className="ml-auto text-[11px] text-muted">{shown.length} of {upcoming.length} hours</span>
+        <span className="ml-auto text-11 text-muted">{shown.length} of {upcoming.length} hours</span>
       </div>
 
-      {upcoming.length === 0 && <div className="px-[16px] py-[12px] text-center text-[12px] text-muted">No upcoming arbitrations in the feed.</div>}
+      {upcoming.length === 0 && <div className="px-4 py-3 text-center text-12 text-muted">No upcoming arbitrations in the feed.</div>}
       {upcoming.length > 0 && shown.length === 0 &&
-        <div className="px-[16px] py-[12px] text-center text-[12px] text-muted">No upcoming arbitrations in the tiers you are showing.</div>}
+        <div className="px-4 py-3 text-center text-12 text-muted">No upcoming arbitrations in the tiers you are showing.</div>}
       {shown.map(e => {
         const day = dayLabel(e.start);
-        const header = day !== lastDay ? <div className="sticky top-0 z-[1] flex items-center gap-[8px] border-b border-b-[rgba(48,54,61,.4)] bg-surface px-[16px] pt-[6px] pb-[3px] text-[10px] font-bold uppercase tracking-[.04em] text-muted">{day}</div> : null;
+        const header = day !== lastDay ? <div className="sticky top-0 z-1 flex items-center gap-2 border-b border-b-border/40 bg-surface px-4 pt-1.5 pb-0.75 text-10 font-bold uppercase tracking-0.04 text-muted">{day}</div> : null;
         lastDay = day;
         return (
           <div key={e.start}>
             {header}
-            <div className={`flex min-h-[30px] items-center gap-[6px] border-b border-b-[rgba(48,54,61,.25)] py-[5px] pr-[12px] pl-[8px] transition-colors duration-100 ${isFav(e) ? "bg-[rgba(240,192,64,.08)] hover:bg-[rgba(240,192,64,.14)]" : byTier(e) ? "bg-[rgba(56,139,253,.07)] hover:bg-[rgba(56,139,253,.12)]" : "hover:bg-[rgba(255,255,255,.03)]"}`} title={alertTitle(e)}>
+            <div className={`flex min-h-7.5 items-center gap-1.5 border-b border-b-border/25 py-1.25 pr-3 pl-2 transition-colors duration-100 ${isFav(e) ? "bg-ducat/8 hover:bg-ducat/14" : byTier(e) ? "bg-accent/7 hover:bg-accent/12" : "hover:bg-white/3"}`} title={alertTitle(e)}>
               {star(e)}
-              <span className="min-w-[48px] shrink-0 text-[12px] tabular-nums text-muted">{formatUnixTime(e.start, clockFormat, systemLocale)}</span>
-              <span className={`min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[12px] ${isFav(e) ? "text-[#f0c040]" : "text-foreground"}`}>{name(e)}</span>
-              <span className="w-[210px] shrink-0 overflow-hidden text-ellipsis whitespace-nowrap text-[11px] text-muted">{detail(e)}</span>
-              <span className="w-[96px] shrink-0 overflow-hidden text-ellipsis whitespace-nowrap text-right text-[10px] text-muted">in {fmtMs(e.start * 1000 - now)}</span>
+              <span className="min-w-12 shrink-0 text-12 tabular-nums text-muted">{formatUnixTime(e.start, clockFormat, systemLocale)}</span>
+              <span className={`min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-12 ${isFav(e) ? "text-ducat" : "text-foreground"}`}>{name(e)}</span>
+              <span className="w-52.5 shrink-0 overflow-hidden text-ellipsis whitespace-nowrap text-11 text-muted">{detail(e)}</span>
+              <span className="w-24 shrink-0 overflow-hidden text-ellipsis whitespace-nowrap text-right text-10 text-muted">in {fmtMs(e.start * 1000 - now)}</span>
             </div>
           </div>
         );

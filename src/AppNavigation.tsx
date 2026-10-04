@@ -36,13 +36,12 @@ export default function AppNavigation({ activeModule, onModuleChange }: AppNavig
         <span className={MODULE_LABEL}>Timers</span>
       </button>
       <button className={`${MODULE_BTN} ${activeModule === "arbitrations" ? MODULE_BTN_ON : MODULE_BTN_OFF}`} onClick={() => onModuleChange("arbitrations")} title="Arbitrations">
-        <span aria-hidden className="flex size-6 items-center justify-center text-[20px] leading-none">?</span>
+        <span aria-hidden className="size-6 text-center text-20 leading-6">?</span>
         <span className={MODULE_LABEL}>Arbitrations</span>
       </button>
       <button className={`${MODULE_BTN} ${activeModule === "statistics" ? MODULE_BTN_ON : MODULE_BTN_OFF}`} onClick={() => onModuleChange("statistics")} title="Statistics">
         <img src="/statistics-icon.png" alt="" className="size-6 object-contain" />
         <span className={MODULE_LABEL}>Statistics</span>
-      </button>
       </button>
       <button className={`${MODULE_BTN} ${activeModule === "rivens" ? MODULE_BTN_ON : MODULE_BTN_OFF}`} onClick={() => onModuleChange("rivens")} title="Riven Analyzer">
         <img src="/riven-icon.png" alt="" className="size-6 object-contain" />
