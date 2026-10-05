@@ -249,7 +249,7 @@ export default function RelicPickOverlay() {
     });
     const unClose = listen(TAURI_EVENTS.RELIC_PICK_CLOSE, () => hide());
     const unPreviewClose = listen(TAURI_EVENTS.RELIC_PICK_PREVIEW_CLOSE, () => {
-      if (sourceRef.current === "preview") hide();
+      if (sourceRef.current !== "live") hide();
     });
     const unOverlaysDisabled = listen(TAURI_EVENTS.OVERLAYS_DISABLED, () => hide());
     // A scale change does not alter the layout size, so the ResizeObserver never

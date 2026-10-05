@@ -205,7 +205,8 @@ pub(crate) fn handle_riven_events(
     let cooldown_ok = last_riven_fire
         .is_none_or(|t| t.elapsed().as_secs() >= 4);
 
-    if riven_trigger && cooldown_ok {
+    if riven_trigger && cooldown_ok
+        && app.state::<AppState>().overlays_enabled.load(Ordering::SeqCst) {
         *last_riven_fire = Some(std::time::Instant::now());
         let _ = app.emit(events::RIVEN_SCREEN_OPEN, ());
         let _ = app.emit(events::FF_STATUS, "🎲 Riven screen detected");
@@ -276,15 +277,32 @@ pub(crate) fn handle_relic_pick_events(
             std::thread::spawn(move || {
                 // Brief delay for the screen to finish rendering before capture.
                 std::thread::sleep(std::time::Duration::from_millis(400));
+                let state = app_clone.state::<AppState>();
+                if !state.overlays_enabled.load(Ordering::SeqCst)
+                    || !state.relic_pick_overlay_enabled.load(Ordering::SeqCst) {
+                    return;
+                }
                 let era = crate::ocr::detect_fissure_era();
                 info!("relic-pick: OCR result = {:?}", era);
                 if let Some(era) = era {
                     let payload = build_relic_pick_payload(&era, &app_clone);
+                    let state = app_clone.state::<AppState>();
+                    if !state.overlays_enabled.load(Ordering::SeqCst)
+                        || !state.relic_pick_overlay_enabled.load(Ordering::SeqCst) {
+                        return;
+                    }
                     let relic_count = payload["relics"].as_array().map_or(0, |a| a.len());
                     info!("relic-pick: emitting relic-pick-open era={} relics={}", era, relic_count);
                     // Show the overlay window from Rust — more reliable than
                     // calling win.show() from the WebView (avoids timing races).
                     relic_pick_show(&app_clone);
+                    let state = app_clone.state::<AppState>();
+                    if !state.overlays_enabled.load(Ordering::SeqCst)
+                        || !state.relic_pick_overlay_enabled.load(Ordering::SeqCst) {
+                        relic_pick_hide(&app_clone);
+                        let _ = app_clone.emit(events::RELIC_PICK_CLOSE, ());
+                        return;
+                    }
                     let _ = app_clone.emit(events::RELIC_PICK_OPEN, payload);
                 }
             });
@@ -980,6 +998,10 @@ pub(crate) fn publish_relic_rewards(
     app: &tauri::AppHandle,
     payload: Option<&serde_json::Value>,
 ) {
+    if payload.is_some_and(|payload| !payload.is_null())
+        && !app.state::<AppState>().overlays_enabled.load(Ordering::SeqCst) {
+        return;
+    }
     if let Some(payload) = payload.filter(|payload| !payload.is_null()) {
         if let Ok(mut pending) = app.state::<AppState>().pending_relic_rewards.lock() {
             *pending = Some(payload.clone());

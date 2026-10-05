@@ -2,8 +2,9 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 
+use crate::app_state::AppState;
 use crate::events;
 use crate::log_watcher;
 use crate::wfcd::RelicReward;
@@ -242,10 +243,12 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                         &ee_last_path,
                     );
 
-                    let _ = ee_ocr_app.emit(events::FF_STATUS, "🔍 Relic reward screen detected");
-                    // Tell App.tsx to pre-create the overlay window NOW, before OCR finishes.
-                    // Window creation takes 1-2 s; pre-creating shaves that off the visible delay.
-                    let _ = ee_ocr_app.emit(events::RELIC_TRIGGER, ());
+                    if ee_ocr_app.state::<AppState>().overlays_enabled.load(Ordering::SeqCst) {
+                        let _ = ee_ocr_app.emit(events::FF_STATUS, "🔍 Relic reward screen detected");
+                        // Tell App.tsx to pre-create the overlay window NOW, before OCR finishes.
+                        // Window creation takes 1-2 s; pre-creating shaves that off the visible delay.
+                        let _ = ee_ocr_app.emit(events::RELIC_TRIGGER, ());
+                    }
 
                     let app          = ee_ocr_app.clone();
                     let cat          = filtered_cat; // relic prefilter (was: Arc::clone(&ee_catalog))

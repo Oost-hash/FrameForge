@@ -189,7 +189,13 @@ export function useSettings(
   const loadSettings = useCallback(async (): Promise<SettingsFile | null> => {
     try {
       const json = await invoke<string>(TAURI_COMMANDS.LOAD_SETTINGS);
-      if (!json) { settingsLoadedRef.current = true; return null; }
+      if (!json) {
+        const overlaysEnabled = localStorage.getItem(PREFERENCE_KEYS.OVERLAYS_ENABLED) !== "false";
+        invoke(TAURI_COMMANDS.SET_OVERLAYS_ENABLED, { enabled: overlaysEnabled });
+        invoke(TAURI_COMMANDS.SET_RELIC_PICK_ENABLED, { enabled: true });
+        settingsLoadedRef.current = true;
+        return null;
+      }
       try {
         const s = JSON.parse(json) as SettingsFile;
         if (typeof s.memoryScannerEnabled === "boolean") setMemoryScannerEnabled(s.memoryScannerEnabled);
@@ -199,11 +205,10 @@ export function useSettings(
           setAutoDiagEnabled(s.autoDiagEnabled);
           localStorage.setItem(PREFERENCE_KEYS.AUTO_DIAGNOSTICS, String(s.autoDiagEnabled));
         }
-        if (typeof s.overlaysEnabled === "boolean") {
-          setOverlaysEnabled(s.overlaysEnabled);
-          localStorage.setItem(PREFERENCE_KEYS.OVERLAYS_ENABLED, String(s.overlaysEnabled));
-          invoke(TAURI_COMMANDS.SET_OVERLAYS_ENABLED, { enabled: s.overlaysEnabled });
-        }
+        const overlaysEnabled = typeof s.overlaysEnabled === "boolean" ? s.overlaysEnabled : true;
+        setOverlaysEnabled(overlaysEnabled);
+        localStorage.setItem(PREFERENCE_KEYS.OVERLAYS_ENABLED, String(overlaysEnabled));
+        invoke(TAURI_COMMANDS.SET_OVERLAYS_ENABLED, { enabled: overlaysEnabled });
         if (typeof s.overlayEnabled === "boolean") {
           setOverlayEnabled(s.overlayEnabled);
           localStorage.setItem(PREFERENCE_KEYS.OVERLAY_ENABLED, String(s.overlayEnabled));
@@ -237,10 +242,9 @@ export function useSettings(
         if (typeof s.foundryPageSize === "string" && FOUNDRY_PAGE_SIZE_OPTIONS.includes(s.foundryPageSize)) {
           setFoundryPageSize(s.foundryPageSize);
         }
-        if (typeof s.relicPickEnabled === "boolean") {
-          setRelicPickEnabled(s.relicPickEnabled);
-          invoke(TAURI_COMMANDS.SET_RELIC_PICK_ENABLED, { enabled: s.relicPickEnabled });
-        }
+        const relicPickEnabled = typeof s.relicPickEnabled === "boolean" ? s.relicPickEnabled : true;
+        setRelicPickEnabled(relicPickEnabled);
+        invoke(TAURI_COMMANDS.SET_RELIC_PICK_ENABLED, { enabled: relicPickEnabled });
         if (typeof s.memTriggerEnabled === "boolean") {
           setMemTriggerEnabled(s.memTriggerEnabled);
           invoke(TAURI_COMMANDS.SET_MEM_TRIGGER_ENABLED, { enabled: s.memTriggerEnabled });
@@ -262,6 +266,9 @@ export function useSettings(
         if (s.filterPresets) setFilterPresets(parseFilterPresetSettings(s.filterPresets));
         return s;
       } catch {
+        const overlaysEnabled = localStorage.getItem(PREFERENCE_KEYS.OVERLAYS_ENABLED) !== "false";
+        invoke(TAURI_COMMANDS.SET_OVERLAYS_ENABLED, { enabled: overlaysEnabled });
+        invoke(TAURI_COMMANDS.SET_RELIC_PICK_ENABLED, { enabled: true });
         settingsLoadedRef.current = true;
         return null;
       }

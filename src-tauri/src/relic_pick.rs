@@ -60,8 +60,8 @@ pub(crate) fn test_relic_pick_overlay(era: String, app: tauri::AppHandle) -> Str
     let payload = build_relic_pick_payload(&era, &app);
     let relic_count = payload["relics"].as_array().map_or(0, |a| a.len());
     relic_pick_show(&app);
-    let _ = app.emit(events::RELIC_PICK_PREVIEW, &payload);
-    format!("Emitted relic-pick-preview: era={}, {} relics in inventory", era, relic_count)
+    let _ = app.emit(events::RELIC_PICK_OPEN, &payload);
+    format!("Emitted relic-pick-open: era={}, {} relics in inventory", era, relic_count)
 }
 
 /// Debug/preview: hide the relic pick overlay again (pairs with test_relic_pick_overlay).

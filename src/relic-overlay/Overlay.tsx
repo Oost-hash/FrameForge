@@ -542,7 +542,7 @@ export default function Overlay() {
       prevKey.current = "";
     });
     const unsubPreviewClose = listen(TAURI_EVENTS.RELIC_REWARD_PREVIEW_CLOSE, () => {
-      if (sourceRef.current !== "preview") return;
+      if (sourceRef.current === "live") return;
       startSource("idle");
       setRewards([]);
       prevKey.current = "";

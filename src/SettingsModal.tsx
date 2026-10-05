@@ -302,19 +302,18 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>Overlays</span>
                       <span className={ROW_DESC_CLASS}>Enable or disable all automatic overlays.</span>
                     </div>
-                    <SecondaryButton className={toggleButtonClass(overlaysEnabled)} onClick={() => {
+                    <SecondaryButton className={toggleButtonClass(overlaysEnabled)} onClick={async () => {
                       const next = !overlaysEnabled;
                       setOverlaysEnabled(next);
                       localStorage.setItem(PREFERENCE_KEYS.OVERLAYS_ENABLED, String(next));
                       settingsRef.current = { ...settingsRef.current, overlaysEnabled: next };
                       saveAllSettings();
-                      invoke(TAURI_COMMANDS.SET_OVERLAYS_ENABLED, { enabled: next });
                       if (!next) {
+                        closePreviews();
                         emit(TAURI_EVENTS.OVERLAYS_DISABLED, {}).catch(() => {});
-                        setRewardShown(false);
-                        setPickShown(false);
-                        setRivenShown(false);
                       }
+                      await invoke(TAURI_COMMANDS.SET_OVERLAYS_ENABLED, { enabled: next }).catch(() => {});
+                      if (!next) emit(TAURI_EVENTS.OVERLAYS_DISABLED, {}).catch(() => {});
                     }}>{overlaysEnabled ? "On" : "Off"}</SecondaryButton>
                   </div>
                   <div className={ROW_CLASS + " mt-2"}>

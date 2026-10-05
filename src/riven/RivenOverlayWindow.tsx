@@ -178,7 +178,7 @@ export default function RivenOverlayWindow() {
       scanTimerRef.current = setTimeout(() => requestHide("emergency-60min"), 3_600_000);
     });
     const unlistenPreviewClose = listen(TAURI_EVENTS.RIVEN_PREVIEW_CLOSE, () => {
-      if (sourceRef.current === "preview") requestHide("preview-close");
+      if (sourceRef.current !== "live") requestHide("preview-close");
     });
 
     // Tell App.tsx the listener is registered and the pending payload can be sent now.

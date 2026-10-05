@@ -6,6 +6,9 @@ import { ensureRivenWindow, rivenPlacement } from "./rivenWindow";
 import { overlayScale } from "./uiScale";
 
 type Rect = [number, number, number, number];
+let rewardPreviewRequest = 0;
+let pickPreviewRequest = 0;
+let rivenPreviewRequest = 0;
 
 async function rectOrScreen(): Promise<Rect> {
   try {
@@ -20,22 +23,32 @@ async function rectOrScreen(): Promise<Rect> {
 }
 
 export async function showRewardOverlay(): Promise<void> {
+  const request = ++rewardPreviewRequest;
   const [wx, wy, ww, wh] = await rectOrScreen();
+  if (request !== rewardPreviewRequest) return;
   const offsetY = Math.round(wh * 0.60);
   const stripH = Math.min(Math.round(wh * 0.30 * overlayScale()), wh - offsetY);
   try {
     await invoke("show_overlay_window", { x: wx, y: wy + offsetY, w: ww, h: stripH });
+    if (request !== rewardPreviewRequest) {
+      await emit(TAURI_EVENTS.RELIC_REWARD_PREVIEW_CLOSE, {});
+      return;
+    }
     await emit(TAURI_EVENTS.RELIC_REWARD_PREVIEW, {});
   } catch {}
 }
 
 export async function hideRewardOverlay(): Promise<void> {
+  rewardPreviewRequest += 1;
   await emit(TAURI_EVENTS.RELIC_REWARD_PREVIEW_CLOSE, {});
 }
 
 export async function showPickOverlay(): Promise<void> {
+  const request = ++pickPreviewRequest;
   await emit(TAURI_EVENTS.RELIC_PICK_PREVIEW, {});
+  if (request !== pickPreviewRequest) return;
   await invoke(TAURI_COMMANDS.SHOW_RELIC_PICK).catch(() => {});
+  if (request !== pickPreviewRequest) await emit(TAURI_EVENTS.RELIC_PICK_PREVIEW_CLOSE, {});
 }
 
 export async function placePickOverlay(): Promise<void> {
@@ -43,12 +56,13 @@ export async function placePickOverlay(): Promise<void> {
 }
 
 export async function hidePickOverlay(): Promise<void> {
+  pickPreviewRequest += 1;
   await emit(TAURI_EVENTS.RELIC_PICK_PREVIEW_CLOSE, {});
 }
 
-async function ensurePlacedRiven(): Promise<{ fresh: boolean } | null> {
+async function ensurePlacedRiven(hidden = false): Promise<{ win: import("@tauri-apps/api/webviewWindow").WebviewWindow; fresh: boolean } | null> {
   const [wx, wy, , wh] = await rectOrScreen();
-  const result = await ensureRivenWindow(wx, wy, wh);
+  const result = await ensureRivenWindow(wx, wy, wh, hidden);
   if (!result) return null;
   if (!result.fresh) {
     try {
@@ -57,7 +71,7 @@ async function ensurePlacedRiven(): Promise<{ fresh: boolean } | null> {
       await result.win.setSize(new LogicalSize(p.width, p.height));
     } catch {}
   }
-  return { fresh: result.fresh };
+  return result;
 }
 
 export async function showRivenOverlay(): Promise<void> {
@@ -65,21 +79,41 @@ export async function showRivenOverlay(): Promise<void> {
 }
 
 export async function hideRivenOverlay(): Promise<void> {
+  rivenPreviewRequest += 1;
   await emit(TAURI_EVENTS.RIVEN_PREVIEW_CLOSE, {});
 }
 
 export async function showRivenDummy(): Promise<void> {
-  const placed = await ensurePlacedRiven();
+  const request = ++rivenPreviewRequest;
+  const placed = await ensurePlacedRiven(true);
   if (!placed) return;
   if (placed.fresh) {
-    await new Promise<void>(resolve => {
+    const ready = await new Promise<boolean>(resolve => {
       let unlisten: (() => void) | undefined;
-      const finish = () => { clearTimeout(timer); unlisten?.(); resolve(); };
-      const timer = setTimeout(finish, 3000);
-      listen(TAURI_EVENTS.RIVEN_WINDOW_READY, finish).then(fn => { unlisten = fn; }).catch(() => resolve());
+      let settled = false;
+      const finish = (isReady: boolean) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        unlisten?.();
+        resolve(isReady);
+      };
+      const timer = setTimeout(() => finish(false), 3000);
+      listen(TAURI_EVENTS.RIVEN_WINDOW_READY, () => finish(true))
+        .then(fn => { unlisten = fn; if (settled) fn(); })
+        .catch(() => finish(false));
     });
+    if (request !== rivenPreviewRequest) return;
+    if (!ready) {
+      await emit(TAURI_EVENTS.RIVEN_PREVIEW_CLOSE, {});
+      return;
+    }
   }
 
+  if (request !== rivenPreviewRequest) {
+    await emit(TAURI_EVENTS.RIVEN_PREVIEW_CLOSE, {});
+    return;
+  }
   await emit(TAURI_EVENTS.RIVEN_PREVIEW_START, {});
   await emit(TAURI_EVENTS.RIVEN_ANALYSIS_UPDATE, {
     dummy: true,
@@ -114,4 +148,5 @@ export async function showRivenDummy(): Promise<void> {
     ],
     isComparison: false,
   });
+  await placed.win.show().catch(() => {});
 }

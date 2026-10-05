@@ -558,8 +558,8 @@ pub fn run() {
             unmatched_paths_dir,
             corrections: initial.corrections,
             force_pid_check: Arc::new(AtomicBool::new(false)),
-            relic_pick_overlay_enabled: Arc::new(AtomicBool::new(true)),
-            overlays_enabled: Arc::new(AtomicBool::new(true)),
+            relic_pick_overlay_enabled: Arc::new(AtomicBool::new(false)),
+            overlays_enabled: Arc::new(AtomicBool::new(false)),
             mem_trigger_enabled: Arc::new(AtomicBool::new(false)),
         })
         .setup(setup_app)

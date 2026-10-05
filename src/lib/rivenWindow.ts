@@ -98,7 +98,7 @@ export async function rivenPlacement(
   };
 }
 
-export async function ensureRivenWindow(wx: number, wy: number, wh: number): Promise<{ win: WebviewWindow; fresh: boolean } | null> {
+export async function ensureRivenWindow(wx: number, wy: number, wh: number, hidden = false): Promise<{ win: WebviewWindow; fresh: boolean } | null> {
   // 1. Existing valid handle
   if (_rivenWin) return { win: _rivenWin, fresh: false };
 
@@ -110,7 +110,8 @@ export async function ensureRivenWindow(wx: number, wy: number, wh: number): Pro
     return { win: _rivenWin, fresh: false };
   }
 
-  // 3. Create fresh at correct position — shows immediately
+  // 3. Create fresh at the correct position. Settings previews stay hidden until
+  // their listener is ready so a cancelled preview cannot flash a scan window.
   try {
     const p = await rivenPlacement(wx, wy, wh);
     _rivenWin = new WebviewWindow("riven-overlay", {
@@ -118,6 +119,7 @@ export async function ensureRivenWindow(wx: number, wy: number, wh: number): Pro
       title: `${APP_TITLE} Riven`,
       transparent: true, decorations: false,
       alwaysOnTop: true, skipTaskbar: true,
+      visible: !hidden,
       resizable: false, focus: false,
       x: p.x, y: p.y, width: p.width, height: p.height,
     });
