@@ -66,6 +66,11 @@ pub(crate) fn set_relic_pick_enabled(state: State<AppState>, enabled: bool) {
 }
 
 #[tauri::command]
+pub(crate) fn set_overlays_enabled(state: State<AppState>, enabled: bool) {
+    state.overlays_enabled.store(enabled, Ordering::SeqCst);
+}
+
+#[tauri::command]
 pub(crate) fn set_mem_trigger_enabled(state: State<AppState>, enabled: bool) {
     state.mem_trigger_enabled.store(enabled, Ordering::SeqCst);
 }

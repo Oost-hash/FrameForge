@@ -27,6 +27,7 @@ interface UseSettingsReturn {
   blobLogEnabled: boolean;
   apiLogEnabled: boolean;
   autoDiagEnabled: boolean;
+  overlaysEnabled: boolean;
   overlayEnabled: boolean;
   overlayPriority: RelicOverlayPriority;
   overlayOffsets: OverlayOffsets;
@@ -54,6 +55,7 @@ interface UseSettingsReturn {
   setBlobLogEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   setApiLogEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   setAutoDiagEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  setOverlaysEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   setOverlayEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   setOverlayPriority: React.Dispatch<React.SetStateAction<RelicOverlayPriority>>;
   setOverlayOffsets: React.Dispatch<React.SetStateAction<OverlayOffsets>>;
@@ -94,6 +96,9 @@ export function useSettings(
   const [blobLogEnabled, setBlobLogEnabled] = useState(false);
   const [apiLogEnabled, setApiLogEnabled] = useState(false);
   const [autoDiagEnabled, setAutoDiagEnabled] = useState(false);
+  const [overlaysEnabled, setOverlaysEnabled] = useState<boolean>(
+    () => localStorage.getItem(PREFERENCE_KEYS.OVERLAYS_ENABLED) !== "false"
+  );
   const [overlayEnabled, setOverlayEnabled] = useState<boolean>(
     () => localStorage.getItem(PREFERENCE_KEYS.OVERLAY_ENABLED) !== "false"
   );
@@ -131,6 +136,7 @@ export function useSettings(
   // ── Refs ────────────────────────────────────────────────────────────────────
   const settingsLoadedRef = useRef(false);
   const settingsRef = useRef<SettingsSnapshot>({
+    overlaysEnabled: true,
     overlayEnabled: true,
     overlayPriority: DEFAULT_RELIC_OVERLAY_PRIORITY,
     overlayOffsets: DEFAULT_OVERLAY_OFFSETS,
@@ -192,6 +198,11 @@ export function useSettings(
         if (typeof s.autoDiagEnabled === "boolean") {
           setAutoDiagEnabled(s.autoDiagEnabled);
           localStorage.setItem(PREFERENCE_KEYS.AUTO_DIAGNOSTICS, String(s.autoDiagEnabled));
+        }
+        if (typeof s.overlaysEnabled === "boolean") {
+          setOverlaysEnabled(s.overlaysEnabled);
+          localStorage.setItem(PREFERENCE_KEYS.OVERLAYS_ENABLED, String(s.overlaysEnabled));
+          invoke(TAURI_COMMANDS.SET_OVERLAYS_ENABLED, { enabled: s.overlaysEnabled });
         }
         if (typeof s.overlayEnabled === "boolean") {
           setOverlayEnabled(s.overlayEnabled);
@@ -286,6 +297,7 @@ export function useSettings(
     blobLogEnabled,
     apiLogEnabled,
     autoDiagEnabled,
+    overlaysEnabled,
     overlayEnabled,
     overlayPriority,
     overlayOffsets,
@@ -313,6 +325,7 @@ export function useSettings(
     setBlobLogEnabled,
     setApiLogEnabled,
     setAutoDiagEnabled,
+    setOverlaysEnabled,
     setOverlayEnabled,
     setOverlayPriority,
     setOverlayOffsets,

@@ -559,6 +559,7 @@ pub fn run() {
             corrections: initial.corrections,
             force_pid_check: Arc::new(AtomicBool::new(false)),
             relic_pick_overlay_enabled: Arc::new(AtomicBool::new(true)),
+            overlays_enabled: Arc::new(AtomicBool::new(true)),
             mem_trigger_enabled: Arc::new(AtomicBool::new(false)),
         })
         .setup(setup_app)
@@ -688,6 +689,7 @@ pub fn run() {
             monitor::stop_monitor,
             monitor::poke_scan,
             monitor::set_relic_pick_enabled,
+            monitor::set_overlays_enabled,
             monitor::set_mem_trigger_enabled,
             monitor::get_monitor_status,
             catalogue::get_blueprint_names,

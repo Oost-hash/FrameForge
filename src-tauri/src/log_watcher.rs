@@ -265,7 +265,9 @@ pub(crate) fn handle_relic_pick_events(
     if lower.contains("themedprojectionmanager.lua: populateinventorygrid") {
         info!("relic-pick: PopulateInventoryGrid detected — spawning OCR thread");
         let now = std::time::Instant::now();
-        let relic_pick_on = app.state::<AppState>().relic_pick_overlay_enabled.load(Ordering::SeqCst);
+        let state = app.state::<AppState>();
+        let relic_pick_on = state.overlays_enabled.load(Ordering::SeqCst)
+            && state.relic_pick_overlay_enabled.load(Ordering::SeqCst);
         let should_trigger = relic_pick_on && last_relic_pick_trigger
             .is_none_or(|t| now.duration_since(t).as_secs() >= 5);
         if should_trigger {

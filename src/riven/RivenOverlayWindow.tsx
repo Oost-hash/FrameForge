@@ -137,9 +137,10 @@ export default function RivenOverlayWindow() {
   const [scanning, setScanning]         = useState(true);
   const [saved, setSaved]               = useState(false);
   const scanTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hasRealRef = useRef(false);
+  const sourceRef = useRef<"idle" | "preview" | "live">("idle");
 
-  const resetToScanning = () => {
+  const resetToScanning = (source: "preview" | "live") => {
+    sourceRef.current = source;
     setScanning(true);
     setAnalysis(null);
     setRolledStats([]);
@@ -153,13 +154,16 @@ export default function RivenOverlayWindow() {
   };
 
   useEffect(() => {
-    const unlistenStart = listen(TAURI_EVENTS.RIVEN_SCANNING_START, () => resetToScanning());
+    const unlistenStart = listen(TAURI_EVENTS.RIVEN_SCANNING_START, () => resetToScanning("live"));
+    const unlistenPreviewStart = listen(TAURI_EVENTS.RIVEN_PREVIEW_START, () => {
+      if (sourceRef.current !== "live") resetToScanning("preview");
+    });
 
     const unlistenUpdate = listen<RivenAnalysisUpdate>(TAURI_EVENTS.RIVEN_ANALYSIS_UPDATE, e => {
       if (e.payload.dummy) {
-        if (hasRealRef.current) return;
+        if (sourceRef.current !== "preview") return;
       } else {
-        hasRealRef.current = true;
+        sourceRef.current = "live";
       }
       if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
       setAnalysis(e.payload.analysis ?? null);
@@ -173,6 +177,9 @@ export default function RivenOverlayWindow() {
       // Reset emergency fallback timer — 60 min from last data shown
       scanTimerRef.current = setTimeout(() => requestHide("emergency-60min"), 3_600_000);
     });
+    const unlistenPreviewClose = listen(TAURI_EVENTS.RIVEN_PREVIEW_CLOSE, () => {
+      if (sourceRef.current === "preview") requestHide("preview-close");
+    });
 
     // Tell App.tsx the listener is registered and the pending payload can be sent now.
     emit(TAURI_EVENTS.RIVEN_WINDOW_READY, {}).catch(() => {});
@@ -182,7 +189,9 @@ export default function RivenOverlayWindow() {
 
     return () => {
       unlistenStart.then(fn => fn());
+      unlistenPreviewStart.then(fn => fn());
       unlistenUpdate.then(fn => fn());
+      unlistenPreviewClose.then(fn => fn());
       if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
     };
   }, []); // eslint-disable-line

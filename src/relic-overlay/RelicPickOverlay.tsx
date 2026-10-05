@@ -182,6 +182,7 @@ function DucatIcon() {
 
 export default function RelicPickOverlay() {
   const [payload,  setPayload]  = useState<RelicPickPayload | null>(null);
+  const [source, setSource] = useState<"idle" | "preview" | "live">("idle");
   const [priority, setPriority] = useState<RelicPickPriority>(DEFAULT_RELIC_PICK_PRIORITY);
   const [lines,    setLines]    = useState<RelicPickLines>(DEFAULT_RELIC_PICK_LINES);
   // Use a callback ref so the ResizeObserver is set up each time the root div
@@ -189,6 +190,12 @@ export default function RelicPickOverlay() {
   // because the root div doesn't exist yet when the effect runs at mount time.
   const roRef   = useRef<ResizeObserver | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const sourceRef = useRef<"idle" | "preview" | "live">("idle");
+
+  const setOverlaySource = (next: "idle" | "preview" | "live") => {
+    sourceRef.current = next;
+    setSource(next);
+  };
 
   // The scale is a CSS transform, so it does not change the measured layout size.
   // The window must grow by the same factor that the content is drawn at.
@@ -215,12 +222,15 @@ export default function RelicPickOverlay() {
   }, [syncSize]);
 
   const hide = () => {
+    setOverlaySource("idle");
     setPayload(null);
     getCurrentWindow().hide().catch(() => {});
   };
 
   useEffect(() => {
     const unOpen = listen<RelicPickPayload>(TAURI_EVENTS.RELIC_PICK_OPEN, async e => {
+      setOverlaySource("live");
+      setPayload(e.payload);
       // Reload settings fresh on every show — the main window may have changed them
       // since this overlay was first mounted at app startup.
       try {
@@ -231,20 +241,29 @@ export default function RelicPickOverlay() {
           if (RELIC_PICK_LINES_OPTIONS.includes(s.relicPickLines))        setLines(s.relicPickLines);
         }
       } catch {}
+    });
+    const unPreview = listen<RelicPickPayload>(TAURI_EVENTS.RELIC_PICK_PREVIEW, e => {
+      if (sourceRef.current === "live") return;
+      setOverlaySource("preview");
       setPayload(e.payload);
     });
     const unClose = listen(TAURI_EVENTS.RELIC_PICK_CLOSE, () => hide());
+    const unPreviewClose = listen(TAURI_EVENTS.RELIC_PICK_PREVIEW_CLOSE, () => {
+      if (sourceRef.current === "preview") hide();
+    });
+    const unOverlaysDisabled = listen(TAURI_EVENTS.OVERLAYS_DISABLED, () => hide());
     // A scale change does not alter the layout size, so the ResizeObserver never
     // fires. Measure again to resize a window that is already open.
     const unScale = listen(TAURI_EVENTS.SETTINGS_UPDATED, () => {
       const el = rootRef.current;
       if (el) syncSize(Math.ceil(el.offsetHeight));
     });
-    return () => { unOpen.then(f => f()); unClose.then(f => f()); unScale.then(f => f()); };
+    return () => { unOpen.then(f => f()); unPreview.then(f => f()); unClose.then(f => f()); unPreviewClose.then(f => f()); unOverlaysDisabled.then(f => f()); unScale.then(f => f()); };
   }, [syncSize]);
 
-  const realHasRewards = payload?.relics.some(r => r.rewards.length > 0) ?? false;
-  const data = payload && realHasRewards ? payload : DUMMY_PICK;
+  if (source === "idle") return null;
+  const data = source === "preview" && (!payload || payload.relics.length === 0) ? DUMMY_PICK : payload;
+  if (!data) return null;
 
   const sorted = [...data.relics]
     .sort((a, b) => scoreOf(b, priority) - scoreOf(a, priority))

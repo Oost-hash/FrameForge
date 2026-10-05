@@ -1,4 +1,5 @@
 export const PREFERENCE_KEYS = {
+  OVERLAYS_ENABLED: "ff-overlays-enabled",
   OVERLAY_ENABLED: "ff-overlay-enabled",
   OVERLAY_PRIORITY: "ff-overlay-priority",
   OVERLAY_OFFSETS: "ff-overlay-offsets",

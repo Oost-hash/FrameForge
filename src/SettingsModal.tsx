@@ -51,7 +51,7 @@ export interface SettingsModalProps {
   marketFilters: MarketFilters; setMarketFilters: Setter<MarketFilters>;
   relicFilters: RelicFilters; setRelicFilters: Setter<RelicFilters>;
   foundryPageSize: FoundryPageSize; setFoundryPageSize: Setter<FoundryPageSize>; settingsRef: MutableRefObject<SettingsSnapshot>; saveAllSettings: () => Promise<void>;
-  memoryScannerEnabled: boolean; setMemoryScannerEnabled: Setter<boolean>; modularPopout: boolean; setModularPopout: Setter<boolean>; overlayStatus: string;
+  memoryScannerEnabled: boolean; setMemoryScannerEnabled: Setter<boolean>; modularPopout: boolean; setModularPopout: Setter<boolean>; overlayStatus: string; overlaysEnabled: boolean; setOverlaysEnabled: Setter<boolean>;
   overlayEnabled: boolean; setOverlayEnabled: Setter<boolean>; overlayPriority: RelicOverlayPriority; setOverlayPriority: Setter<RelicOverlayPriority>;
   overlayOffsets: OverlayOffsets; setOverlayOffsets: Setter<OverlayOffsets>;
   rivenEnabled: boolean; setRivenEnabled: Setter<boolean>;
@@ -88,9 +88,9 @@ function BulkPriceRefreshButton() {
 }
 
 export default function SettingsModal(props: SettingsModalProps) {
-  const { settingsTab, setSettingsTab, settingsFilterModule, setSettingsFilterModule, filterPresets, setFilterPresets, inventoryFilters, setInventoryFilters, foundryFilters, setFoundryFilters, marketFilters, setMarketFilters, relicFilters, setRelicFilters, foundryPageSize, setFoundryPageSize, settingsRef, saveAllSettings, memoryScannerEnabled, setMemoryScannerEnabled, modularPopout, setModularPopout, overlayStatus, overlayEnabled, setOverlayEnabled, overlayPriority, setOverlayPriority, overlayOffsets, setOverlayOffsets, rivenEnabled, setRivenEnabled, memTriggerEnabled, setMemTriggerEnabled, relicPickEnabled, setRelicPickEnabled, relicPickPriority, setRelicPickPriority, relicPickLines, setRelicPickLines, wfmLoggedIn, wfmInvisibleOnStart, setWfmInvisibleOnStart, wfmInvisibleOnStartRef, wfmInvisibleOnClose, setWfmInvisibleOnClose, wfmInvisibleOnCloseRef, wfmAutoInvisible, setWfmAutoInvisible, wfmAutoInvisibleMins, setWfmAutoInvisibleMins, wfmRecordSales, setWfmRecordSales, colorblindMode, setColorblindMode, textScale, setTextScale, clockFormat, setClockFormat, systemLocale, itemCount, recipeCount, handleFetch, fetching, fetchMsg, fissureNotifications, onFissureNotificationsChange, setQuantities, setApiQuantities, setApiModCopies, setScannerMods, setMasteryData, setArchonShards, setFormaData, setChangeLog, setLastChanged, setWfConnected, wfConnectedRef, setItemsRefreshKey, setClearMsg, clearMsg, blobLogEnabled, setBlobLogEnabled, blobLogSize, setBlobLogSize, companionApiEnabled, apiLogEnabled, setApiLogEnabled, apiLogSize, setApiLogSize, setShowInventoryBatchPreview, notifyTestResult, setNotifyTestResult, overlayLogCopied, setOverlayLogCopied, autoDiagEnabled, setAutoDiagEnabled, diagFolderSize, setDiagFolderSize, diagPath, diagCapturing, setDiagCapturing, setDiagPath, reloadDebugSizes, memoryProbing, setMemoryProbing, probeSize, setProbeSize, rawScanning, setRawScanning, rawScanSize, setRawScanSize, memRelicDebugRunning, setMemRelicDebugRunning, relicPickOcrResult, relicPickOcrTesting, setRelicPickOcrTesting, setRelicPickOcrResult, relicPickTestResult, relicPickTestEra, setRelicPickTestEra, setRelicPickTestResult, eeLogTail, setEeLogTail, debugCatEnabled, setDebugCatEnabled, unmatchedPathsSize, setUnmatchedPathsSize, appVersion } = props;
+  const { settingsTab, setSettingsTab, settingsFilterModule, setSettingsFilterModule, filterPresets, setFilterPresets, inventoryFilters, setInventoryFilters, foundryFilters, setFoundryFilters, marketFilters, setMarketFilters, relicFilters, setRelicFilters, foundryPageSize, setFoundryPageSize, settingsRef, saveAllSettings, memoryScannerEnabled, setMemoryScannerEnabled, modularPopout, setModularPopout, overlayStatus, overlaysEnabled, setOverlaysEnabled, overlayEnabled, setOverlayEnabled, overlayPriority, setOverlayPriority, overlayOffsets, setOverlayOffsets, rivenEnabled, setRivenEnabled, memTriggerEnabled, setMemTriggerEnabled, relicPickEnabled, setRelicPickEnabled, relicPickPriority, setRelicPickPriority, relicPickLines, setRelicPickLines, wfmLoggedIn, wfmInvisibleOnStart, setWfmInvisibleOnStart, wfmInvisibleOnStartRef, wfmInvisibleOnClose, setWfmInvisibleOnClose, wfmInvisibleOnCloseRef, wfmAutoInvisible, setWfmAutoInvisible, wfmAutoInvisibleMins, setWfmAutoInvisibleMins, wfmRecordSales, setWfmRecordSales, colorblindMode, setColorblindMode, textScale, setTextScale, clockFormat, setClockFormat, systemLocale, itemCount, recipeCount, handleFetch, fetching, fetchMsg, fissureNotifications, onFissureNotificationsChange, setQuantities, setApiQuantities, setApiModCopies, setScannerMods, setMasteryData, setArchonShards, setFormaData, setChangeLog, setLastChanged, setWfConnected, wfConnectedRef, setItemsRefreshKey, setClearMsg, clearMsg, blobLogEnabled, setBlobLogEnabled, blobLogSize, setBlobLogSize, companionApiEnabled, apiLogEnabled, setApiLogEnabled, apiLogSize, setApiLogSize, setShowInventoryBatchPreview, notifyTestResult, setNotifyTestResult, overlayLogCopied, setOverlayLogCopied, autoDiagEnabled, setAutoDiagEnabled, diagFolderSize, setDiagFolderSize, diagPath, diagCapturing, setDiagCapturing, setDiagPath, reloadDebugSizes, memoryProbing, setMemoryProbing, probeSize, setProbeSize, rawScanning, setRawScanning, rawScanSize, setRawScanSize, memRelicDebugRunning, setMemRelicDebugRunning, relicPickOcrResult, relicPickOcrTesting, setRelicPickOcrTesting, setRelicPickOcrResult, relicPickTestResult, relicPickTestEra, setRelicPickTestEra, setRelicPickTestResult, eeLogTail, setEeLogTail, debugCatEnabled, setDebugCatEnabled, unmatchedPathsSize, setUnmatchedPathsSize, appVersion } = props;
 
-  // Overlay show toggles; the overlays fall back to dummy data when empty.
+  // Preview visibility is local to Settings; live game data always takes precedence.
   const [rewardShown, setRewardShown] = useState(false);
   const [pickShown,   setPickShown]   = useState(false);
   const [rivenShown,    setRivenShown]    = useState(false);
@@ -284,6 +284,52 @@ export default function SettingsModal(props: SettingsModalProps) {
 
               {/* ════════════ OVERLAYS ════════════ */}
               {settingsTab === "overlays" && <>
+
+                <div className={SECTION_CLASS}>
+                  <div className={ROW_CLASS}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Overlays</span>
+                      <span className={ROW_DESC_CLASS}>Enable or disable all automatic overlays.</span>
+                    </div>
+                    <SecondaryButton className={toggleButtonClass(overlaysEnabled)} onClick={() => {
+                      const next = !overlaysEnabled;
+                      setOverlaysEnabled(next);
+                      localStorage.setItem(PREFERENCE_KEYS.OVERLAYS_ENABLED, String(next));
+                      settingsRef.current = { ...settingsRef.current, overlaysEnabled: next };
+                      saveAllSettings();
+                      invoke(TAURI_COMMANDS.SET_OVERLAYS_ENABLED, { enabled: next });
+                      if (!next) {
+                        emit(TAURI_EVENTS.OVERLAYS_DISABLED, {}).catch(() => {});
+                        setRewardShown(false);
+                        setPickShown(false);
+                        setRivenShown(false);
+                      }
+                    }}>{overlaysEnabled ? "On" : "Off"}</SecondaryButton>
+                  </div>
+                  <div className={ROW_CLASS + " mt-2"}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Show all overlays</span>
+                      <span className={ROW_DESC_CLASS}>Show every overlay preview at once.</span>
+                    </div>
+                    <SecondaryButton className={toggleButtonClass(rewardShown && pickShown && rivenShown)} onClick={() => {
+                      if (rewardShown && pickShown && rivenShown) {
+                        hideRewardOverlay().catch(() => {});
+                        hidePickOverlay().catch(() => {});
+                        hideRivenOverlay().catch(() => {});
+                        setRewardShown(false);
+                        setPickShown(false);
+                        setRivenShown(false);
+                      } else {
+                        showRewardOverlay().catch(() => {});
+                        showPickOverlay().catch(() => {});
+                        showRivenDummy().catch(() => {});
+                        setRewardShown(true);
+                        setPickShown(true);
+                        setRivenShown(true);
+                      }
+                    }}>{rewardShown && pickShown && rivenShown ? "Hide all overlays" : "Show all overlays"}</SecondaryButton>
+                  </div>
+                </div>
 
                 {/* Relic Overlay */}
                 <div className={SECTION_CLASS}>

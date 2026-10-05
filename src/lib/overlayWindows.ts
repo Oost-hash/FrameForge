@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { LogicalPosition, LogicalSize, availableMonitors } from "@tauri-apps/api/window";
 import { TAURI_COMMANDS, TAURI_EVENTS } from "../constants/tauri";
-import { ensureRivenWindow, rivenPlacement, rivenWinHide } from "./rivenWindow";
+import { ensureRivenWindow, rivenPlacement } from "./rivenWindow";
 import { overlayScale } from "./uiScale";
 
 type Rect = [number, number, number, number];
@@ -24,12 +24,13 @@ export async function showRewardOverlay(): Promise<void> {
   const offsetY = Math.round(wh * 0.60);
   const stripH = Math.min(Math.round(wh * 0.30 * overlayScale()), wh - offsetY);
   try {
+    await emit(TAURI_EVENTS.RELIC_REWARD_PREVIEW, {});
     await invoke("show_overlay_window", { x: wx, y: wy + offsetY, w: ww, h: stripH });
   } catch {}
 }
 
 export async function hideRewardOverlay(): Promise<void> {
-  await invoke(TAURI_COMMANDS.MOVE_OVERLAY_OFFSCREEN).catch(() => {});
+  await emit(TAURI_EVENTS.RELIC_REWARD_PREVIEW_CLOSE, {});
 }
 
 export async function showPickOverlay(): Promise<void> {
@@ -37,11 +38,11 @@ export async function showPickOverlay(): Promise<void> {
 }
 
 export async function placePickOverlay(): Promise<void> {
-  await invoke(TAURI_COMMANDS.SHOW_RELIC_PICK).catch(() => {});
+  await showPickOverlay();
 }
 
 export async function hidePickOverlay(): Promise<void> {
-  await invoke(TAURI_COMMANDS.HIDE_RELIC_PICK).catch(() => {});
+  await emit(TAURI_EVENTS.RELIC_PICK_PREVIEW_CLOSE, {});
 }
 
 async function ensurePlacedRiven(): Promise<{ fresh: boolean } | null> {
@@ -63,7 +64,7 @@ export async function showRivenOverlay(): Promise<void> {
 }
 
 export async function hideRivenOverlay(): Promise<void> {
-  rivenWinHide("manual-hide", false);
+  await emit(TAURI_EVENTS.RIVEN_PREVIEW_CLOSE, {});
 }
 
 export async function showRivenDummy(): Promise<void> {
@@ -78,7 +79,7 @@ export async function showRivenDummy(): Promise<void> {
     });
   }
 
-  await emit(TAURI_EVENTS.RIVEN_SCANNING_START, {});
+  await emit(TAURI_EVENTS.RIVEN_PREVIEW_START, {});
   await emit(TAURI_EVENTS.RIVEN_ANALYSIS_UPDATE, {
     dummy: true,
     analysis: {

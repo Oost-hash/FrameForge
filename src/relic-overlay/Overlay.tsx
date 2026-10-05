@@ -334,6 +334,7 @@ const DUMMY_REWARDS: RewardItem[] = [
 
 export default function Overlay() {
   const [rewards, setRewards] = useState<RewardItem[]>([]);
+  const [source, setSource] = useState<"idle" | "preview" | "live">("idle");
   // winW = the overlay window's own pixel width, which equals the Warframe client
   // width (App.tsx creates the window with width: ww). No URL param needed.
   //
@@ -348,6 +349,15 @@ export default function Overlay() {
   const sessionCatalogRef = useRef<Record<string, any>>({}); // populated per-session by get_items_by_paths
   const quantRef     = useRef<QuantityMap>({});
   const craftingRef  = useRef<QuantityMap>({});  // normalized unique_name → crafting count
+  const sourceRef = useRef<"idle" | "preview" | "live">("idle");
+  const sessionRef = useRef(0);
+
+  const startSource = (next: "idle" | "preview" | "live") => {
+    sessionRef.current += 1;
+    sourceRef.current = next;
+    setSource(next);
+    return sessionRef.current;
+  };
 
   // Force document-level transparency — only runs when this overlay window mounts,
   // never in the main app. App.css sets background on html/#root which overrides
@@ -366,6 +376,7 @@ export default function Overlay() {
     let dataReady = false;
 
     const processPayload = (paths: string[], positions: number[]) => {
+      const session = sessionRef.current;
       invoke(TAURI_COMMANDS.LOG_RELIC_FE, { msg: `[OV] processPayload(${paths.length} items)` }).catch(() => {});
       const key = paths.join(",");
       if (key === prevKey.current) { invoke(TAURI_COMMANDS.LOG_RELIC_FE, { msg: "[OV] processPayload: duplicate key, skipping" }).catch(() => {}); return; }
@@ -402,6 +413,7 @@ export default function Overlay() {
         };
       });
       invoke(TAURI_COMMANDS.LOG_RELIC_FE, { msg: `[OV] setRewards(${base.length} items)` }).catch(() => {});
+      if (session !== sessionRef.current) return;
       setRewards(base);
 
       paths.forEach(async (path, i) => {
@@ -413,7 +425,7 @@ export default function Overlay() {
         const name = meta?.name ?? path.split("/").pop() ?? path;
 
         invoke<number | null>("get_item_price", { itemName: name })
-          .then(plat => { if (plat != null) setRewards(prev => prev.map((r, idx) => idx === i ? { ...r, plat } : r)); })
+          .then(plat => { if (plat != null && session === sessionRef.current) setRewards(prev => prev.map((r, idx) => idx === i ? { ...r, plat } : r)); })
           .catch(() => {});
 
         const setName = getSetName(name);
@@ -495,6 +507,7 @@ export default function Overlay() {
           : 0;
         const completeSets = builtQty > 0 ? Math.max(compSets, 1) : compSets;
 
+        if (session !== sessionRef.current) return;
         setRewards(prev => prev.map((r, idx) => idx === i
           ? { ...r, set_name: setName, components: components!, complete_sets: completeSets, missing_plat: 0, total_plat: 0 }
           : r
@@ -503,6 +516,7 @@ export default function Overlay() {
         await Promise.all(components.map(async comp => {
           const plat = await invoke<number | null>("get_item_price", { itemName: comp.name }).catch(() => null);
           if (plat == null) return;
+          if (session !== sessionRef.current) return;
           setRewards(prev => prev.map((r, idx) => {
             if (idx !== i || !r.components) return r;
             const comps = r.components.map(c =>
@@ -521,10 +535,31 @@ export default function Overlay() {
       });
     };
 
-    // Clear stale rewards when a new fissure starts so the diagnostic div shows
-    // while OCR is running instead of the previous fissure's stale cards.
+    const unsubPreview = listen(TAURI_EVENTS.RELIC_REWARD_PREVIEW, () => {
+      if (sourceRef.current === "live") return;
+      startSource("preview");
+      setRewards([]);
+      prevKey.current = "";
+    });
+    const unsubPreviewClose = listen(TAURI_EVENTS.RELIC_REWARD_PREVIEW_CLOSE, () => {
+      if (sourceRef.current !== "preview") return;
+      startSource("idle");
+      setRewards([]);
+      prevKey.current = "";
+      invoke(TAURI_COMMANDS.MOVE_OVERLAY_OFFSCREEN).catch(() => {});
+    });
+    const unsubOverlaysDisabled = listen(TAURI_EVENTS.OVERLAYS_DISABLED, () => {
+      startSource("idle");
+      setRewards([]);
+      prevKey.current = "";
+      invoke(TAURI_COMMANDS.MOVE_OVERLAY_OFFSCREEN).catch(() => {});
+    });
+
+    // Clear stale rewards when a new fissure starts. The window stays transparent
+    // until live OCR data arrives; only an explicit preview may render dummy data.
     const unsubTrigger = listen<null>(TAURI_EVENTS.RELIC_TRIGGER, () => {
       invoke(TAURI_COMMANDS.LOG_RELIC_FE, { msg: "[OV] relic-trigger → clearing rewards" }).catch(() => {});
+      startSource("live");
       setRewards([]);
       prevKey.current = "";
     });
@@ -537,11 +572,14 @@ export default function Overlay() {
         invoke(TAURI_COMMANDS.LOG_RELIC_FE, { msg: `[OV] relic-rewards event: items=${payload?.items?.length ?? "null"} dataReady=${dataReady} catalogSize=${Object.keys(sessionCatalogRef.current).length}` }).catch(() => {});
         if (!payload || payload.items.length === 0) {
           invoke(TAURI_COMMANDS.LOG_RELIC_FE, { msg: "[OV] null/empty payload → moving off-screen" }).catch(() => {});
+          startSource("idle");
           setRewards([]);
           prevKey.current = "";
           invoke(TAURI_COMMANDS.MOVE_OVERLAY_OFFSCREEN).catch(() => {});
           return;
         }
+
+        if (sourceRef.current !== "live") startSource("live");
 
         if (dataReady) {
           // Fetch only the items relevant to this relic session (the reward items +
@@ -573,6 +611,7 @@ export default function Overlay() {
       .then(pending => {
         invoke(TAURI_COMMANDS.LOG_RELIC_FE, { msg: `[OV] pull result: ${pending ? pending.items.length + " items" : "null"}` }).catch(() => {});
         if (pending && pending.items.length > 0) {
+          if (sourceRef.current !== "live") startSource("live");
           if (dataReady) {
             processPayload(pending.items, pending.positions);
           } else {
@@ -660,10 +699,11 @@ export default function Overlay() {
       }));
     });
 
-    return () => { unsub.then(fn => fn()); unsubInv.then(fn => fn()); unsubTrigger.then(fn => fn()); };
+    return () => { unsub.then(fn => fn()); unsubInv.then(fn => fn()); unsubTrigger.then(fn => fn()); unsubPreview.then(fn => fn()); unsubPreviewClose.then(fn => fn()); unsubOverlaysDisabled.then(fn => fn()); };
   }, []);
 
-  const shown = rewards.length > 0 ? rewards : DUMMY_REWARDS;
+  const shown = source === "preview" ? DUMMY_REWARDS : rewards;
+  if (shown.length === 0) return null;
   const bestIdx = bestPickIndex(shown, priority);
 
   const n  = shown.length;
