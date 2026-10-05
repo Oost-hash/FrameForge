@@ -126,7 +126,7 @@ export async function showRivenDummy(): Promise<void> {
       total_wanted: 4,
       score: 78,
       verdict: "Strong roll",
-      notes: "Dummy payload for preflight comparison",
+      notes: "Dummy payload",
       alternatives: [],
     },
     rollCount: 4,
