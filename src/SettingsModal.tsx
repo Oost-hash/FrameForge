@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { emit } from "@tauri-apps/api/event";
 import { notify, ensurePermission } from "./lib/notify";
 import { formatBytes } from "./lib/formatters";
-import { hidePickOutline, hideRewardOutline, hideRivenOverlay, showPickOutline, showRewardOutline, showRivenOverlay } from "./lib/outlineWindows";
+import { hidePickOverlay, hideRewardOverlay, hideRivenOverlay, placePickOverlay, showPickOverlay, showRewardOverlay, showRivenDummy, showRivenOverlay } from "./lib/overlayWindows";
 import FilterPresets from "./shared/FilterPresets";
 import { ActionButton, DangerButton, SecondaryButton } from "./shared/ui/ActionButton";
 import { ModalCloseButton } from "./shared/ui/ModalCloseButton";
@@ -28,7 +28,7 @@ const ROW_CLASS = "flex items-center justify-between gap-4";
 const ROW_INFO_CLASS = "flex min-w-0 flex-col gap-0.5";
 const ROW_LABEL_CLASS = "text-13 font-medium text-foreground";
 const ROW_DESC_CLASS = "text-11 leading-1.4 text-muted";
-const SELECT_CLASS = "shrink-0 cursor-pointer rounded-5 border border-border bg-surface px-2 py-0.75 text-12 text-foreground [color-scheme:dark] hover:border-accent/50";
+const SELECT_CLASS = "shrink-0 cursor-pointer rounded-5 border border-border bg-surface px-2 py-0.75 text-12 text-foreground [color-scheme:dark] hover:border-accent/50 focus:border-accent/50 focus:outline-none [&>option]:bg-surface [&>option]:text-foreground [&>option:checked]:bg-accent";
 const STEP_BTN_CLASS = "flex min-w-0 cursor-pointer items-center justify-center border-0 border-border bg-white/3 p-0 text-6 leading-none text-muted first:border-b hover:bg-accent/18 hover:text-accent focus-visible:outline focus-visible:outline-accent focus-visible:-outline-offset-1";
 const DEBUG_TABLE_CLASS = "debug-table grid grid-cols-[1fr_auto_auto_auto] items-center gap-x-2 gap-y-3";
 const SECTION_CLASS = "border-b border-border/60 px-5 py-3 last:border-b-0";
@@ -90,10 +90,9 @@ function BulkPriceRefreshButton() {
 export default function SettingsModal(props: SettingsModalProps) {
   const { settingsTab, setSettingsTab, settingsFilterModule, setSettingsFilterModule, filterPresets, setFilterPresets, inventoryFilters, setInventoryFilters, foundryFilters, setFoundryFilters, marketFilters, setMarketFilters, relicFilters, setRelicFilters, foundryPageSize, setFoundryPageSize, settingsRef, saveAllSettings, memoryScannerEnabled, setMemoryScannerEnabled, modularPopout, setModularPopout, overlayStatus, overlayEnabled, setOverlayEnabled, overlayPriority, setOverlayPriority, overlayOffsets, setOverlayOffsets, rivenEnabled, setRivenEnabled, memTriggerEnabled, setMemTriggerEnabled, relicPickEnabled, setRelicPickEnabled, relicPickPriority, setRelicPickPriority, relicPickLines, setRelicPickLines, wfmLoggedIn, wfmInvisibleOnStart, setWfmInvisibleOnStart, wfmInvisibleOnStartRef, wfmInvisibleOnClose, setWfmInvisibleOnClose, wfmInvisibleOnCloseRef, wfmAutoInvisible, setWfmAutoInvisible, wfmAutoInvisibleMins, setWfmAutoInvisibleMins, wfmRecordSales, setWfmRecordSales, colorblindMode, setColorblindMode, textScale, setTextScale, clockFormat, setClockFormat, systemLocale, itemCount, recipeCount, handleFetch, fetching, fetchMsg, fissureNotifications, onFissureNotificationsChange, setQuantities, setApiQuantities, setApiModCopies, setScannerMods, setMasteryData, setArchonShards, setFormaData, setChangeLog, setLastChanged, setWfConnected, wfConnectedRef, setItemsRefreshKey, setClearMsg, clearMsg, blobLogEnabled, setBlobLogEnabled, blobLogSize, setBlobLogSize, companionApiEnabled, apiLogEnabled, setApiLogEnabled, apiLogSize, setApiLogSize, setShowInventoryBatchPreview, notifyTestResult, setNotifyTestResult, overlayLogCopied, setOverlayLogCopied, autoDiagEnabled, setAutoDiagEnabled, diagFolderSize, setDiagFolderSize, diagPath, diagCapturing, setDiagCapturing, setDiagPath, reloadDebugSizes, memoryProbing, setMemoryProbing, probeSize, setProbeSize, rawScanning, setRawScanning, rawScanSize, setRawScanSize, memRelicDebugRunning, setMemRelicDebugRunning, relicPickOcrResult, relicPickOcrTesting, setRelicPickOcrTesting, setRelicPickOcrResult, relicPickTestResult, relicPickTestEra, setRelicPickTestEra, setRelicPickTestResult, eeLogTail, setEeLogTail, debugCatEnabled, setDebugCatEnabled, unmatchedPathsSize, setUnmatchedPathsSize, appVersion } = props;
 
-  // Outline toggles for the reward and pick overlays; the riven overlay shows
-  // itself directly (Settings → Overlays).
-  const [outlineReward, setOutlineReward] = useState(false);
-  const [outlinePick,   setOutlinePick]   = useState(false);
+  // Overlay show toggles; the overlays fall back to dummy data when empty.
+  const [rewardShown, setRewardShown] = useState(false);
+  const [pickShown,   setPickShown]   = useState(false);
   const [rivenShown,    setRivenShown]    = useState(false);
   const [notifPermissionDenied, setNotifPermissionDenied] = useState(false);
   if (!props.open) return null;
@@ -107,12 +106,12 @@ export default function SettingsModal(props: SettingsModalProps) {
       settingsRef.current = { ...settingsRef.current, overlayOffsets: next };
       localStorage.setItem(PREFERENCE_KEYS.OVERLAY_OFFSETS, JSON.stringify(next));
       // Rust reads offsets from settings.json, so wait for the write to land
-      // before re-applying placement of an outline that is currently shown.
+      // before re-applying placement of an overlay that is currently shown.
       await saveAllSettings();
       try {
-        if (outlineReward) await showRewardOutline();
-        if (outlinePick)   await showPickOutline();
-        if (rivenShown)    await showRivenOverlay();
+        if (rewardShown) await showRewardOverlay();
+        if (pickShown)   await placePickOverlay();
+        if (rivenShown)  await showRivenOverlay();
       } catch {}
     };
     const setAxis = (key: keyof OverlayOffsets, n: number) => {
@@ -147,7 +146,7 @@ export default function SettingsModal(props: SettingsModalProps) {
           {axisInput(keyX, "X")}
           <span className="w-2.25 text-center text-11 text-muted">Y</span>
           {axisInput(keyY, "Y")}
-          <SecondaryButton className="min-w-14 h-6.5" disabled={overlayOffsets[keyX] === 0 && overlayOffsets[keyY] === 0}
+          <SecondaryButton className="min-w-14 h-6.5 py-0 leading-none" disabled={overlayOffsets[keyX] === 0 && overlayOffsets[keyY] === 0}
             onClick={resetOffsets}>Reset</SecondaryButton>
         </div>
       </div>
@@ -338,14 +337,14 @@ export default function SettingsModal(props: SettingsModalProps) {
                   {offsetRow("relicX", "relicY", !overlayEnabled)}
                   <div className={ROW_CLASS + " mt-2"}>
                     <div className={ROW_INFO_CLASS}>
-                      <span className={ROW_LABEL_CLASS}>Show Outline</span>
-                      <span className={ROW_DESC_CLASS}>Toggle a dashed outline of the overlay at its current position.</span>
+                      <span className={ROW_LABEL_CLASS}>Show</span>
+                      <span className={ROW_DESC_CLASS}>Show the overlay with dummy data; real rewards take over during a run.</span>
                     </div>
-                    <SecondaryButton className={toggleButtonClass(outlineReward)}
+                    <SecondaryButton className={toggleButtonClass(rewardShown)}
                       onClick={() => {
-                        if (outlineReward) { hideRewardOutline().catch(() => {}); setOutlineReward(false); }
-                        else { showRewardOutline().catch(() => {}); setOutlineReward(true); }
-                      }}>{outlineReward ? "Hide" : "Show"}</SecondaryButton>
+                        if (rewardShown) { hideRewardOverlay().catch(() => {}); setRewardShown(false); }
+                        else { showRewardOverlay().catch(() => {}); setRewardShown(true); }
+                      }}>{rewardShown ? "Hide" : "Show"}</SecondaryButton>
                   </div>
                 </div>
 
@@ -405,14 +404,14 @@ export default function SettingsModal(props: SettingsModalProps) {
                   {offsetRow("relicPickX", "relicPickY", !relicPickEnabled)}
                   <div className={`${ROW_CLASS} mt-2`}>
                     <div className={ROW_INFO_CLASS}>
-                      <span className={ROW_LABEL_CLASS}>Show Outline</span>
-                      <span className={ROW_DESC_CLASS}>Toggle a dashed outline of the overlay at its current position.</span>
+                      <span className={ROW_LABEL_CLASS}>Show</span>
+                      <span className={ROW_DESC_CLASS}>Show the overlay with your relics; dummy data when the inventory has none.</span>
                     </div>
-                    <SecondaryButton className={toggleButtonClass(outlinePick)}
+                    <SecondaryButton className={toggleButtonClass(pickShown)}
                       onClick={() => {
-                        if (outlinePick) { hidePickOutline().catch(() => {}); setOutlinePick(false); }
-                        else { showPickOutline().catch(() => {}); setOutlinePick(true); }
-                      }}>{outlinePick ? "Hide" : "Show"}</SecondaryButton>
+                        if (pickShown) { hidePickOverlay().catch(() => {}); setPickShown(false); }
+                        else { showPickOverlay().catch(() => {}); setPickShown(true); }
+                      }}>{pickShown ? "Hide" : "Show"}</SecondaryButton>
                   </div>
                 </div>
 
@@ -439,12 +438,12 @@ export default function SettingsModal(props: SettingsModalProps) {
                   <div className={`${ROW_CLASS} mt-2`}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Show</span>
-                      <span className={ROW_DESC_CLASS}>Show the riven overlay at its current position.</span>
+                      <span className={ROW_DESC_CLASS}>Show the riven overlay; dummy data unless a real analysis is loaded.</span>
                     </div>
                     <SecondaryButton className={toggleButtonClass(rivenShown)}
                       onClick={() => {
                         if (rivenShown) { hideRivenOverlay().catch(() => {}); setRivenShown(false); }
-                        else { showRivenOverlay().catch(() => {}); setRivenShown(true); }
+                        else { showRivenDummy().catch(() => {}); setRivenShown(true); }
                       }}>{rivenShown ? "Hide" : "Show"}</SecondaryButton>
                   </div>
                 </div>

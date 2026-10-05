@@ -12,4 +12,5 @@ export const PREFERENCE_KEYS = {
   FOUNDRY_VIEW: "ff-view-foundry",
   RELIC_VIEW: "ff-view-relic",
   ITEM_REPORT_ORDER: "ff-item-report-order",
+  PREFLIGHT: "ff-preflight",
 } as const;

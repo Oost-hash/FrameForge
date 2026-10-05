@@ -29,7 +29,7 @@ export const TAURI_EVENTS = {
   WFM_PRICE_UPDATE: "wfm-price-update",
   WFM_TOP_PROGRESS: "wfm-top-progress",
   WFM_TOP_UPDATED: "wfm-top-updated",
-  OVERLAY_OUTLINE: "overlay-outline",
+  PREFLIGHT_TOGGLED: "preflight-toggled",
 } as const;
 
 // Feature 3 — api.warframe.com/api/inventory.php
@@ -49,6 +49,9 @@ export const TAURI_COMMANDS = {
   ANALYZE_RIVEN: "analyze_riven",
   FETCH_WFM_ITEMS: "fetch_wfm_items",
   GET_ALL_ITEMS: "get_all_items",
+  TEST_RELIC_PICK: "test_relic_pick_overlay",
+  SHOW_RELIC_PICK: "show_relic_pick_window",
+  HIDE_RELIC_PICK: "hide_relic_pick_overlay",
   GET_BULK_PRICES: "get_bulk_prices",
   GET_CRAFTABLE_ITEMS: "get_craftable_items",
   GET_RECIPE: "get_recipe",

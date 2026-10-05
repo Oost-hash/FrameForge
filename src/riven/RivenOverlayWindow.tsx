@@ -137,6 +137,7 @@ export default function RivenOverlayWindow() {
   const [scanning, setScanning]         = useState(true);
   const [saved, setSaved]               = useState(false);
   const scanTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasRealRef = useRef(false);
 
   const resetToScanning = () => {
     setScanning(true);
@@ -155,6 +156,11 @@ export default function RivenOverlayWindow() {
     const unlistenStart = listen(TAURI_EVENTS.RIVEN_SCANNING_START, () => resetToScanning());
 
     const unlistenUpdate = listen<RivenAnalysisUpdate>(TAURI_EVENTS.RIVEN_ANALYSIS_UPDATE, e => {
+      if (e.payload.dummy) {
+        if (hasRealRef.current) return;
+      } else {
+        hasRealRef.current = true;
+      }
       if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
       setAnalysis(e.payload.analysis ?? null);
       setRollCount(e.payload.rollCount);

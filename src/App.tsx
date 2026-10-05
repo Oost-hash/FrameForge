@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { getVersion } from "@tauri-apps/api/app";
 import { listen } from "@tauri-apps/api/event";
 import { applyScale } from "./lib/uiScale";
+import { preflightEnabled, setPreflight } from "./lib/preflight";
 import { useContextMenu, CtxMenu } from "./shared/CtxMenu";
 import { extractItemName } from "./lib/itemContext";
 import { matchesSearchTerms, splitSearchTerms } from "./lib/search";
@@ -113,6 +114,12 @@ export default function App() {
   if (IS_RELIC_PICK_OVERLAY) return <RelicPickOverlay />;
   // If we're the pop-out modular window, render the standalone modular UI
   if (IS_MODULAR) return <ModularWindowPage />;
+
+  const [preflightOn, setPreflightOn] = useState(preflightEnabled);
+  useEffect(() => {
+    const p = listen<boolean>(TAURI_EVENTS.PREFLIGHT_TOGGLED, e => setPreflightOn(e.payload));
+    return () => { p.then(fn => fn()); };
+  }, []);
 
   const [activeModule, setActiveModule] = useState<Module>("inventory");
   const [visitedModules, setVisitedModules] = useState<Set<Module>>(() => new Set(["inventory"]));
@@ -661,6 +668,16 @@ export default function App() {
       {/* ── Header ── */}
       <header className="flex h-(--header-h) shrink-0 items-center gap-3 border-b border-border bg-surface px-4">
         <span className="text-15 font-semibold text-foreground">{APP_TITLE}</span>
+        <button
+          type="button"
+          onClick={() => { const next = !preflightOn; setPreflightOn(next); setPreflight(next).catch(() => {}); }}
+          title="Toggle Tailwind preflight (main window + overlays)"
+          className={`cursor-pointer rounded-4 border px-1.5 py-0.5 text-10 font-bold uppercase tracking-0.04 transition-colors duration-120 ${
+            preflightOn
+              ? "border-accent bg-accent/15 text-accent"
+              : "border-border bg-white/3 text-muted hover:border-accent/50 hover:text-foreground"
+          }`}
+        >PF {preflightOn ? "on" : "off"}</button>
         <HeaderStatusBadges
           masteryRank={masteryRank}
           playerName={playerName}
