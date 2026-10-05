@@ -674,8 +674,6 @@ pub fn run() {
             diagnostics::debug_create_window,
             relic_pick::show_overlay_window,
             relic_pick::move_overlay_offscreen,
-            relic_pick::show_test_overlay_window,
-            relic_pick::hide_test_overlay_window,
             diagnostics::get_diag_folder_size,
             diagnostics::clear_diag_folder,
             diagnostics::save_auto_diag_capture,

@@ -67,7 +67,6 @@ const IS_OVERLAY       = _params.has("overlay")      || _hash === "#overlay"    
 const IS_MODULAR       = _params.has("modular")      || _hash === "#modular"      || _winLabel === "modular-popout";
 const IS_RIVEN_OVERLAY      = _params.has("rivenoverlay")      || _hash === "#rivenoverlay"      || _winLabel === "riven-overlay";
 const IS_RELIC_PICK_OVERLAY = _params.has("relicpickoverlay") || _hash === "#relicpickoverlay" || _winLabel === "relic-pick-overlay";
-const IS_OVERLAY_TEST       = _params.has("overlaytest")       || _hash === "#overlaytest"       || _winLabel === "overlay-test";
 const IS_ANY_OVERLAY = IS_OVERLAY || IS_MODULAR || IS_RIVEN_OVERLAY || IS_RELIC_PICK_OVERLAY;
 
 // Overlay windows return from the router before any hook can run, which rules
@@ -79,34 +78,7 @@ listen(TAURI_EVENTS.SETTINGS_UPDATED, () => applyScale(IS_ANY_OVERLAY));
 
 // RelicAndRivenTab is kept but now just shows RelicHelper — Rivens moved to own tab
 
-// ── Isolated overlay test page ────────────────────────────────────────────────
-// Rendered when window URL contains ?overlaytest.
-// No data loading, no events — pure window-creation smoke test.
-function OverlayTestPage() {
-  useEffect(() => {
-    [document.documentElement, document.body, document.getElementById('root')]
-      .forEach(el => el?.style.setProperty('background', 'transparent', 'important'));
-  }, []);
-
-  return (
-    <div className="box-border flex h-screen w-screen flex-col items-center justify-center gap-3 border-4 border-overlay-smoke bg-overlay-smoke-bg font-sans text-white">
-      <div className="text-22 font-bold drop-shadow-[0_2px_6px_#000]">
-        FrameForge Overlay Test
-      </div>
-      <div className="text-13 opacity-85">If you see green: window + React are working</div>
-      <button
-        onClick={() => getCurrentWindow().close().catch(() => {})}
-        className="mt-2 cursor-pointer rounded-md border-0 bg-overlay-smoke px-6 py-2 text-sm font-bold text-black"
-      >
-        Close
-      </button>
-    </div>
-  );
-}
-
 export default function App() {
-  // Isolated overlay test — no data, no events, just proves the window appears.
-  if (IS_OVERLAY_TEST) return <OverlayTestPage />;
   // If we're the overlay window, render only the overlay UI
   if (IS_OVERLAY) return <Overlay />;
   if (IS_RIVEN_OVERLAY) return <RivenOverlayWindow />;
