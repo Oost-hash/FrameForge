@@ -95,6 +95,48 @@ const ERA_LABEL: Record<string, string> = {
 
 const REWARD_ORDER: Record<string, number> = { Gold: 0, Silver: 1, Bronze: 2 };
 
+const DUMMY_PICK: RelicPickPayload = {
+  era: "ALL",
+  relics: [
+    {
+      name: "Axi R4 Intact", base_name: "Axi R4", refinement: "intact", count: 1,
+      unowned_score: 0.3833, ducat_score: 19.5, plat_score: 5.4,
+      rewards: [
+        { name: "Forma Blueprint", rarity: "Bronze", drop_rate: 0.2533, ducats: 0, plat: 0, vaulted: false, owned: true },
+        { name: "Boltor Prime Stock", rarity: "Bronze", drop_rate: 0.2533, ducats: 15, plat: 9, vaulted: true, owned: true },
+        { name: "Burston Prime Blueprint", rarity: "Bronze", drop_rate: 0.2533, ducats: 15, plat: 3, vaulted: true, owned: false },
+        { name: "Glaive Prime Disc", rarity: "Silver", drop_rate: 0.11, ducats: 45, plat: 9, vaulted: true, owned: false },
+        { name: "Ember Prime Systems Blueprint", rarity: "Silver", drop_rate: 0.11, ducats: 45, plat: 9, vaulted: true, owned: true },
+        { name: "Rhino Prime Blueprint", rarity: "Gold", drop_rate: 0.02, ducats: 100, plat: 20, vaulted: true, owned: false },
+      ],
+    },
+    {
+      name: "Meso N1 Intact", base_name: "Meso N1", refinement: "intact", count: 2,
+      unowned_score: 0.2733, ducat_score: 26, plat_score: 2.4,
+      rewards: [
+        { name: "Fang Prime Handle", rarity: "Bronze", drop_rate: 0.2533, ducats: 25, plat: 2, vaulted: true, owned: false },
+        { name: "Braton Prime Stock", rarity: "Bronze", drop_rate: 0.2533, ducats: 25, plat: 1, vaulted: true, owned: true },
+        { name: "Fang Prime Blueprint", rarity: "Bronze", drop_rate: 0.2533, ducats: 25, plat: 1, vaulted: true, owned: true },
+        { name: "2X Forma Blueprint", rarity: "Silver", drop_rate: 0.11, ducats: 0, plat: 0, vaulted: false, owned: true },
+        { name: "Dual Kamas Prime Handle", rarity: "Silver", drop_rate: 0.11, ducats: 45, plat: 7, vaulted: true, owned: true },
+        { name: "Nyx Prime Neuroptics Blueprint", rarity: "Gold", drop_rate: 0.02, ducats: 100, plat: 30, vaulted: true, owned: false },
+      ],
+    },
+    {
+      name: "Lith S1 Intact", base_name: "Lith S1", refinement: "intact", count: 3,
+      unowned_score: 0.13, ducat_score: 18.4, plat_score: 3.3,
+      rewards: [
+        { name: "Paris Prime String", rarity: "Bronze", drop_rate: 0.2533, ducats: 15, plat: 2, vaulted: false, owned: true },
+        { name: "Hikou Prime Blueprint", rarity: "Bronze", drop_rate: 0.2533, ducats: 15, plat: 4, vaulted: true, owned: true },
+        { name: "Bronco Prime Blueprint", rarity: "Bronze", drop_rate: 0.2533, ducats: 15, plat: 3, vaulted: true, owned: true },
+        { name: "Paris Prime Grip", rarity: "Silver", drop_rate: 0.11, ducats: 45, plat: 3, vaulted: false, owned: false },
+        { name: "2X Forma Blueprint", rarity: "Silver", drop_rate: 0.11, ducats: 0, plat: 0, vaulted: false, owned: true },
+        { name: "Spira Prime Pouch", rarity: "Gold", drop_rate: 0.02, ducats: 100, plat: 35, vaulted: true, owned: false },
+      ],
+    },
+  ],
+};
+
 // Bronze → run Intact (refining reduces common drop rate)
 // Silver → Exceptional (solid improvement, low trace cost)
 // Gold   → Radiant (rare items benefit most from full refinement)
@@ -140,8 +182,6 @@ function DucatIcon() {
 
 export default function RelicPickOverlay() {
   const [payload,  setPayload]  = useState<RelicPickPayload | null>(null);
-  // Outline mode (Settings → Overlays → Show Outline): dashed frame instead of relic cards.
-  const [outline,  setOutline]  = useState(false);
   const [priority, setPriority] = useState<RelicPickPriority>(DEFAULT_RELIC_PICK_PRIORITY);
   const [lines,    setLines]    = useState<RelicPickLines>(DEFAULT_RELIC_PICK_LINES);
   // Use a callback ref so the ResizeObserver is set up each time the root div
@@ -181,8 +221,6 @@ export default function RelicPickOverlay() {
 
   useEffect(() => {
     const unOpen = listen<RelicPickPayload>(TAURI_EVENTS.RELIC_PICK_OPEN, async e => {
-      // Real screen open wins over an active outline.
-      setOutline(false);
       // Reload settings fresh on every show — the main window may have changed them
       // since this overlay was first mounted at app startup.
       try {
@@ -202,27 +240,16 @@ export default function RelicPickOverlay() {
       const el = rootRef.current;
       if (el) syncSize(Math.ceil(el.offsetHeight));
     });
-    const unOutline = listen<string>(TAURI_EVENTS.OVERLAY_OUTLINE, e => {
-      if (e.payload === "relicPick") setOutline(true);
-      else if (e.payload === "off-relicPick") { setOutline(false); setPayload(null); }
-    });
-    return () => { unOpen.then(f => f()); unClose.then(f => f()); unScale.then(f => f()); unOutline.then(f => f()); };
+    return () => { unOpen.then(f => f()); unClose.then(f => f()); unScale.then(f => f()); };
   }, [syncSize]);
 
-  if (outline) {
-    return (
-      <div ref={rootCallback} className="box-border flex h-75 w-full items-center justify-center rounded-10 border-2 border-dashed border-accent/85 bg-surface/55 text-base font-semibold text-overlay-outline">
-        Relic Pick Overlay — outline
-      </div>
-    );
-  }
+  const realHasRewards = payload?.relics.some(r => r.rewards.length > 0) ?? false;
+  const data = payload && realHasRewards ? payload : DUMMY_PICK;
 
-  if (!payload) return null;
-
-  const sorted = [...payload.relics]
+  const sorted = [...data.relics]
     .sort((a, b) => scoreOf(b, priority) - scoreOf(a, priority))
     .slice(0, 3);
-  const eraLabel = ERA_LABEL[payload.era] ?? payload.era;
+  const eraLabel = ERA_LABEL[data.era] ?? data.era;
 
   return (
     <div className={RPO_ROOT} ref={rootCallback}>

@@ -299,11 +299,41 @@ function RewardCard({ item, left, width }: { item: RewardItem; left: number; wid
 }
 
 // ─── Main overlay ─────────────────────────────────────────────────────────────
+const DUMMY_REWARDS: RewardItem[] = [
+  {
+    unique_name: "dummy-0", raw_unique: "", slot_x: 0.29,
+    name: "Rhino Prime Blueprint", category: "Blueprints", vaulted: true, plat: 20, ducats: 100, owned_qty: 0,
+    set_name: "Rhino Prime", complete_sets: 0, total_plat: 48, missing_plat: 32,
+    components: [
+      { unique_name: "rp-bp",  name: "Rhino Prime Blueprint", needed: 1, owned: 0, plat: 20, ducats: 15 },
+      { unique_name: "rp-ch",  name: "Rhino Prime Chassis Blueprint", needed: 1, owned: 1, plat: 9, ducats: 45 },
+      { unique_name: "rp-ne",  name: "Rhino Prime Neuroptics Blueprint", needed: 1, owned: 0, plat: 12, ducats: 90 },
+      { unique_name: "rp-sy",  name: "Rhino Prime Systems Blueprint", needed: 1, owned: 1, plat: 7, ducats: 45 },
+    ],
+  },
+  {
+    unique_name: "dummy-1", raw_unique: "", slot_x: 0.43,
+    name: "Nyx Prime Neuroptics Blueprint", category: "Blueprints", vaulted: true, plat: 30, ducats: 100, owned_qty: 1,
+    set_name: "Nyx Prime", complete_sets: 1, total_plat: 56, missing_plat: 0,
+    components: [
+      { unique_name: "nx-bp",  name: "Nyx Prime Blueprint", needed: 1, owned: 1, plat: 9, ducats: 15 },
+      { unique_name: "nx-ch",  name: "Nyx Prime Chassis Blueprint", needed: 1, owned: 1, plat: 9, ducats: 45 },
+      { unique_name: "nx-ne",  name: "Nyx Prime Neuroptics Blueprint", needed: 1, owned: 1, plat: 30, ducats: 100 },
+      { unique_name: "nx-sy",  name: "Nyx Prime Systems Blueprint", needed: 1, owned: 1, plat: 8, ducats: 45 },
+    ],
+  },
+  {
+    unique_name: "dummy-2", raw_unique: "", slot_x: 0.57,
+    name: "Glaive Prime Disc", category: "Parts", vaulted: true, plat: 9, ducats: 45, owned_qty: 1,
+  },
+  {
+    unique_name: "dummy-3", raw_unique: "", slot_x: 0.71,
+    name: "Spira Prime Pouch", category: "Parts", vaulted: true, plat: 35, ducats: 100, owned_qty: 0,
+  },
+];
+
 export default function Overlay() {
   const [rewards, setRewards] = useState<RewardItem[]>([]);
-  // Outline mode (Settings → Overlays → Show Outline): draw an empty frame at
-  // the overlay's current position so offsets can be judged without a fissure run.
-  const [outline, setOutline] = useState(false);
   // winW = the overlay window's own pixel width, which equals the Warframe client
   // width (App.tsx creates the window with width: ww). No URL param needed.
   //
@@ -328,14 +358,6 @@ export default function Overlay() {
     };
     important(document.documentElement);
     important(document.getElementById('root'));
-  }, []);
-
-  useEffect(() => {
-    const unsub = listen<string>(TAURI_EVENTS.OVERLAY_OUTLINE, (e) => {
-      if (e.payload === "relic") setOutline(true);
-      else if (e.payload === "off-relic") setOutline(false);
-    });
-    return () => { unsub.then(fn => fn()); };
   }, []);
 
   useEffect(() => {
@@ -641,22 +663,10 @@ export default function Overlay() {
     return () => { unsub.then(fn => fn()); unsubInv.then(fn => fn()); unsubTrigger.then(fn => fn()); };
   }, []);
 
-  if (rewards.length === 0 && !outline) return null;
+  const shown = rewards.length > 0 ? rewards : DUMMY_REWARDS;
+  const bestIdx = bestPickIndex(shown, priority);
 
-  if (rewards.length === 0) {
-    // Outline: dashed frame at the window's current position.
-    return (
-      <div className={OV_ROOT}>
-        <div className="absolute inset-x-8 top-10 bottom-10 flex items-center justify-center rounded-10 border-2 border-dashed border-accent/85 bg-surface/55 text-22 font-semibold text-overlay-outline">
-          Relic Reward Overlay — outline
-        </div>
-      </div>
-    );
-  }
-
-  const bestIdx = bestPickIndex(rewards, priority);
-
-  const n  = rewards.length;
+  const n  = shown.length;
   const screenCenter = winW / 2;
   const colCenters   = columnCenters(winW, n);
   const cardW = Math.max(80, Math.round(winW * COL_SPACING_FRAC - 10));
@@ -665,7 +675,7 @@ export default function Overlay() {
   return (
     <div className={OV_ROOT}>
       {bestIdx >= 0 && <PickArrow slotX={(colCenters[bestIdx] ?? screenCenter) / winW} winW={winW} />}
-      {rewards.map((item, idx) => (
+      {shown.map((item, idx) => (
         <RewardCard key={item.unique_name} item={item} left={cardLeft(idx)} width={cardW} />
       ))}
     </div>
