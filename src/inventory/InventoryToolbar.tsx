@@ -22,6 +22,7 @@ interface InventoryToolbarProps {
   filters: InventoryFilters;
   onFiltersChange: Dispatch<SetStateAction<InventoryFilters>>;
   onToggleRecent: () => void;
+  platinumPriceStatus: "loading" | "ready" | "unavailable";
   availableRanks: number[];
   showRankFilters: boolean;
   itemCount: number;
@@ -37,12 +38,19 @@ interface InventoryToolbarProps {
 }
 
 export default function InventoryToolbar({
-  filters, onFiltersChange, onToggleRecent, availableRanks, showRankFilters, itemCount, view, onViewChange, cardColumns, onCardColumnsChange, listTextScale, onListTextScaleChange, filterPresets, onFilterPresetsChange, onOpenSettings,
+  filters, onFiltersChange, onToggleRecent, platinumPriceStatus, availableRanks, showRankFilters, itemCount, view, onViewChange, cardColumns, onCardColumnsChange, listTextScale, onListTextScaleChange, filterPresets, onFilterPresetsChange, onOpenSettings,
 }: InventoryToolbarProps) {
-  const { search, filterOwned, filterRecent, filterPrime, filterVaulted, filterUnvaulted, filterTradeable, filterDucats, filterRank, sortMode } = filters;
+  const { search, filterOwned, filterRecent, filterPrime, filterVaulted, filterUnvaulted, filterTradeable, filterRank, sortMode } = filters;
   const isCardView = view === "cards" || view === "text-cards";
   const isListView = view === "list" || view === "list-compact";
   const imagesVisible = view === "cards" || view === "list";
+  const toggleSort = (primary: InventoryFilters["sortMode"], secondary: InventoryFilters["sortMode"]) =>
+    onFiltersChange(previous => ({ ...previous, sortMode: previous.sortMode === primary ? secondary : primary }));
+  const platinumSortActive = sortMode === "plat-desc" || sortMode === "plat-asc";
+  const ducatRatioSortActive = sortMode === "ducat-ratio-desc" || sortMode === "ducat-ratio-asc";
+  const itemCountLabel = (platinumSortActive || ducatRatioSortActive) && platinumPriceStatus !== "ready"
+    ? platinumPriceStatus === "loading" ? "Loading Platinum prices…" : "Platinum prices unavailable"
+    : `${itemCount} item${itemCount !== 1 ? "s" : ""}${itemCount === 1000 ? " (capped)" : ""}`;
   return (
     <>
       <div className={TOOLBAR}>
@@ -59,7 +67,6 @@ export default function InventoryToolbar({
         <FilterChip active={filterVaulted} onClick={() => onFiltersChange(previous => ({ ...previous, filterVaulted: !previous.filterVaulted }))}>🔒 Vaulted</FilterChip>
         <FilterChip active={filterUnvaulted} onClick={() => onFiltersChange(previous => ({ ...previous, filterUnvaulted: !previous.filterUnvaulted }))}>🔓 Unvaulted</FilterChip>
         <FilterChip active={filterTradeable} aria-pressed={filterTradeable} onClick={() => onFiltersChange(previous => ({ ...previous, filterTradeable: !previous.filterTradeable }))}>Tradeable</FilterChip>
-        <FilterChip active={filterDucats} aria-pressed={filterDucats} onClick={() => onFiltersChange(previous => ({ ...previous, filterDucats: !previous.filterDucats }))}>Ducats</FilterChip>
         {showRankFilters && <>
           <FilterSeparator />
           <FilterLabel>Rank:</FilterLabel>
@@ -72,11 +79,12 @@ export default function InventoryToolbar({
         <FilterPresets module="inventory" {...{ filters, onFiltersChange, filterPresets, onFilterPresetsChange, onOpenSettings }} />
         <FilterSeparator />
         <FilterLabel>Sort:</FilterLabel>
-        <FilterChip active={sortMode === "qty-desc"} onClick={() => onFiltersChange(previous => ({ ...previous, sortMode: "qty-desc" }))}>Qty ↓</FilterChip>
-        <FilterChip active={sortMode === "qty-asc"} onClick={() => onFiltersChange(previous => ({ ...previous, sortMode: "qty-asc" }))}>Qty ↑</FilterChip>
-        <FilterChip active={sortMode === "name-asc"} onClick={() => onFiltersChange(previous => ({ ...previous, sortMode: "name-asc" }))}>A-Z</FilterChip>
-        <FilterChip active={sortMode === "name-desc"} onClick={() => onFiltersChange(previous => ({ ...previous, sortMode: "name-desc" }))}>Z-A</FilterChip>
-        <span className={`${ITEM_COUNT_LABEL} ml-auto`}>{itemCount} item{itemCount !== 1 ? "s" : ""}{itemCount === 1000 ? " (capped)" : ""}</span>
+        <FilterChip active={sortMode === "qty-desc" || sortMode === "qty-asc"} onClick={() => toggleSort("qty-desc", "qty-asc")}>Qty{sortMode === "qty-desc" ? " ↓" : sortMode === "qty-asc" ? " ↑" : ""}</FilterChip>
+        <FilterChip active={sortMode === "name-asc" || sortMode === "name-desc"} onClick={() => toggleSort("name-asc", "name-desc")}>{sortMode === "name-desc" ? "Z-A" : "A-Z"}</FilterChip>
+        <FilterChip active={platinumSortActive} onClick={() => toggleSort("plat-desc", "plat-asc")}>Plat{platinumPriceStatus === "ready" ? sortMode === "plat-desc" ? " ↓" : sortMode === "plat-asc" ? " ↑" : "" : ""}</FilterChip>
+        <FilterChip active={sortMode === "ducat-desc" || sortMode === "ducat-asc"} onClick={() => toggleSort("ducat-desc", "ducat-asc")}>Ducats{sortMode === "ducat-desc" ? " ↓" : sortMode === "ducat-asc" ? " ↑" : ""}</FilterChip>
+        <FilterChip active={ducatRatioSortActive} title="Ducats per Platinum: descending favors Ducats; ascending favors trading" onClick={() => toggleSort("ducat-ratio-desc", "ducat-ratio-asc")}>D/P{platinumPriceStatus === "ready" ? sortMode === "ducat-ratio-desc" ? " ↓" : sortMode === "ducat-ratio-asc" ? " ↑" : "" : ""}</FilterChip>
+        <span className={`${ITEM_COUNT_LABEL} ml-auto`} aria-live="polite">{itemCountLabel}</span>
         <ViewToggle
           view={view === "text-cards" ? "cards" : view === "list-compact" ? "list" : view}
           onChange={onViewChange}

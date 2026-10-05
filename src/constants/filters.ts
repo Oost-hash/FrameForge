@@ -9,7 +9,6 @@ export const INVENTORY_FILTERS_DEFAULT: InventoryFilters = {
   filterVaulted: false,
   filterUnvaulted: false,
   filterTradeable: false,
-  filterDucats: false,
   filterRank: null,
   sortMode: "qty-desc",
 };
