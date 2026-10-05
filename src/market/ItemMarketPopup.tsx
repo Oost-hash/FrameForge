@@ -190,10 +190,11 @@ function OrderRow({ o, type, displayName, onList }: {
 }) {
   const [copied, setCopied] = useState(false);
 
+  const action = type === "sell" ? "buy" : "sell";
+  const whisper = `/w ${o.user.ingameName} Hi! I want to ${action}: "${displayName}" for ${o.platinum} platinum. (warframe.market)`;
+
   const copyWhisper = () => {
-    const action = type === "sell" ? "buy" : "sell";
-    const msg = `/w ${o.user.ingameName} Hi! I want to ${action}: "${displayName}" for ${o.platinum} platinum. (warframe.market)`;
-    navigator.clipboard.writeText(msg).then(() => {
+    navigator.clipboard.writeText(whisper).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     });
@@ -210,7 +211,7 @@ function OrderRow({ o, type, displayName, onList }: {
         <button
           className={copied ? IMP_COPY_BTN_DONE : IMP_COPY_BTN}
           onClick={copyWhisper}
-          title={`/w ${o.user.ingameName} Hi! I want to buy: "${displayName}" for ${o.platinum} platinum. (warframe.market)`}
+          title={whisper}
         >
           {copied ? "✓" : "📋"}
         </button>
