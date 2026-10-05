@@ -476,15 +476,16 @@ export default function SettingsModal(props: SettingsModalProps) {
                   </div>
                 </div>
 
-                <div className="settings-section">
-                  <div className="settings-section-title">Arbitration Summary Overlay</div>
-                  <div className="settings-row">
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Enable</span>
-                      <span className="settings-row-desc">Briefly show a completed arbitration run's numbers over the game. Runs are recorded either way.</span>
+                {/* Arbitration Summary Overlay */}
+                <div className={SECTION_CLASS}>
+                  <div className={SECTION_TITLE_CLASS}>Arbitration Summary Overlay</div>
+                  <div className={ROW_CLASS}>
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Enable</span>
+                      <span className={ROW_DESC_CLASS}>Briefly show a completed arbitration run's numbers over the game. Runs are recorded either way.</span>
                     </div>
-                    <button
-                      className={`btn-secondary min-w-16 ${arbOverlayEnabled ? "border-accent bg-accent/15" : ""}`}
+                    <SecondaryButton
+                      className={toggleButtonClass(arbOverlayEnabled)}
                       onClick={() => {
                         const next = !arbOverlayEnabled;
                         setArbOverlayEnabled(next);
@@ -492,7 +493,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                         saveAllSettings();
                         invoke(TAURI_COMMANDS.SET_ARBITRATION_OVERLAY_ENABLED, { enabled: next });
                       }}
-                    >{arbOverlayEnabled ? "On" : "Off"}</button>
+                    >{arbOverlayEnabled ? "On" : "Off"}</SecondaryButton>
                   </div>
                 </div>
 
@@ -1025,20 +1026,20 @@ export default function SettingsModal(props: SettingsModalProps) {
                       catch (e) { setRelicPickTestResult(`Error: ${e}`); }
                     }}>Launch</SecondaryButton>
 
-                    <div className="settings-row-info">
-                      <span className="settings-row-label">Test Arbitration Summary Overlay</span>
-                      <span className="settings-row-desc">
+                    <div className={ROW_INFO_CLASS}>
+                      <span className={ROW_LABEL_CLASS}>Test Arbitration Summary Overlay</span>
+                      <span className={ROW_DESC_CLASS}>
                         Fire the post-run overlay with a sample run. Ignores the enable setting.
                         {arbOverlayTestResult && <span className="mt-0.5 block text-11 text-accent">{arbOverlayTestResult}</span>}
                       </span>
                     </div>
                     <div />
-                    <div />
-                    <button className="btn-secondary" onClick={async () => {
+                    <SecondaryButton onClick={async () => {
                       setArbOverlayTestResult(null);
                       try { setArbOverlayTestResult(await invoke<string>("test_arbitration_overlay")); }
                       catch (e) { setArbOverlayTestResult(`Error: ${e}`); }
-                    }}>Launch</button>
+                    }}>Launch</SecondaryButton>
+                    <div />
 
                     {/* EE.log tail — reveals what string to trigger on */}
                     <div className={ROW_INFO_CLASS}>
