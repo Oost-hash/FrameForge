@@ -402,6 +402,8 @@ impl Parser {
         Self::default()
     }
 
+    /// Test hook: the watcher never asks whether a run is open.
+    #[cfg(test)]
     pub fn is_run_active(&self) -> bool {
         self.run.is_some()
     }
@@ -599,6 +601,9 @@ impl Parser {
         Vec::new()
     }
 
+    /// Closes a run still open at the end of the input. Only the offline
+    /// helpers below call it: the watcher drops the parser instead of flushing.
+    #[cfg(test)]
     pub fn finish(&mut self) -> Option<Run> {
         // No active run is not an error: the parser simply has nothing to close.
         match self.end_run(EndReason::Unterminated)? {
@@ -706,6 +711,7 @@ impl Parser {
 
 /// Every run in a log, in order. A run still open at the end of the input is
 /// included with `EndReason::Unterminated`.
+#[cfg(test)]
 pub fn parse_log<'a>(lines: impl IntoIterator<Item = &'a str>) -> Vec<Run> {
     let mut parser = Parser::new();
     let mut runs = Vec::new();

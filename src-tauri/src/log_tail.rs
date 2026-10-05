@@ -47,6 +47,7 @@ impl LogTail {
 
     /// Starts at the end, for readers that react to events as they happen and
     /// would fire on hours-old lines if handed the existing log.
+    #[cfg(test)]
     pub fn from_end(path: PathBuf) -> Self {
         let seen = std::fs::File::open(&path)
             .ok()
