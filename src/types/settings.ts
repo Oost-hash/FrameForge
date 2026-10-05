@@ -52,6 +52,6 @@ export interface SettingsSnapshot {
   modularWidth: number; modularSectionOrder: string[]; modularPopout: boolean; wfmInvisibleOnStart: boolean;
   wfmInvisibleOnClose: boolean; wfmAutoInvisible: boolean; wfmAutoInvisibleMins: number; wfmRecordSales: boolean; relicPickEnabled: boolean;
   relicPickPriority: RelicPickPriority; relicPickRefinement: RelicRefinement;
-  relicPickLines: RelicPickLines; foundryPageSize: FoundryPageSize; memTriggerEnabled: boolean;
+  relicPickLines: RelicPickLines; foundryPageSize: FoundryPageSize;
   filterPresets: FilterPresetSettings;
 }

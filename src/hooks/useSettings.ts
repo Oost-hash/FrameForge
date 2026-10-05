@@ -38,7 +38,6 @@ interface UseSettingsReturn {
   systemLocale: string;
   foundryPageSize: FoundryPageSize;
   relicPickEnabled: boolean;
-  memTriggerEnabled: boolean;
   relicPickPriority: RelicPickPriority;
   relicPickRefinement: RelicRefinement;
   relicPickLines: RelicPickLines;
@@ -66,7 +65,6 @@ interface UseSettingsReturn {
   setSystemLocale: React.Dispatch<React.SetStateAction<string>>;
   setFoundryPageSize: React.Dispatch<React.SetStateAction<FoundryPageSize>>;
   setRelicPickEnabled: React.Dispatch<React.SetStateAction<boolean>>;
-  setMemTriggerEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   setRelicPickPriority: React.Dispatch<React.SetStateAction<RelicPickPriority>>;
   setRelicPickRefinement: React.Dispatch<React.SetStateAction<RelicRefinement>>;
   setRelicPickLines: React.Dispatch<React.SetStateAction<RelicPickLines>>;
@@ -121,7 +119,6 @@ export function useSettings(
   const [systemLocale, setSystemLocale] = useState("en-US");
   const [foundryPageSize, setFoundryPageSize] = useState<FoundryPageSize>(DEFAULT_FOUNDRY_PAGE_SIZE);
   const [relicPickEnabled, setRelicPickEnabled] = useState<boolean>(true);
-  const [memTriggerEnabled, setMemTriggerEnabled] = useState<boolean>(false);
   const [relicPickPriority, setRelicPickPriority] = useState<RelicPickPriority>(DEFAULT_RELIC_PICK_PRIORITY);
   const [relicPickRefinement, setRelicPickRefinement] = useState<RelicRefinement>(DEFAULT_RELIC_PICK_REFINEMENT);
   const [relicPickLines, setRelicPickLines] = useState<RelicPickLines>(DEFAULT_RELIC_PICK_LINES);
@@ -167,7 +164,6 @@ export function useSettings(
     relicPickRefinement: DEFAULT_RELIC_PICK_REFINEMENT,
     relicPickLines: DEFAULT_RELIC_PICK_LINES,
     foundryPageSize: DEFAULT_FOUNDRY_PAGE_SIZE,
-    memTriggerEnabled: false,
     filterPresets: { presets: [], restorePreviousFiltersOnPresetClick: false },
   });
   const wfmInvisibleOnStartRef = useRef(false);
@@ -245,10 +241,6 @@ export function useSettings(
         const relicPickEnabled = typeof s.relicPickEnabled === "boolean" ? s.relicPickEnabled : true;
         setRelicPickEnabled(relicPickEnabled);
         invoke(TAURI_COMMANDS.SET_RELIC_PICK_ENABLED, { enabled: relicPickEnabled });
-        if (typeof s.memTriggerEnabled === "boolean") {
-          setMemTriggerEnabled(s.memTriggerEnabled);
-          invoke(TAURI_COMMANDS.SET_MEM_TRIGGER_ENABLED, { enabled: s.memTriggerEnabled });
-        }
         if (RELIC_PICK_PRIORITY_OPTIONS.includes(s.relicPickPriority)) setRelicPickPriority(s.relicPickPriority);
         if (RELIC_PICK_REFINEMENT_OPTIONS.includes(s.relicPickRefinement)) setRelicPickRefinement(s.relicPickRefinement);
         if (RELIC_PICK_LINES_OPTIONS.includes(s.relicPickLines)) setRelicPickLines(s.relicPickLines);
@@ -315,7 +307,6 @@ export function useSettings(
     systemLocale,
     foundryPageSize,
     relicPickEnabled,
-    memTriggerEnabled,
     relicPickPriority,
     relicPickRefinement,
     relicPickLines,
@@ -343,7 +334,6 @@ export function useSettings(
     setSystemLocale,
     setFoundryPageSize,
     setRelicPickEnabled,
-    setMemTriggerEnabled,
     setRelicPickPriority,
     setRelicPickRefinement,
     setRelicPickLines,

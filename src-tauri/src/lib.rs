@@ -387,7 +387,6 @@ async fn start_monitor(app: tauri::AppHandle, state: State<'_, AppState>) -> Res
     // the memory scanner's on/off state.
     let debug_path = std::env::temp_dir().join("frameforge_reward_debug.txt");
     let last_found_path = std::env::temp_dir().join("frameforge_last_reward.txt");
-    monitor::start_memory_trigger(app.clone());
     monitor::start_legacy_reward_worker(flag, debug_path, last_found_path);
 
     Ok(())
@@ -560,7 +559,6 @@ pub fn run() {
             force_pid_check: Arc::new(AtomicBool::new(false)),
             relic_pick_overlay_enabled: Arc::new(AtomicBool::new(false)),
             overlays_enabled: Arc::new(AtomicBool::new(false)),
-            mem_trigger_enabled: Arc::new(AtomicBool::new(false)),
         })
         .setup(setup_app)
         .invoke_handler(tauri::generate_handler![
@@ -688,7 +686,6 @@ pub fn run() {
             monitor::poke_scan,
             monitor::set_relic_pick_enabled,
             monitor::set_overlays_enabled,
-            monitor::set_mem_trigger_enabled,
             monitor::get_monitor_status,
             catalogue::get_blueprint_names,
             platform::get_system_locale,

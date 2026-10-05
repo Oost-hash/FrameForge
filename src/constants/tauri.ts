@@ -65,7 +65,6 @@ export const TAURI_COMMANDS = {
   LOAD_SETTINGS: "load_settings",
   LOG_RELIC_FE: "log_relic_fe",
   SAVE_API_INVENTORY: "save_api_inventory",
-  SET_MEM_TRIGGER_ENABLED: "set_mem_trigger_enabled",
   SET_RELIC_PICK_ENABLED: "set_relic_pick_enabled",
   SET_OVERLAYS_ENABLED: "set_overlays_enabled",
   WFM_CREATE_ORDER: "wfm_create_order",

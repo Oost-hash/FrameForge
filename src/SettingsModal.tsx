@@ -55,7 +55,6 @@ export interface SettingsModalProps {
   overlayEnabled: boolean; setOverlayEnabled: Setter<boolean>; overlayPriority: RelicOverlayPriority; setOverlayPriority: Setter<RelicOverlayPriority>;
   overlayOffsets: OverlayOffsets; setOverlayOffsets: Setter<OverlayOffsets>;
   rivenEnabled: boolean; setRivenEnabled: Setter<boolean>;
-  memTriggerEnabled: boolean; setMemTriggerEnabled: Setter<boolean>;
   relicPickEnabled: boolean; setRelicPickEnabled: Setter<boolean>; relicPickPriority: RelicPickPriority; setRelicPickPriority: Setter<RelicPickPriority>;
   relicPickLines: RelicPickLines; setRelicPickLines: Setter<RelicPickLines>; wfmLoggedIn: boolean;
   wfmInvisibleOnStart: boolean; setWfmInvisibleOnStart: Setter<boolean>; wfmInvisibleOnStartRef: MutableRefObject<boolean>; wfmInvisibleOnClose: boolean; setWfmInvisibleOnClose: Setter<boolean>; wfmInvisibleOnCloseRef: MutableRefObject<boolean>;
@@ -88,7 +87,7 @@ function BulkPriceRefreshButton() {
 }
 
 export default function SettingsModal(props: SettingsModalProps) {
-  const { settingsTab, setSettingsTab, settingsFilterModule, setSettingsFilterModule, filterPresets, setFilterPresets, inventoryFilters, setInventoryFilters, foundryFilters, setFoundryFilters, marketFilters, setMarketFilters, relicFilters, setRelicFilters, foundryPageSize, setFoundryPageSize, settingsRef, saveAllSettings, memoryScannerEnabled, setMemoryScannerEnabled, modularPopout, setModularPopout, overlayStatus, overlaysEnabled, setOverlaysEnabled, overlayEnabled, setOverlayEnabled, overlayPriority, setOverlayPriority, overlayOffsets, setOverlayOffsets, rivenEnabled, setRivenEnabled, memTriggerEnabled, setMemTriggerEnabled, relicPickEnabled, setRelicPickEnabled, relicPickPriority, setRelicPickPriority, relicPickLines, setRelicPickLines, wfmLoggedIn, wfmInvisibleOnStart, setWfmInvisibleOnStart, wfmInvisibleOnStartRef, wfmInvisibleOnClose, setWfmInvisibleOnClose, wfmInvisibleOnCloseRef, wfmAutoInvisible, setWfmAutoInvisible, wfmAutoInvisibleMins, setWfmAutoInvisibleMins, wfmRecordSales, setWfmRecordSales, colorblindMode, setColorblindMode, textScale, setTextScale, clockFormat, setClockFormat, systemLocale, itemCount, recipeCount, handleFetch, fetching, fetchMsg, fissureNotifications, onFissureNotificationsChange, setQuantities, setApiQuantities, setApiModCopies, setScannerMods, setMasteryData, setArchonShards, setFormaData, setChangeLog, setLastChanged, setWfConnected, wfConnectedRef, setItemsRefreshKey, setClearMsg, clearMsg, blobLogEnabled, setBlobLogEnabled, blobLogSize, setBlobLogSize, companionApiEnabled, apiLogEnabled, setApiLogEnabled, apiLogSize, setApiLogSize, setShowInventoryBatchPreview, notifyTestResult, setNotifyTestResult, overlayLogCopied, setOverlayLogCopied, autoDiagEnabled, setAutoDiagEnabled, diagFolderSize, setDiagFolderSize, diagPath, diagCapturing, setDiagCapturing, setDiagPath, reloadDebugSizes, memoryProbing, setMemoryProbing, probeSize, setProbeSize, rawScanning, setRawScanning, rawScanSize, setRawScanSize, memRelicDebugRunning, setMemRelicDebugRunning, relicPickOcrResult, relicPickOcrTesting, setRelicPickOcrTesting, setRelicPickOcrResult, relicPickTestResult, relicPickTestEra, setRelicPickTestEra, setRelicPickTestResult, eeLogTail, setEeLogTail, debugCatEnabled, setDebugCatEnabled, unmatchedPathsSize, setUnmatchedPathsSize, appVersion } = props;
+  const { settingsTab, setSettingsTab, settingsFilterModule, setSettingsFilterModule, filterPresets, setFilterPresets, inventoryFilters, setInventoryFilters, foundryFilters, setFoundryFilters, marketFilters, setMarketFilters, relicFilters, setRelicFilters, foundryPageSize, setFoundryPageSize, settingsRef, saveAllSettings, memoryScannerEnabled, setMemoryScannerEnabled, modularPopout, setModularPopout, overlayStatus, overlaysEnabled, setOverlaysEnabled, overlayEnabled, setOverlayEnabled, overlayPriority, setOverlayPriority, overlayOffsets, setOverlayOffsets, rivenEnabled, setRivenEnabled, relicPickEnabled, setRelicPickEnabled, relicPickPriority, setRelicPickPriority, relicPickLines, setRelicPickLines, wfmLoggedIn, wfmInvisibleOnStart, setWfmInvisibleOnStart, wfmInvisibleOnStartRef, wfmInvisibleOnClose, setWfmInvisibleOnClose, wfmInvisibleOnCloseRef, wfmAutoInvisible, setWfmAutoInvisible, wfmAutoInvisibleMins, setWfmAutoInvisibleMins, wfmRecordSales, setWfmRecordSales, colorblindMode, setColorblindMode, textScale, setTextScale, clockFormat, setClockFormat, systemLocale, itemCount, recipeCount, handleFetch, fetching, fetchMsg, fissureNotifications, onFissureNotificationsChange, setQuantities, setApiQuantities, setApiModCopies, setScannerMods, setMasteryData, setArchonShards, setFormaData, setChangeLog, setLastChanged, setWfConnected, wfConnectedRef, setItemsRefreshKey, setClearMsg, clearMsg, blobLogEnabled, setBlobLogEnabled, blobLogSize, setBlobLogSize, companionApiEnabled, apiLogEnabled, setApiLogEnabled, apiLogSize, setApiLogSize, setShowInventoryBatchPreview, notifyTestResult, setNotifyTestResult, overlayLogCopied, setOverlayLogCopied, autoDiagEnabled, setAutoDiagEnabled, diagFolderSize, setDiagFolderSize, diagPath, diagCapturing, setDiagCapturing, setDiagPath, reloadDebugSizes, memoryProbing, setMemoryProbing, probeSize, setProbeSize, rawScanning, setRawScanning, rawScanSize, setRawScanSize, memRelicDebugRunning, setMemRelicDebugRunning, relicPickOcrResult, relicPickOcrTesting, setRelicPickOcrTesting, setRelicPickOcrResult, relicPickTestResult, relicPickTestEra, setRelicPickTestEra, setRelicPickTestResult, eeLogTail, setEeLogTail, debugCatEnabled, setDebugCatEnabled, unmatchedPathsSize, setUnmatchedPathsSize, appVersion } = props;
 
   // Preview visibility is local to Settings; live game data always takes precedence.
   const [rewardShown, setRewardShown] = useState(false);
@@ -501,31 +500,6 @@ export default function SettingsModal(props: SettingsModalProps) {
                         if (rivenShown) { hideRivenOverlay().catch(() => {}); setRivenShown(false); }
                         else { showRivenDummy().catch(() => {}); setRivenShown(true); }
                       }}>{rivenShown ? "Hide" : "Show"}</SecondaryButton>
-                  </div>
-                </div>
-
-                {/* Relic Overlay — Memory Trigger */}
-                <div className={SECTION_CLASS}>
-                  <div className={SECTION_TITLE_CLASS}>Memory Trigger <span className="ml-1.5 text-11 font-normal opacity-55">in development</span></div>
-                  <div className={ROW_CLASS}>
-                    <div className={ROW_INFO_CLASS}>
-                      <span className={ROW_LABEL_CLASS}>Use memory scan</span>
-                      <span className={ROW_DESC_CLASS}>
-                        Still in development — for testing only. Polls Warframe's process memory for the reward screen event in parallel with EE.log.
-                        Timing for both paths is written to the session log so they can be compared.
-                        The EE.log overlay is unaffected regardless of this setting.
-                      </span>
-                    </div>
-                    <SecondaryButton
-                      className={toggleButtonClass(memTriggerEnabled)}
-                      onClick={() => {
-                        const next = !memTriggerEnabled;
-                        setMemTriggerEnabled(next);
-                        settingsRef.current = { ...settingsRef.current, memTriggerEnabled: next };
-                        saveAllSettings();
-                        invoke(TAURI_COMMANDS.SET_MEM_TRIGGER_ENABLED, { enabled: next });
-                      }}
-                    >{memTriggerEnabled ? "On" : "Off"}</SecondaryButton>
                   </div>
                 </div>
 
