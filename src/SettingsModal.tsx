@@ -8,6 +8,7 @@ import FilterPresets from "./shared/FilterPresets";
 import { ActionButton, DangerButton, SecondaryButton } from "./shared/ui/ActionButton";
 import { ModalCloseButton } from "./shared/ui/ModalCloseButton";
 import { PREFERENCE_KEYS } from "./constants/preferences";
+import { IS_DEV } from "./constants/app";
 import { CLOCK_FORMAT_OPTIONS, FOUNDRY_PAGE_SIZE_OPTIONS, RELIC_OVERLAY_PRIORITY_OPTIONS, RELIC_PICK_LINES_OPTIONS, RELIC_PICK_PRIORITY_OPTIONS } from "./constants/settings";
 import { TAURI_COMMANDS, TAURI_EVENTS } from "./constants/tauri";
 import type { ArchonShard, QuantityMap } from "./types/items";
@@ -1026,20 +1027,24 @@ export default function SettingsModal(props: SettingsModalProps) {
                       catch (e) { setRelicPickTestResult(`Error: ${e}`); }
                     }}>Launch</SecondaryButton>
 
-                    <div className={ROW_INFO_CLASS}>
-                      <span className={ROW_LABEL_CLASS}>Test Arbitration Summary Overlay</span>
-                      <span className={ROW_DESC_CLASS}>
-                        Fire the post-run overlay with a sample run. Ignores the enable setting.
-                        {arbOverlayTestResult && <span className="mt-0.5 block text-11 text-accent">{arbOverlayTestResult}</span>}
-                      </span>
-                    </div>
-                    <div />
-                    <SecondaryButton onClick={async () => {
-                      setArbOverlayTestResult(null);
-                      try { setArbOverlayTestResult(await invoke<string>("test_arbitration_overlay")); }
-                      catch (e) { setArbOverlayTestResult(`Error: ${e}`); }
-                    }}>Launch</SecondaryButton>
-                    <div />
+                    {IS_DEV && (
+                      <>
+                        <div className={ROW_INFO_CLASS}>
+                          <span className={ROW_LABEL_CLASS}>Test Arbitration Summary Overlay</span>
+                          <span className={ROW_DESC_CLASS}>
+                            Fire the post-run overlay with a sample run. Ignores the enable setting.
+                            {arbOverlayTestResult && <span className="mt-0.5 block text-11 text-accent">{arbOverlayTestResult}</span>}
+                          </span>
+                        </div>
+                        <div />
+                        <SecondaryButton onClick={async () => {
+                          setArbOverlayTestResult(null);
+                          try { setArbOverlayTestResult(await invoke<string>("test_arbitration_overlay")); }
+                          catch (e) { setArbOverlayTestResult(`Error: ${e}`); }
+                        }}>Launch</SecondaryButton>
+                        <div />
+                      </>
+                    )}
 
                     {/* EE.log tail — reveals what string to trigger on */}
                     <div className={ROW_INFO_CLASS}>

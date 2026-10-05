@@ -7,10 +7,14 @@ pub struct TailChunk {
     pub restarted: bool,
 }
 
-#[cfg(windows)]
+/// Volume serial and file index of an open file: two launches write two files
+/// at the same path, and the pair is what tells them apart.
+///
+/// `MetadataExt::file_index` and `volume_serial_number` report the same two
+/// numbers without `unsafe`, but both are still unstable (`windows_by_handle`),
+/// so the raw call is the stable way to get them.
 type FileId = (u32, u32, u32);
 
-#[cfg(windows)]
 fn file_id(file: &std::fs::File) -> std::io::Result<FileId> {
     use std::os::windows::io::AsRawHandle;
     use windows_sys::Win32::Storage::FileSystem::{
@@ -30,15 +34,9 @@ fn file_id(file: &std::fs::File) -> std::io::Result<FileId> {
     ))
 }
 
-#[cfg(unix)]
-type FileId = (u64, u64, Option<std::time::SystemTime>);
-
-#[cfg(unix)]
-fn file_id(file: &std::fs::File) -> std::io::Result<FileId> {
-    use std::os::unix::fs::MetadataExt;
-    let meta = file.metadata()?;
-    Ok((meta.dev(), meta.ino(), meta.created().ok()))
-}
+/// Bytes handed over by a single `read`. A large EE.log is pulled in in
+/// pieces rather than as one allocation.
+const READ_MAX: usize = 1024 * 1024;
 
 pub struct LogTail {
     path: PathBuf,
@@ -101,7 +99,10 @@ impl LogTail {
         let pos = if restarted { 0 } else { self.pos };
         file.seek(SeekFrom::Start(pos)).ok()?;
         let mut bytes = Vec::new();
-        file.read_to_end(&mut bytes).ok()?;
+        (&mut file)
+            .take(READ_MAX as u64)
+            .read_to_end(&mut bytes)
+            .ok()?;
 
         if restarted {
             self.partial_char.clear();
@@ -139,10 +140,9 @@ impl LogTail {
                 }
                 Err(e) => {
                     let valid = e.valid_up_to();
-                    text.push_str(
-                        std::str::from_utf8(&buf[at..at + valid])
-                            .expect("valid_up_to reports a decodable prefix"),
-                    );
+                    // `valid_up_to` guarantees this prefix decodes; lossy keeps
+                    // the loop free of a panic even so.
+                    text.push_str(&String::from_utf8_lossy(&buf[at..at + valid]));
                     match e.error_len() {
                         Some(bad) => at += valid + bad,
                         None => {
@@ -211,6 +211,27 @@ mod log_tail_tests {
 
         append(&path, b"two\n");
         assert_eq!(text_of(&mut tail), "two\n");
+        assert!(tail.read().is_none());
+    }
+
+    /// Startup backfill reads a whole session log: the bound keeps one call
+    /// from allocating the file.
+    #[test]
+    fn a_large_file_is_delivered_in_bounded_pieces() {
+        let path = scratch("large.log");
+        let big = vec![b'a'; READ_MAX + 1024];
+        append(&path, &big);
+
+        let mut tail = LogTail::from_start(path.clone());
+        let first = text_of(&mut tail);
+        assert_eq!(first.len(), READ_MAX, "one read stops at the bound");
+
+        let rest = text_of(&mut tail);
+        assert_eq!(
+            first.len() + rest.len(),
+            READ_MAX + 1024,
+            "the remainder follows in the next read"
+        );
         assert!(tail.read().is_none());
     }
 

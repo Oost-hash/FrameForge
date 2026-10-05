@@ -4,7 +4,7 @@ import { runAlertPass, DEFAULT_LEAD_MINS, EVAL_INTERVAL_MS, type AlertRule, type
 import { useArbitrationSchedule } from "../arbitration/arbitrationSchedule";
 import type { TierKey } from "../arbitration/arbitrationTiers";
 import { TAURI_COMMANDS } from "../constants/tauri";
-import { notify } from "../lib/notify";
+import { notify, permissionGranted } from "../lib/notify";
 import { fmtMs } from "../TimerHelper";
 import type { SettingsFile, SettingsPatch } from "../types/tauri";
 
@@ -47,9 +47,12 @@ export function useArbitrationAlerts(
   // passes reading the same fired state would raise one occurrence twice.
   const checkingRef = useRef(false);
 
-  // Only Arbitrations writes this. It raises the permission prompt on a user
-  // gesture and shows the warning.
+  // Only Arbitrations raises the prompt — it does that on a user gesture — but
+  // a pass the platform refuses sets the flag too, so a blocked alert is shown
+  // instead of retried every tick without a word.
   const [permissionDenied, setPermissionDenied] = useState(false);
+  // One warning per stretch of denial, not one per pass.
+  const deniedLoggedRef = useRef(false);
 
   useEffect(() => {
     if (alertsOn && scheduleError) {
@@ -67,12 +70,29 @@ export function useArbitrationAlerts(
         const nowMs = Date.now();
         const fired = await runAlertPass(
           entries, rule, leadMins, firedRef.current, nowMs / 1000,
-          e => notify(
-            `Arbitration — ${e.node}${e.region ? ` (${e.region})` : ""}`,
-            `${[e.mission_type, e.faction].filter(Boolean).join(" · ")} — ${e.start * 1000 > nowMs
-              ? `starts in ${fmtMs(e.start * 1000 - nowMs)}`
-              : `under way, ${fmtMs(e.end * 1000 - nowMs)} left`}`,
-          ));
+          async e => {
+            const handedOver = await notify(
+              `Arbitration — ${e.node}${e.region ? ` (${e.region})` : ""}`,
+              `${[e.mission_type, e.faction].filter(Boolean).join(" · ")} — ${e.start * 1000 > nowMs
+                ? `starts in ${fmtMs(e.start * 1000 - nowMs)}`
+                : `under way, ${fmtMs(e.end * 1000 - nowMs)} left`}`,
+            );
+            if (handedOver) {
+              deniedLoggedRef.current = false;
+              return true;
+            }
+            // A pass that could not hand over leaves the occurrence out of the
+            // fired list, so the next one offers it again. Say so once rather
+            // than retry in silence.
+            if (!(await permissionGranted())) {
+              if (!deniedLoggedRef.current) {
+                deniedLoggedRef.current = true;
+                console.warn("arbitration alert not sent: notification permission is missing; the occurrence stays due");
+              }
+              setPermissionDenied(true);
+            }
+            return false;
+          });
         if (fired !== null) {
           firedRef.current = fired;
           firedDirtyRef.current = true;

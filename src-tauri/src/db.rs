@@ -1051,6 +1051,30 @@ mod arbitration_storage_tests {
         assert_eq!(stored(&conn).len(), 1);
     }
 
+    /// The uid is the start time plus the node, so two runs on one node at one
+    /// game-time offset in a log without a boot header are one row and the
+    /// second is dropped. `run_uid` documents that as a known collision waiting
+    /// for a header-less log; this test is what makes the drop visible.
+    #[test]
+    fn two_headerless_runs_on_one_node_at_one_offset_store_once() {
+        let conn = db("uid-collision");
+        let mut first = completed_run();
+        first.started_at = None;
+        first.run_start_sec = 100.0;
+        let mut second = first.clone();
+        second.run_end_sec = Some(200.0);
+
+        assert!(
+            store_arbitration_run(&conn, &first).expect("the first run stores"),
+            "a new identity is a new row"
+        );
+        assert!(
+            !store_arbitration_run(&conn, &second).expect("a collision is not an error"),
+            "the colliding run is dropped rather than stored twice"
+        );
+        assert_eq!(stored(&conn).len(), 1);
+    }
+
     /// The parser has already consumed the lines behind a queued run, so a
     /// write that fails has to leave the run recoverable rather than drop it.
     #[test]

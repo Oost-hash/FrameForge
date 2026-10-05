@@ -672,6 +672,7 @@ pub fn run() {
             arbitrations::get_arbitration_runs,
             arbitrations::delete_arbitration_run,
             arbitrations::set_arbitration_overlay_enabled,
+            #[cfg(debug_assertions)]
             arbitrations::test_arbitration_overlay,
             diagnostics::get_warframe_window_rect,
             diagnostics::get_overlay_session_log,

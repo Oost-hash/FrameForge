@@ -475,7 +475,7 @@ impl Parser {
             if ts > 0.0 {
                 run.run_end_sec = Some(ts);
             }
-            let mut events = vec![self.end_run(EndReason::NewMission)];
+            let mut events: Vec<Event> = self.end_run(EndReason::NewMission).into_iter().collect();
             if is_arbitration {
                 events.push(self.start_run(&name, ts));
             }
@@ -495,7 +495,7 @@ impl Parser {
             } else {
                 EndReason::MissionEnd
             };
-            return vec![self.end_run(reason)];
+            return self.end_run(reason).into_iter().collect();
         }
 
         if let Some(sync) = SYNC_CONSUMABLES.captures(line) {
@@ -600,12 +600,13 @@ impl Parser {
     }
 
     pub fn finish(&mut self) -> Option<Run> {
-        self.run
-            .is_some()
-            .then(|| match self.end_run(EndReason::Unterminated) {
-                Event::RunEnded(run) => *run,
-                _ => unreachable!("end_run only builds RunEnded"),
-            })
+        // No active run is not an error: the parser simply has nothing to close.
+        match self.end_run(EndReason::Unterminated)? {
+            Event::RunEnded(run) => Some(*run),
+            // `end_run` builds nothing else; any other event would mean the run
+            // state went out without a summary to hand over.
+            _ => None,
+        }
     }
 
     fn start_run(&mut self, mission_name: &str, ts: f64) -> Event {
@@ -644,8 +645,8 @@ impl Parser {
         }
     }
 
-    fn end_run(&mut self, end_reason: EndReason) -> Event {
-        let r = self.run.take().expect("callers check a run is active");
+    fn end_run(&mut self, end_reason: EndReason) -> Option<Event> {
+        let r = self.run.take()?;
         let drone_kills = r.drone_kills;
         let kills = count_valid_spawns(&r.spawns) + drone_kills;
 
@@ -677,7 +678,7 @@ impl Parser {
                 .map(|d| boot + d)
         });
 
-        Event::RunEnded(Box::new(Run {
+        Some(Event::RunEnded(Box::new(Run {
             started_at,
             run_start_sec: r.run_start_sec,
             run_end_sec: r.run_end_sec,
@@ -699,7 +700,7 @@ impl Parser {
                 std,
                 per_minute,
             },
-        }))
+        })))
     }
 }
 

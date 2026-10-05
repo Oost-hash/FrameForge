@@ -209,8 +209,12 @@ pub(crate) fn get_arbitration_runs(state: State<AppState>) -> Result<Vec<db::Run
 
 #[tauri::command]
 pub(crate) fn delete_arbitration_run(app: tauri::AppHandle, state: State<AppState>, uid: String) -> Result<(), String> {
-    let conn = state.conn.lock().map_err(|e| e.to_string())?;
-    let deleted = db::delete_arbitration_run(&conn, &uid).map_err(|e| e.to_string())?;
+    // The guard stops at the block: nothing holds the database across the
+    // emit below, so no other command can be waiting on it during the IPC.
+    let deleted = {
+        let conn = state.conn.lock().map_err(|e| e.to_string())?;
+        db::delete_arbitration_run(&conn, &uid).map_err(|e| e.to_string())?
+    };
     if !deleted {
         return Err("run not found; the history shown may be out of date".to_string());
     }
@@ -231,7 +235,9 @@ pub(crate) fn set_arbitration_overlay_enabled(state: State<AppState>, enabled: b
     state.arbitration_overlay_enabled.store(enabled, Ordering::SeqCst);
 }
 
-/// Debug: fire the post-run overlay with a made-up completed run.
+/// Debug: fire the post-run overlay with a made-up completed run. Debug builds
+/// only: release binaries have no such surface.
+#[cfg(debug_assertions)]
 #[tauri::command]
 pub(crate) fn test_arbitration_overlay(app: tauri::AppHandle) -> String {
     let summary = db::RunSummary {

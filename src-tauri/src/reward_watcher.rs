@@ -80,13 +80,20 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
         let flag = flag.clone();
         std::thread::spawn(move || {
             let mut arbitration_runs = db::ArbitrationRecorder::default();
+            let existed_at_start = std::fs::metadata(&log_path).is_ok();
             let mut tail = log_tail::LogTail::from_start(log_path.clone());
             // Only arbitration consumes history; old trade prompts and reward overlays
             // must not replay. Keep the parser so an active run can finish live.
-            if let Some(chunk) = tail.read() {
-                arbitrations::record_arbitration_runs(&ee_ocr_app, &mut arbitration_runs, chunk.text, false);
+            // A log that was already there holds history to drain; one that does
+            // not exist yet will only ever contain bytes written while we watch,
+            // so those are live. Drained in pieces so a large file is never one
+            // allocation.
+            if existed_at_start {
+                while let Some(chunk) = tail.read() {
+                    arbitrations::record_arbitration_runs(&ee_ocr_app, &mut arbitration_runs, chunk.text, false);
+                }
             }
-            let mut backfilled = tail.has_read();
+            let mut backfilled = !existed_at_start || tail.has_read();
             let mut pending_lines = String::new();
             let mut active_since: Option<std::time::Instant> = None;
             // Cooldown: don't fire riven-screen-open again within 4 seconds of the last fire.
@@ -151,7 +158,10 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                     last_riven_fire = None;
                     last_relic_pick_trigger = None;
                 }
-                let live = backfilled && !chunk.restarted;
+                // The boundary is known once the tail has read the file at least
+                // once: what follows a replacement file is new bytes of a new
+                // session, so it is live like any other append.
+                let live = backfilled;
                 backfilled = true;
                 let buf = chunk.text;
                 arbitrations::record_arbitration_runs(&ee_ocr_app, &mut arbitration_runs, buf.clone(), live);
