@@ -1,37 +1,12 @@
 use std::path::PathBuf;
 
+use crate::platform::{file_identity, FileId};
+
 pub struct TailChunk {
     pub text: String,
     /// The file this text came from is not the one the previous chunk came
     /// from. Readers holding state across chunks must drop it.
     pub restarted: bool,
-}
-
-/// Volume serial and file index of an open file: two launches write two files
-/// at the same path, and the pair is what tells them apart.
-///
-/// `MetadataExt::file_index` and `volume_serial_number` report the same two
-/// numbers without `unsafe`, but both are still unstable (`windows_by_handle`),
-/// so the raw call is the stable way to get them.
-type FileId = (u32, u32, u32);
-
-fn file_id(file: &std::fs::File) -> std::io::Result<FileId> {
-    use std::os::windows::io::AsRawHandle;
-    use windows_sys::Win32::Storage::FileSystem::{
-        GetFileInformationByHandle, BY_HANDLE_FILE_INFORMATION,
-    };
-
-    let mut info = std::mem::MaybeUninit::<BY_HANDLE_FILE_INFORMATION>::uninit();
-    // The handle stays open for this call; the API initializes info on success.
-    if unsafe { GetFileInformationByHandle(file.as_raw_handle() as _, info.as_mut_ptr()) } == 0 {
-        return Err(std::io::Error::last_os_error());
-    }
-    let info = unsafe { info.assume_init() };
-    Ok((
-        info.dwVolumeSerialNumber,
-        info.nFileIndexHigh,
-        info.nFileIndexLow,
-    ))
 }
 
 /// Bytes handed over by a single `read`. A large EE.log is pulled in in
@@ -75,7 +50,7 @@ impl LogTail {
     pub fn from_end(path: PathBuf) -> Self {
         let seen = std::fs::File::open(&path)
             .ok()
-            .and_then(|file| Some((file.metadata().ok()?.len(), file_id(&file).ok()?)));
+            .and_then(|file| Some((file.metadata().ok()?.len(), file_identity(&file).ok()?)));
         Self {
             pos: seen.as_ref().map_or(0, |(len, _)| *len),
             file_id: seen.map(|(_, id)| id),
@@ -94,7 +69,7 @@ impl LogTail {
         let meta = file.metadata().ok()?;
         // Identity and bytes must come from the same open file. A failed identity
         // query leaves the cursor untouched so the next filesystem event can retry.
-        let id = file_id(&file).ok()?;
+        let id = file_identity(&file).ok()?;
         let restarted = self.file_id.is_some_and(|seen| seen != id) || meta.len() < self.pos;
         let pos = if restarted { 0 } else { self.pos };
         file.seek(SeekFrom::Start(pos)).ok()?;
