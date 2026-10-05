@@ -242,10 +242,10 @@ export default function RelicPickOverlay() {
         }
       } catch {}
     });
-    const unPreview = listen<RelicPickPayload>(TAURI_EVENTS.RELIC_PICK_PREVIEW, e => {
+    const unPreview = listen(TAURI_EVENTS.RELIC_PICK_PREVIEW, () => {
       if (sourceRef.current === "live") return;
       setOverlaySource("preview");
-      setPayload(e.payload);
+      setPayload(null);
     });
     const unClose = listen(TAURI_EVENTS.RELIC_PICK_CLOSE, () => hide());
     const unPreviewClose = listen(TAURI_EVENTS.RELIC_PICK_PREVIEW_CLOSE, () => {

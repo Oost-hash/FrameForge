@@ -24,8 +24,8 @@ export async function showRewardOverlay(): Promise<void> {
   const offsetY = Math.round(wh * 0.60);
   const stripH = Math.min(Math.round(wh * 0.30 * overlayScale()), wh - offsetY);
   try {
-    await emit(TAURI_EVENTS.RELIC_REWARD_PREVIEW, {});
     await invoke("show_overlay_window", { x: wx, y: wy + offsetY, w: ww, h: stripH });
+    await emit(TAURI_EVENTS.RELIC_REWARD_PREVIEW, {});
   } catch {}
 }
 
@@ -34,7 +34,8 @@ export async function hideRewardOverlay(): Promise<void> {
 }
 
 export async function showPickOverlay(): Promise<void> {
-  await invoke(TAURI_COMMANDS.TEST_RELIC_PICK, { era: "ALL" }).catch(() => {});
+  await emit(TAURI_EVENTS.RELIC_PICK_PREVIEW, {});
+  await invoke(TAURI_COMMANDS.SHOW_RELIC_PICK).catch(() => {});
 }
 
 export async function placePickOverlay(): Promise<void> {

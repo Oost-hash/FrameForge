@@ -95,8 +95,19 @@ export default function SettingsModal(props: SettingsModalProps) {
   const [pickShown,   setPickShown]   = useState(false);
   const [rivenShown,    setRivenShown]    = useState(false);
   const [notifPermissionDenied, setNotifPermissionDenied] = useState(false);
+  const closePreviews = () => {
+    if (rewardShown) hideRewardOverlay().catch(() => {});
+    if (pickShown) hidePickOverlay().catch(() => {});
+    if (rivenShown) hideRivenOverlay().catch(() => {});
+    setRewardShown(false);
+    setPickShown(false);
+    setRivenShown(false);
+  };
+  const closeSettings = () => {
+    closePreviews();
+    props.onClose();
+  };
   if (!props.open) return null;
-  const onClose = props.onClose;
 
   // ── Position offset row (Settings → Overlays) ─────────────────────────────
   // Adds a pixel delta on top of the overlay's built-in placement; 0 = default.
@@ -154,7 +165,7 @@ export default function SettingsModal(props: SettingsModalProps) {
   };
 
   return (
-      <div className="fixed inset-0 z-300 flex items-center justify-center bg-black/60 p-5" onClick={() => onClose()}>
+      <div className="fixed inset-0 z-300 flex items-center justify-center bg-black/60 p-5" onClick={closeSettings}>
         <div
           className={`flex w-[min(849px,95vw)] flex-col rounded-12 border border-border bg-surface shadow-[0_20px_60px_rgba(0,0,0,.6)] settings-modal-${settingsTab}`}
           style={{ height: "calc(90vh / var(--ff-scale, 1))", maxHeight: "calc(90vh / var(--ff-scale, 1))" }}
@@ -162,7 +173,7 @@ export default function SettingsModal(props: SettingsModalProps) {
         >
           <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
             <span className="text-15 font-semibold">Settings</span>
-            <ModalCloseButton onClick={() => onClose()}>✕</ModalCloseButton>
+            <ModalCloseButton onClick={closeSettings}>✕</ModalCloseButton>
           </div>
 
           <div className="flex min-h-0 flex-1">
@@ -774,7 +785,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                       <span className={ROW_LABEL_CLASS}>Catalog</span>
                       <span className={ROW_DESC_CLASS}>{itemCount.toLocaleString()} items · {recipeCount.toLocaleString()} recipes cached</span>
                     </div>
-                    <SecondaryButton onClick={() => { onClose(); handleFetch(); }} disabled={fetching}>
+                    <SecondaryButton onClick={() => { closeSettings(); handleFetch(); }} disabled={fetching}>
                       {fetching ? "Fetching…" : "Refresh"}
                     </SecondaryButton>
                   </div>
