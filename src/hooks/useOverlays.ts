@@ -31,7 +31,9 @@ export function useOverlays(
 
   // ── Riven overlay ─────────────────────────────────────────────────────────
   useEffect(() => {
+    let rivenRun = 0;
     const runRivenCheck = async () => {
+      const run = ++rivenRun;
       setRivenLastTriggerMs(Date.now());
       incrementRivenRollCount();
 
@@ -39,6 +41,7 @@ export function useOverlays(
       try { rect = await invoke<WarframeWindowRect>("get_warframe_window_rect"); } catch {}
       const [wx, wy, , wh] = rect;
       const result = await ensureRivenWindow(wx, wy, wh);
+      if (run !== rivenRun) return;
       let pendingPayload: RivenAnalysisUpdate | null = null;
       let windowReady = false;
 
@@ -49,6 +52,7 @@ export function useOverlays(
         const unsubReady = await listen(TAURI_EVENTS.RIVEN_WINDOW_READY, async () => {
           unsubReady();
           windowReady = true;
+          if (run !== rivenRun) return;
           if (pendingPayload) { await emit(TAURI_EVENTS.RIVEN_ANALYSIS_UPDATE, pendingPayload).catch(() => {}); pendingPayload = null; }
         });
       }
@@ -59,11 +63,13 @@ export function useOverlays(
           ? await invoke<RivenAnalysis | null>(TAURI_COMMANDS.ANALYZE_RIVEN, { weapon: ocrResult.weapon, positives: ocrResult.positives, negatives: ocrResult.negatives } satisfies AnalyzeRivenArgs).catch(() => null)
           : null;
         const payload: RivenAnalysisUpdate = { analysis, ocrRaw: ocrResult.raw, weapon: ocrResult.weapon, positives: ocrResult.positives, negatives: ocrResult.negatives, rolledStats: ocrResult.rolled_stats, isComparison: ocrResult.is_comparison, originalStats: ocrResult.original_rolled_stats, rollCount: getRivenRollCount() };
+        if (run !== rivenRun) return;
         if (windowReady) { await emit(TAURI_EVENTS.RIVEN_ANALYSIS_UPDATE, payload).catch(() => {}); }
         else              { pendingPayload = payload; }
       } catch (e) {
         await invoke("ocr_riven_log_error", { error: String(e) }).catch(() => {});
         const payload: RivenAnalysisUpdate = { analysis: null, ocrRaw: `OCR ERROR: ${e}`, weapon: "", positives: [], negatives: [], rolledStats: [], isComparison: false, originalStats: [], rollCount: getRivenRollCount() };
+        if (run !== rivenRun) return;
         if (windowReady) { await emit(TAURI_EVENTS.RIVEN_ANALYSIS_UPDATE, payload).catch(() => {}); }
         else              { pendingPayload = payload; }
       }
@@ -79,12 +85,17 @@ export function useOverlays(
       runRivenCheck().catch(() => {});
     };
     const unsubAutoDetect = listen(TAURI_EVENTS.RIVEN_SCREEN_OPEN, () => {
+      if (localStorage.getItem(PREFERENCE_KEYS.OVERLAYS_ENABLED) === "false") return;
       if (localStorage.getItem(PREFERENCE_KEYS.RIVEN_OVERLAY_ENABLED) === "false") return;
       triggerOpen();
     });
 
     const unsubClose   = listen(TAURI_EVENTS.RIVEN_SCREEN_CLOSE,   () => rivenWinHide("screen-close"));
     const unsubHideReq = listen<{ reason?: string }>(TAURI_EVENTS.RIVEN_OVERLAY_HIDE, e => rivenWinHide(e.payload?.reason ?? "overlay-hide"));
+    const unsubOverlaysDisabled = listen(TAURI_EVENTS.OVERLAYS_DISABLED, () => {
+      rivenRun += 1;
+      rivenWinHide("overlays-disabled");
+    });
     const unsubSettings = listen(TAURI_EVENTS.SETTINGS_UPDATED, () => { void resizeRivenForScale(); });
 
     return () => {
@@ -92,6 +103,7 @@ export function useOverlays(
       unsubAutoDetect.then(fn => fn());
       unsubClose.then(fn => fn());
       unsubHideReq.then(fn => fn());
+      unsubOverlaysDisabled.then(fn => fn());
       unsubSettings.then(fn => fn());
       setRivenManualTrigger(null);
     };
@@ -100,8 +112,10 @@ export function useOverlays(
   // ── Relic reward overlay ──────────────────────────────────────────────────
   useEffect(() => {
     let overlayVisible = false;
+    let overlayRun = 0;
 
     const closeOverlay = async () => {
+      overlayRun += 1;
       overlayVisible = false;
       await invoke(TAURI_COMMANDS.MOVE_OVERLAY_OFFSCREEN).catch(() => {});
     };
@@ -114,6 +128,7 @@ export function useOverlays(
     const openOverlay = async (
       wx: number, wy: number, ww: number, wh: number,
       yFrac: number, hFrac: number,
+      run: number,
     ): Promise<boolean> => {
       const offsetY = Math.round(wh * yFrac);
       const stripH  = Math.min(Math.round(wh * hFrac * overlayScale()), wh - offsetY);
@@ -121,42 +136,55 @@ export function useOverlays(
       try {
         const bounds: OverlayWindowBounds = { x: wx, y: stripY, w: ww, h: stripH };
         await invoke("show_overlay_window", bounds);
+        if (run !== overlayRun || localStorage.getItem(PREFERENCE_KEYS.OVERLAYS_ENABLED) === "false") {
+          await invoke(TAURI_COMMANDS.MOVE_OVERLAY_OFFSCREEN).catch(() => {});
+          return false;
+        }
         overlayVisible = true;
         return true;
       } catch { return false; }
     };
 
     const unsubTrigger = listen<null>(TAURI_EVENTS.RELIC_TRIGGER, async () => {
-      const enabled = localStorage.getItem(PREFERENCE_KEYS.OVERLAY_ENABLED) !== "false";
+      const enabled = localStorage.getItem(PREFERENCE_KEYS.OVERLAYS_ENABLED) !== "false"
+        && localStorage.getItem(PREFERENCE_KEYS.OVERLAY_ENABLED) !== "false";
       if (!enabled) return;
+      const run = ++overlayRun;
       try {
         const [wx, wy, ww, wh] = await invoke<WarframeWindowRect>("get_warframe_window_rect");
+        if (run !== overlayRun || localStorage.getItem(PREFERENCE_KEYS.OVERLAYS_ENABLED) === "false") return;
         invoke(TAURI_COMMANDS.LOG_RELIC_FE, { msg: `[APP] relic-trigger: wf(${wx},${wy} ${ww}×${wh})` }).catch(() => {});
-        await openOverlay(wx, wy, ww, wh, 0.60, 0.30);
+        await openOverlay(wx, wy, ww, wh, 0.60, 0.30, run);
       } catch (e) {
+        if (run !== overlayRun || localStorage.getItem(PREFERENCE_KEYS.OVERLAYS_ENABLED) === "false") return;
         invoke(TAURI_COMMANDS.LOG_RELIC_FE, { msg: `[APP] relic-trigger: wf-rect failed (${e}), falling back to screen dims` }).catch(() => {});
         const sw = window.screen.width, sh = window.screen.height;
-        await openOverlay(0, 0, sw, sh, 0.60, 0.30);
+        await openOverlay(0, 0, sw, sh, 0.60, 0.30, run);
       }
     });
 
     const unsubRelic = listen<boolean>(TAURI_EVENTS.RELIC_SCREEN, () => { closeOverlay(); });
+    const unsubOverlaysDisabled = listen(TAURI_EVENTS.OVERLAYS_DISABLED, () => { closeOverlay(); });
 
     const unsub = listen<RelicRewardsPayload | null>(TAURI_EVENTS.RELIC_REWARDS, async (e) => {
       const rewards = e.payload;
       if (!rewards || rewards.items.length === 0) { closeOverlay(); return; }
-      const enabled = localStorage.getItem(PREFERENCE_KEYS.OVERLAY_ENABLED) !== "false";
+      const enabled = localStorage.getItem(PREFERENCE_KEYS.OVERLAYS_ENABLED) !== "false"
+        && localStorage.getItem(PREFERENCE_KEYS.OVERLAY_ENABLED) !== "false";
       if (!enabled) return;
+      const run = ++overlayRun;
       invoke(TAURI_COMMANDS.LOG_RELIC_FE, { msg: `[APP] relic-rewards: ${rewards.items.length} items, overlayVisible=${overlayVisible}` }).catch(() => {});
       if (!overlayVisible) {
         try {
           const [wx, wy, ww, wh] = await invoke<WarframeWindowRect>("get_warframe_window_rect");
+          if (run !== overlayRun || localStorage.getItem(PREFERENCE_KEYS.OVERLAYS_ENABLED) === "false") return;
           invoke(TAURI_COMMANDS.LOG_RELIC_FE, { msg: `[APP] relic-rewards fallback: wf(${wx},${wy} ${ww}×${wh})` }).catch(() => {});
-          await openOverlay(wx, wy, ww, wh, 0.54, 0.28);
+          await openOverlay(wx, wy, ww, wh, 0.54, 0.28, run);
         } catch (err) {
+          if (run !== overlayRun || localStorage.getItem(PREFERENCE_KEYS.OVERLAYS_ENABLED) === "false") return;
           invoke(TAURI_COMMANDS.LOG_RELIC_FE, { msg: `[APP] relic-rewards fallback: wf-rect failed (${err}), using screen dims` }).catch(() => {});
           const sw = window.screen.width, sh = window.screen.height;
-          await openOverlay(0, 0, sw, sh, 0.54, 0.28);
+          await openOverlay(0, 0, sw, sh, 0.54, 0.28, run);
         }
       }
     });
@@ -169,6 +197,7 @@ export function useOverlays(
     return () => {
       unsub.then(fn => fn());
       unsubRelic.then(fn => fn());
+      unsubOverlaysDisabled.then(fn => fn());
       unsubTrigger.then(fn => fn());
       unsubStatus.then(fn => fn());
       unsubReward.then(fn => fn());

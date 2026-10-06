@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use tauri::{Emitter, Manager, State};
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
 
 use crate::app_state::AppState;
 use crate::events;
@@ -328,53 +328,6 @@ pub(crate) fn move_overlay_offscreen(app: tauri::AppHandle) -> Result<(), String
             tauri::PhysicalPosition { x: 0, y: -3000 }
         ));
     }
-    Ok(())
-}
-
-/// Show the pre-declared overlay-test window.
-/// Pre-declared in tauri.conf.json so WebView2 initialises during app startup
-/// (dynamic build() deadlocks because the Win32 event loop can't process messages while
-/// the calling closure is running).
-#[tauri::command]
-pub(crate) fn show_test_overlay_window(app: tauri::AppHandle) -> Result<(), String> {
-    use tauri::Manager;
-    let win = app.get_webview_window("overlay-test")
-        .ok_or_else(|| "overlay-test window not found".to_string())?;
-    // Move to a visible position using logical coords (DPI-safe)
-    let _ = win.set_position(tauri::Position::Logical(
-        tauri::LogicalPosition { x: 400.0, y: 300.0 }
-    ));
-    let _ = win.set_always_on_top(true);
-    let _ = win.set_focus();
-    // Log current URL and force navigation in case WebView2 deferred loading while off-screen
-    match win.url() {
-        Ok(url) => {
-            debug!(%url, "current url");
-            // Only re-navigate if we're on blank (WebView2 never loaded the app URL)
-            if url.as_str() == "about:blank" || url.as_str().starts_with("about:") {
-                debug!("was on about:blank, navigating to app URL");
-                if let Ok(nav_url) = tauri::Url::parse("http://localhost:1420/index.html?overlaytest") {
-                    let _ = win.navigate(nav_url);
-                }
-            }
-        }
-        Err(e) => warn!(error = %e, "url() error"),
-    }
-    debug!("show_test_overlay_window: moved to logical(400,300), alwaysOnTop=true");
-    Ok(())
-}
-
-/// Move the overlay-test window back off-screen and remove always-on-top.
-#[tauri::command]
-pub(crate) fn hide_test_overlay_window(app: tauri::AppHandle) -> Result<(), String> {
-    use tauri::Manager;
-    let win = app.get_webview_window("overlay-test")
-        .ok_or_else(|| "overlay-test window not found".to_string())?;
-    let _ = win.set_always_on_top(false);
-    let _ = win.set_position(tauri::Position::Physical(
-        tauri::PhysicalPosition { x: 0, y: -3000 }
-    ));
-    debug!("hide_test_overlay_window: moved offscreen");
     Ok(())
 }
 
