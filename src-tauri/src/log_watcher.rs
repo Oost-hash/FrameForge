@@ -700,19 +700,45 @@ pub(crate) fn auto_dismiss_relic_rewards(
     reward_screen_active: &std::sync::Arc<std::sync::atomic::AtomicBool>,
     active_since: &mut Option<std::time::Instant>,
     last_dismiss_at: &mut Option<std::time::Instant>,
+    rewards_emitted_ms: &std::sync::Arc<std::sync::atomic::AtomicU64>,
 ) {
     let Some(since) = *active_since else { return };
     if since.elapsed().as_secs() < 20 {
         return;
     }
+    close_reward_overlay(
+        app,
+        session_log_path,
+        diag_dir,
+        reward_screen_active,
+        active_since,
+        last_dismiss_at,
+        rewards_emitted_ms,
+        "AUTO-DISMISS (20s timeout)",
+    );
+}
+
+/// Hide the reward overlay now and clear its state. Used by the 20 s timeout and
+/// when the relic-pick grid opens (the reward screen has closed by then, even if
+/// its "shut down" line hasn't reached EE.log yet). Skips the 5 s minimum display.
+pub(crate) fn close_reward_overlay(
+    app: &tauri::AppHandle,
+    session_log_path: &std::path::Path,
+    diag_dir: &std::sync::Arc<std::sync::Mutex<Option<std::path::PathBuf>>>,
+    reward_screen_active: &std::sync::Arc<std::sync::atomic::AtomicBool>,
+    active_since: &mut Option<std::time::Instant>,
+    last_dismiss_at: &mut Option<std::time::Instant>,
+    rewards_emitted_ms: &std::sync::Arc<std::sync::atomic::AtomicU64>,
+    reason: &str,
+) {
+    let open_for = active_since.map(|since| since.elapsed().as_secs_f64());
     append_to_diag(
         session_log_path,
         &format!(
-            "[STEP 4] AUTO-DISMISS (20s timeout)\n\\
-             ├─ Time     : {}\n\\
-             └─ Open for : {:.1}s\n\n",
+            "[STEP 4] {}\n├─ Time     : {}\n└─ Open for : {}\n\n",
+            reason,
             chrono::Local::now().format("%H:%M:%S%.3f"),
-            since.elapsed().as_secs_f64(),
+            open_for.map(|seconds| format!("{seconds:.1}s")).unwrap_or_else(|| "(unknown)".to_string()),
         ),
     );
     if let Ok(mut guard) = diag_dir.lock() {
@@ -723,6 +749,7 @@ pub(crate) fn auto_dismiss_relic_rewards(
     reward_screen_active.store(false, Ordering::SeqCst);
     *active_since = None;
     *last_dismiss_at = Some(std::time::Instant::now());
+    rewards_emitted_ms.store(0, Ordering::SeqCst);
     if let Some(window) = app.get_webview_window("relic-overlay") {
         let _ = window.set_position(tauri::Position::Physical(
             tauri::PhysicalPosition { x: 0, y: -3000 },

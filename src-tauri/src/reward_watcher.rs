@@ -123,15 +123,19 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
             let use_notify = change_handle != -1isize; // -1 = INVALID_HANDLE_VALUE
 
             loop {
+                // While a reward screen is up, poll much more often so the closing
+                // line is picked up quickly. The 20 s auto-dismiss still applies.
+                let reward_active = reward_screen_active2.load(Ordering::SeqCst);
+                let idle_wait_ms: u32 = if reward_active { 50 } else { 500 };
                 if use_notify {
                     use windows_sys::Win32::System::Threading::WaitForSingleObject;
                     use windows_sys::Win32::Storage::FileSystem::FindNextChangeNotification;
-                    // Block until a write lands in the EE.log directory (500 ms safety timeout
-                    // keeps the flag check alive even when the game isn't writing).
-                    unsafe { WaitForSingleObject(change_handle, 500); }
+                    // Block until a write lands in the EE.log directory (the timeout keeps
+                    // the flag check alive even when the game isn't writing).
+                    unsafe { WaitForSingleObject(change_handle, idle_wait_ms); }
                     unsafe { FindNextChangeNotification(change_handle); }
                 } else {
-                    std::thread::sleep(std::time::Duration::from_millis(200));
+                    std::thread::sleep(std::time::Duration::from_millis(idle_wait_ms.min(200) as u64));
                 }
                 let Ok(mut f) = std::fs::File::open(&log_path) else { continue };
                 let len = std::fs::metadata(&log_path).map(|m| m.len()).unwrap_or(0);
@@ -193,6 +197,23 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                         projection_state: &mut vp_state,
                     },
                 );
+
+                // The relic-pick grid only opens after the reward screen has closed.
+                // Hide the reward overlay now rather than waiting for the "shut down" line.
+                if active_since.is_some()
+                    && lower.contains("themedprojectionmanager.lua: populateinventorygrid")
+                {
+                    log_watcher::close_reward_overlay(
+                        &ee_ocr_app,
+                        &session_log_path,
+                        &diag_arc,
+                        &reward_screen_active2,
+                        &mut active_since,
+                        &mut last_dismiss_at,
+                        &rewards_emitted_ms_ee,
+                        "PICK SCREEN OPENED (reward screen closed)",
+                    );
+                }
 
                 // ── Trigger: skip if dismiss in same batch, screen already active,
                 //    within 60 s of last dismiss, or the memory scanner is off (this
@@ -448,6 +469,7 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                     &reward_screen_active2,
                     &mut active_since,
                     &mut last_dismiss_at,
+                    &rewards_emitted_ms_ee,
                 );
             }
         });
