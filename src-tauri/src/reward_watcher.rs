@@ -262,6 +262,9 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                     let names_arc    = Arc::clone(&shared_squad_names);
                     let diag_arc2    = Arc::clone(&diag_arc);
                     tauri::async_runtime::spawn(async move {
+                        if !app.state::<AppState>().overlays_enabled.load(Ordering::SeqCst) {
+                            return;
+                        }
                         let deadline = std::time::Instant::now()
                             + std::time::Duration::from_secs(45);
                         log_watcher::wait_for_squad_hint(&squad_arc).await;
