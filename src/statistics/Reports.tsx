@@ -249,7 +249,7 @@ function fmtK(n: number): string {
 }
 
 function PlatIcon({ size = 14 }: { size?: number }) {
-  return <img src="/platinum.webp" alt="" width={size} height={size} className="shrink-0 object-contain align-middle" />;
+  return <img src="/platinum.webp" alt="" width={size} height={size} className="inline-block shrink-0 object-contain align-middle" />;
 }
 
 // ── SVG Donut Chart ─────────────────────────────────────────────────────────

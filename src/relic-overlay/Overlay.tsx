@@ -201,10 +201,10 @@ function bestPickIndex(items: RewardItem[], priority: RelicOverlayPriority): num
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 function PlatIcon({ size = 14 }: { size?: number }) {
-  return <img src="/platinum.webp" alt="p" width={size} height={size} className="shrink-0 object-contain align-middle" />;
+  return <img src="/platinum.webp" alt="p" width={size} height={size} className="inline-block shrink-0 object-contain align-middle" />;
 }
 function DucatIcon({ size = 14 }: { size?: number }) {
-  return <img src="/ducats.webp" alt="d" width={size} height={size} className="shrink-0 object-contain align-middle" />;
+  return <img src="/ducats.webp" alt="d" width={size} height={size} className="inline-block shrink-0 object-contain align-middle" />;
 }
 
 // ─── Column layout ────────────────────────────────────────────────────────────
