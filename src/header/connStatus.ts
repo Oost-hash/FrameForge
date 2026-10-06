@@ -30,7 +30,7 @@ export const CONN_STATUS: Record<ConnState, { chip: string; dot: string; detail:
   },
   overlay: {
     chip: "border-overlay-chip/25",
-    dot: "bg-connected animate-[pulse-ocr_1.2s_ease-in-out_infinite]",
+    dot: "bg-connected animate-pulse-ocr",
     detail: "text-connected font-mono",
   },
 };

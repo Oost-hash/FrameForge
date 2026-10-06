@@ -88,26 +88,26 @@ const GROUP_LABELS: Record<SynGroup, string> = {
 const SYN_ROOT_CLASS = "flex flex-1 min-h-0 flex-col overflow-hidden bg-background text-foreground";
 const SYN_GROUPS_CLASS = "flex shrink-0 gap-0.5 border-b border-border px-3 pt-2 pb-1";
 const SYN_GROUP_BTN_CLASS = "cursor-pointer rounded-4 border px-3.5 py-1 text-12 font-medium transition-all duration-150";
-const SYN_GROUP_IDLE_CLASS = "border-border bg-transparent text-dim hover:bg-[var(--hover)] hover:text-foreground";
-const SYN_GROUP_ACTIVE_CLASS = "border-accent bg-[var(--bg-card)] text-foreground";
+const SYN_GROUP_IDLE_CLASS = "border-border bg-transparent text-muted hover:bg-white/6 hover:text-foreground";
+const SYN_GROUP_ACTIVE_CLASS = "border-accent bg-surface text-foreground";
 const SYN_TABS_CLASS = "flex shrink-0 flex-wrap gap-0.5 border-b border-border px-3 pt-1.5";
 const SYN_TAB_CLASS = "-mb-px cursor-pointer rounded-t-6 border-0 border-b-3 px-3.5 py-1.5 text-13 font-medium transition-[background,color] duration-150";
-const SYN_TAB_IDLE_CLASS = "border-transparent bg-transparent text-dim hover:bg-[var(--hover)] hover:text-foreground";
-const SYN_TAB_ACTIVE_CLASS = "border-[var(--syn-color,#888)] bg-[var(--bg-card)] text-foreground";
+const SYN_TAB_IDLE_CLASS = "border-transparent bg-transparent text-muted hover:bg-white/6 hover:text-foreground";
+const SYN_TAB_ACTIVE_CLASS = "border-[var(--syn-color,#888)] bg-surface text-foreground";
 const SYN_TOOLBAR_CLASS = "flex shrink-0 items-center gap-3 px-3.5 pb-1.5 pt-2.5";
-const SYN_SEARCH_CLASS = "w-40 shrink-0 rounded-5 border border-border bg-[var(--bg-card)] px-2 py-1 text-12 text-foreground placeholder:text-dim focus:border-accent focus:outline-none";
+const SYN_SEARCH_CLASS = "w-40 shrink-0 rounded-5 border border-border bg-surface px-2 py-1 text-12 text-foreground placeholder:text-muted focus:border-accent focus:outline-none";
 const SYN_PROGRESS_WRAP_CLASS = "flex flex-1 items-center gap-2";
 const SYN_PROGRESS_BAR_CLASS = "h-1.5 max-w-50 flex-1 overflow-hidden rounded-3 bg-border";
 const SYN_PROGRESS_FILL_CLASS = "h-full rounded-3 bg-[var(--syn-color,#888)] transition-[width] duration-300";
-const SYN_PROGRESS_LABEL_CLASS = "whitespace-nowrap text-12 text-dim";
+const SYN_PROGRESS_LABEL_CLASS = "whitespace-nowrap text-12 text-muted";
 const SYN_FILTER_CLASS = "cursor-pointer rounded-5 border px-2.5 py-1 text-12 transition-all duration-150";
-const SYN_FILTER_IDLE_CLASS = "border-border bg-transparent text-dim";
+const SYN_FILTER_IDLE_CLASS = "border-border bg-transparent text-muted";
 const SYN_FILTER_ACTIVE_CLASS = "border-[var(--syn-color,#888)] bg-[var(--syn-color,#888)] text-white";
 const SYN_BODY_CLASS = "flex-1 overflow-y-auto px-3 pb-4 pt-2";
 const SYN_TIER_GROUP_CLASS = "mb-5";
-const SYN_TIER_HEADER_CLASS = "mb-1.5 border-b border-border pb-1.5 pt-1 text-11 font-semibold uppercase tracking-0.06 text-dim";
+const SYN_TIER_HEADER_CLASS = "mb-1.5 border-b border-border pb-1.5 pt-1 text-11 font-semibold uppercase tracking-0.06 text-muted";
 const SYN_GRID_CLASS = "grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-1";
-const SYN_ITEM_CLASS = "flex items-center gap-2.5 rounded-5 border px-2 py-1.5 transition-[background,border-color] duration-100 hover:bg-[var(--hover)]";
+const SYN_ITEM_CLASS = "flex items-center gap-2.5 rounded-5 border px-2 py-1.5 transition-[background,border-color] duration-100 hover:bg-white/6";
 const SYN_ITEM_ROW_CLASS: Record<CompStatus, string> = {
   complete:  "border-complete/20 hover:border-complete/20",
   blueprint: "border-ducat/20 hover:border-ducat/20",
@@ -116,16 +116,16 @@ const SYN_ITEM_ROW_CLASS: Record<CompStatus, string> = {
 };
 const SYN_ITEM_INFO_CLASS = "min-w-0 flex-1";
 const SYN_ITEM_NAME_CLASS = "truncate text-13";
-const SYN_ITEM_CAT_CLASS = "mt-px text-11 text-dim";
+const SYN_ITEM_CAT_CLASS = "mt-px text-11 text-muted";
 const SYN_STATUS_BASE_CLASS = "min-w-7 shrink-0 rounded-4 px-1.75 py-0.5 text-center text-11 font-bold";
 const SYN_STATUS_CLASS: Record<CompStatus, string> = {
   complete:  "bg-complete/15 text-complete",
   blueprint: "bg-ducat/15 text-ducat",
   subsumed:  "bg-subsumed/12 text-subsumed",
-  none:      "bg-rank-none/8 text-dim",
+  none:      "bg-rank-none/8 text-muted",
 };
-const SYN_EMPTY_CLASS = "py-10 text-center text-14 text-dim";
-const SYN_LOADING_CLASS = "py-15 text-center text-14 text-dim";
+const SYN_EMPTY_CLASS = "py-10 text-center text-14 text-muted";
+const SYN_LOADING_CLASS = "py-15 text-center text-14 text-muted";
 
 // ── Status badge ─────────────────────────────────────────────────────────────
 
@@ -313,7 +313,7 @@ export default function Syndicates({ inventory, filters, onFiltersChange }: Prop
             <div key={tier} className={SYN_TIER_GROUP_CLASS}>
               <div className={SYN_TIER_HEADER_CLASS}>
                 {tier || "General"}
-                <span className="ml-1.5 font-normal text-dim">
+                <span className="ml-1.5 font-normal text-muted">
                   — {tierComplete}/{items.length}
                 </span>
               </div>

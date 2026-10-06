@@ -24,7 +24,7 @@ async function saveOverlayRoll(
   await emit(TAURI_EVENTS.RIVEN_ROLL_SAVED).catch(() => {});
 }
 
-import "./RivenOverlayWindow.css";
+
 
 // ── Tailwind class constants (formerly RivenOverlayWindow.css) ────────────────
 
@@ -107,15 +107,15 @@ const requestHide = (reason: string) => {
 };
 
 function verdictColor(verdict: string): string {
-  if (verdict.startsWith("GREAT"))    return "var(--green)";
+  if (verdict.startsWith("GREAT"))    return "var(--color-success)";
   if (verdict.startsWith("GOOD"))     return "#a8d8a8";
   if (verdict.startsWith("MEDIOCRE")) return "#f0c040";
-  return "var(--red)";
+  return "var(--color-danger)";
 }
 
 function ScoreBar({ score }: { score: number }) {
   const pct = Math.round(score * 100);
-  const color = score >= 0.8 ? "var(--green)" : score >= 0.6 ? "#a8d8a8" : score >= 0.4 ? "#f0c040" : "var(--red)";
+  const color = score >= 0.8 ? "var(--color-success)" : score >= 0.6 ? "#a8d8a8" : score >= 0.4 ? "#f0c040" : "var(--color-danger)";
   return (
     <div className={ROV_SCORE_WRAP}>
       <div className={ROV_SCORE_TRACK}>

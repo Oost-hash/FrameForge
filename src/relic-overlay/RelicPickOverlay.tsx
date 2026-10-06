@@ -8,13 +8,13 @@ import { TAURI_COMMANDS, TAURI_EVENTS } from "../constants/tauri";
 import type { SettingsFile } from "../types/tauri";
 import type { RelicPickPayload, RelicPickRelic, RelicPickReward } from "../types/relics";
 import type { RelicPickLines, RelicPickPriority } from "../types/settings";
-import "./RelicPickOverlay.css";
+
 
 // ── Tailwind class constants (formerly RelicPickOverlay.css) ──────────────────
-// Note: body transparency stays in RelicPickOverlay.css (document context).
+// Note: body transparency stays in the Tailwind entry (document context).
 
 const RPO_ROOT =
-  "flex flex-col gap-1 py-1.5 px-2 bg-background/92 border border-accent/40 rounded-8 text-12 text-[color:var(--text,#e6edf3)] w-full h-auto backdrop-blur-xs";
+  "flex flex-col gap-1 py-1.5 px-2 bg-background/92 border border-accent/40 rounded-8 text-12 text-[color:var(--color-foreground,#e6edf3)] w-full h-auto backdrop-blur-xs";
 
 const RPO_HEADER = "flex items-center gap-1.5 shrink-0";
 const RPO_TITLE =

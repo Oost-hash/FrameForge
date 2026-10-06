@@ -11,7 +11,14 @@ import { FilterBar, FilterChip, FilterLabel, FilterSeparator } from "../shared/u
 const TOOLBAR = "flex items-center gap-3 px-4 py-2.5 border-b border-border shrink-0";
 const ITEM_COUNT_LABEL = "text-muted text-11 whitespace-nowrap";
 const IMAGE_TOGGLE =
-  "inventory-image-toggle flex items-center gap-1.25 shrink-0 text-muted cursor-pointer text-11 whitespace-nowrap hover:text-foreground";
+  "group/images flex items-center gap-1.25 shrink-0 text-muted cursor-pointer text-11 whitespace-nowrap hover:text-foreground";
+const IMAGE_CHECK =
+  "appearance-none grid place-content-center size-3.5 shrink-0 cursor-pointer border border-border rounded-3 bg-white/3 " +
+  "transition-[border-color,background] duration-120 " +
+  "before:content-[''] before:h-0.75 before:w-1.5 before:border-solid before:border-b-2 before:border-l-2 before:border-t-0 before:border-r-0 before:border-white " +
+  "before:-rotate-45 before:scale-0 before:transition-transform before:duration-100 " +
+  "checked:border-accent checked:bg-accent checked:before:scale-100 group-hover/images:border-accent " +
+  "focus-visible:outline-2 focus-visible:outline-[#388bfd73] focus-visible:outline-offset-2";
 const CTRL_WRAP =
   "flex items-center shrink-0 h-6.25 overflow-hidden border border-border rounded-5 text-muted text-10 tabular-nums";
 const CTRL_SPAN = "min-w-10.5 text-center";
@@ -93,7 +100,7 @@ export default function InventoryToolbar({
         {(isCardView || isListView) && (
           <>
             <label className={IMAGE_TOGGLE}>
-              <input type="checkbox" checked={imagesVisible}
+              <input type="checkbox" checked={imagesVisible} className={IMAGE_CHECK}
                 onChange={event => onViewChange(isCardView
                   ? (event.target.checked ? "cards" : "text-cards")
                   : (event.target.checked ? "list" : "list-compact"))} />

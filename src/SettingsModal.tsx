@@ -17,7 +17,6 @@ import { OVERLAY_OFFSET_LIMIT, clampOverlayOffset } from "./types/settings";
 import type { FilterPresetModule, FilterPresetSettings } from "./types/filterPresets";
 import type { FoundryFilters, InventoryFilters, MarketFilters, RelicFilters } from "./types/filters";
 import type { SaveApiInventoryArgs } from "./types/tauri";
-import "./SettingsModal.css";
 
 type SettingsTab = "general" | "overlays" | "market" | "filters" | "accessibility" | "notifications" | "data" | "debugging";
 type Setter<T> = Dispatch<SetStateAction<T>>;
@@ -28,7 +27,7 @@ const ROW_CLASS = "flex items-center justify-between gap-4";
 const ROW_INFO_CLASS = "flex min-w-0 flex-col gap-0.5";
 const ROW_LABEL_CLASS = "text-13 font-medium text-foreground";
 const ROW_DESC_CLASS = "text-11 leading-1.4 text-muted";
-const SELECT_CLASS = "shrink-0 cursor-pointer rounded-5 border border-border bg-surface px-2 py-0.75 text-12 text-foreground [color-scheme:dark] hover:border-accent/50";
+const SELECT_CLASS = "shrink-0 cursor-pointer rounded-5 border border-border bg-surface px-2 py-0.75 text-12 text-foreground [color-scheme:dark] hover:border-accent/50 focus:border-accent focus:outline-none";
 const STEP_BTN_CLASS = "flex min-w-0 cursor-pointer items-center justify-center border-0 border-border bg-white/3 p-0 text-6 leading-none text-muted first:border-b hover:bg-accent/18 hover:text-accent focus-visible:outline focus-visible:outline-accent focus-visible:-outline-offset-1";
 const DEBUG_TABLE_CLASS = "debug-table grid grid-cols-[1fr_auto_auto_auto] items-center gap-x-2 gap-y-3";
 const SECTION_CLASS = "border-b border-border/60 px-5 py-3 last:border-b-0";
@@ -37,7 +36,7 @@ const SECTION_MSG_CLASS = "mt-2 text-11 text-green";
 const TOGGLE_BUTTON_CLASS = "min-w-16";
 const toggleButtonClass = (active: boolean) => TOGGLE_BUTTON_CLASS + (active ? " border-accent! bg-accent/15!" : "");
 const disabledClass = (disabled: boolean, debugOpacity = false) => disabled ? debugOpacity ? " opacity-40 pointer-events-none" : " opacity-45 pointer-events-none" : "";
-const clearButtonClass = (hasData: boolean) => hasData ? "border-[var(--red)]! text-danger!" : "";
+const clearButtonClass = (hasData: boolean) => hasData ? "border-[var(--color-danger)]! text-danger!" : "";
 
 export interface SettingsModalProps {
   open: boolean;
@@ -133,7 +132,7 @@ export default function SettingsModal(props: SettingsModalProps) {
     const axisInput = (key: keyof OverlayOffsets, axis: "X" | "Y") => (
       <div className="grid h-6.5 w-14 grid-cols-[1fr_16px] overflow-hidden rounded-5 border border-border bg-background transition-colors duration-120 hover:border-accent/65 focus-within:border-accent/65">
         <input
-          className="settings-offset-input h-6 min-w-0 w-full border-0 bg-transparent px-1.25 text-right text-12 text-foreground tabular-nums outline-none [appearance:textfield]"
+          className="h-6 min-w-0 w-full border-0 bg-transparent px-1.25 text-right text-12 text-foreground tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           type="number" min={-OVERLAY_OFFSET_LIMIT} max={OVERLAY_OFFSET_LIMIT} step={10}
           value={overlayOffsets[key]}
           aria-label={`${axis} offset`}
@@ -156,7 +155,7 @@ export default function SettingsModal(props: SettingsModalProps) {
           {axisInput(keyX, "X")}
           <span className="w-2.25 text-center text-11 text-muted">Y</span>
           {axisInput(keyY, "Y")}
-          <SecondaryButton className="min-w-14 h-6.5" disabled={overlayOffsets[keyX] === 0 && overlayOffsets[keyY] === 0}
+          <SecondaryButton className="min-w-14 h-6.5 leading-none" disabled={overlayOffsets[keyX] === 0 && overlayOffsets[keyY] === 0}
             onClick={resetOffsets}>Reset</SecondaryButton>
         </div>
       </div>

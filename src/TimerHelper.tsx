@@ -15,7 +15,7 @@ const TH_ROOT = "flex flex-col overflow-y-auto flex-1 min-h-0 pb-2";
 const TH_MSG = "px-4 py-3 text-12 text-muted text-center";
 const TH_ERROR = "px-4 py-2 text-12 text-danger flex items-center gap-2";
 const TH_ERROR_BTN =
-  "bg-transparent border border-[var(--red)] text-danger text-11 px-2 py-0.25 rounded-3 cursor-pointer";
+  "bg-transparent border border-[var(--color-danger)] text-danger text-11 px-2 py-0.25 rounded-3 cursor-pointer";
 const TH_GROUP =
   "flex items-center gap-2 px-4 pt-1.5 pb-0.75 text-10 font-bold text-muted uppercase tracking-0.04 bg-surface sticky top-0 z-1 border-b border-b-border/40";
 const TH_GROUP_FISSURES = TH_GROUP + " justify-between";
@@ -116,7 +116,7 @@ const TH_FISSURE_TILE =
 // Watched wins over hover (later rule at equal specificity) → no hover class;
 // left edge keeps the standalone `.fissure-watched` 2px accent border.
 const TH_FISSURE_WATCHED =
-  "bg-accent/8 border-t border-r border-b border-l-2 border-[var(--accent)] rounded-5 px-2 py-1.5 flex flex-col gap-0.75 transition-colors duration-100 min-w-0";
+  "bg-accent/8 border-t border-r border-b border-l-2 border-[var(--color-accent)] rounded-5 px-2 py-1.5 flex flex-col gap-0.75 transition-colors duration-100 min-w-0";
 const TH_FISSURE_TOP = "flex justify-between items-center gap-1";
 const TH_FISSURE_CD =
   "text-11 font-bold tabular-nums text-foreground whitespace-nowrap";
@@ -158,9 +158,9 @@ const TH_PILL_GROUP_WRAP = "flex flex-wrap gap-0.75 flex-1";
 const TH_PILL =
   "bg-transparent border border-border/80 text-muted text-10 px-1.75 py-0.5 rounded-3 cursor-pointer whitespace-nowrap transition-colors duration-100 hover:bg-white/7 hover:text-foreground";
 const TH_PILL_ACTIVE =
-  "bg-accent/20 border border-[var(--accent)] text-accent text-10 px-1.75 py-0.5 rounded-3 cursor-pointer whitespace-nowrap transition-colors duration-100";
+  "bg-accent/20 border border-[var(--color-accent)] text-accent text-10 px-1.75 py-0.5 rounded-3 cursor-pointer whitespace-nowrap transition-colors duration-100";
 const TH_ADD_BTN =
-  "self-end bg-accent/15 border border-[var(--accent)] text-accent text-11 px-3 py-0.75 rounded-4 cursor-pointer mt-0.5 transition-colors duration-100 hover:bg-accent/30";
+  "self-end bg-accent/15 border border-[var(--color-accent)] text-accent text-11 px-3 py-0.75 rounded-4 cursor-pointer mt-0.5 transition-colors duration-100 hover:bg-accent/30";
 const TH_NOTIFY =
   "flex items-center gap-1.25 mt-1.5 pt-1.5 border-t border-t-border/50 text-muted text-11 cursor-pointer";
 const TH_NOTIFY_INPUT = "m-0 cursor-pointer";
@@ -679,7 +679,7 @@ export default function TimerHelper({ active, favorites, onFavoriteToggle, fissu
                   <div className={TH_WATCH_CHIPS}>
                     {fissureWatches.map(w => (
                       <div key={w.id} className={TH_WATCH_CHIP}>
-                        <span className={TH_CHIP_TIER} style={{ color: TIER_COLOR[w.tier] ?? "var(--text)" }}>{w.tier}</span>
+                        <span className={TH_CHIP_TIER} style={{ color: TIER_COLOR[w.tier] ?? "var(--color-foreground)" }}>{w.tier}</span>
                         {w.missionType !== "Any" && <span className={TH_CHIP_MT}>{w.missionType}</span>}
                         {w.variant !== "any" && <span className={TH_CHIP_VAR}>{VARIANTS.find(v => v.key === w.variant)?.label}</span>}
                         <button className={TH_CHIP_DEL} onClick={() => onRemoveWatch(w.id)}>×</button>

@@ -24,7 +24,7 @@ export default function CompletionistTabs({ inventory }: CompletionistTabsProps)
           <button
             key={tab}
             onClick={() => setView(tab)}
-            className={`-mb-px cursor-pointer rounded-t-6 border-0 border-b-3 px-4 py-1.25 text-13 font-medium capitalize transition-[background,color] duration-150 ${view === tab ? "border-accent bg-(--bg-card) text-foreground" : "border-transparent bg-transparent text-dim"}`}
+            className={`-mb-px cursor-pointer rounded-t-6 border-0 border-b-3 px-4 py-1.25 text-13 font-medium capitalize transition-[background,color] duration-150 ${view === tab ? "border-accent bg-surface text-foreground" : "border-transparent bg-transparent text-muted"}`}
           >
             {tab === "syndicates" ? "Syndicates" : "Weapons"}
           </button>
