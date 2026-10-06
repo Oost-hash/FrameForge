@@ -644,7 +644,7 @@ fn apply_catalogue(state: &AppState, result: wfcd::FetchResult) -> Result<usize,
         "image_name": i.image_name, "vaulted": i.vaulted, "ducats": i.ducats,
         "mastery_req": i.mastery_req, "omega_attenuation": i.omega_attenuation,
         "fusion_limit": i.fusion_limit, "max_level_cap": i.max_level_cap,
-        "ducat_schema": DUCAT_SCHEMA_VERSION
+        "masterable": i.masterable, "ducat_schema": DUCAT_SCHEMA_VERSION
     })).collect::<Vec<_>>()) {
         let _ = std::fs::write(&state.items_cache_path, json);
     }
@@ -883,7 +883,7 @@ pub(crate) fn get_craftable_items(state: State<AppState>) -> Vec<CatalogItem> {
             ducats:        i.ducats,
             mastery_req:   i.mastery_req,
             max_level_cap: i.max_level_cap,
-            masterable:    i.masterable,
+            masterable:    resolve_masterable(i.masterable, &i.unique_name),
             tradeable_wfm: None,
             source_type:   Some(source.to_string()),
         });
@@ -974,6 +974,12 @@ pub(crate) fn load_items_cache(path: &PathBuf) -> Option<Vec<WfcdItem>> {
         let _ = std::fs::remove_file(path);
         return None;
     }
+    // If the cache predates masterable persistence, discard it so a fresh
+    // fetch populates the flag the Foundry mastery filters depend on.
+    if arr.first().is_some_and(|v| v.get("masterable").is_none()) {
+        let _ = std::fs::remove_file(path);
+        return None;
+    }
     // If the cache predates the current ducat-derivation logic, discard it too.
     let cache_ducat_schema = arr.first()
         .and_then(|v| v.get("ducat_schema"))
@@ -999,7 +1005,8 @@ pub(crate) fn load_items_cache(path: &PathBuf) -> Option<Vec<WfcdItem>> {
         let fusion_limit      = v["fusion_limit"].as_u64().map(|n| n as u32);
         let max_level_cap     = v["max_level_cap"].as_u64().map(|n| n as u32)
             .or_else(|| if unique_name.contains("/EntratiMech/") { Some(40) } else { None });
-        Some(WfcdItem { unique_name, name, category, item_type, product_category, image_name, vaulted, ducats, mastery_req, omega_attenuation, fusion_limit, max_level_cap, tradable: None, masterable: None })
+        let masterable = v.get("masterable").and_then(|b| b.as_bool());
+        Some(WfcdItem { unique_name, name, category, item_type, product_category, image_name, vaulted, ducats, mastery_req, omega_attenuation, fusion_limit, max_level_cap, tradable: None, masterable })
     }).collect();
     if items.is_empty() { None } else { Some(dedup_known_aliases(items)) }
 }
