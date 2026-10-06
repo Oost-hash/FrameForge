@@ -84,9 +84,9 @@ function ItemChart({ data }: { data: SnapshotPoint[] }) {
       <svg viewBox={`0 0 ${W} ${H}`} className={IR_CHART_SVG} preserveAspectRatio="none">
         <line
           x1={pl} y1={H / 2} x2={pl + cW} y2={H / 2}
-          stroke="var(--accent)" strokeWidth="1" strokeOpacity="0.4" strokeDasharray="4 3"
+          stroke="var(--color-accent)" strokeWidth="1" strokeOpacity="0.4" strokeDasharray="4 3"
         />
-        <circle cx={xi(0)} cy={H / 2} r="3" fill="var(--accent)" />
+        <circle cx={xi(0)} cy={H / 2} r="3" fill="var(--color-accent)" />
       </svg>
     );
   }
@@ -96,11 +96,11 @@ function ItemChart({ data }: { data: SnapshotPoint[] }) {
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className={IR_CHART_SVG} preserveAspectRatio="none">
-      <polygon points={fillPts} fill="var(--accent)" fillOpacity="0.12" />
+      <polygon points={fillPts} fill="var(--color-accent)" fillOpacity="0.12" />
       <polyline
         points={linePts}
         fill="none"
-        stroke="var(--accent)"
+        stroke="var(--color-accent)"
         strokeWidth="1.5"
         strokeLinejoin="round"
         strokeLinecap="round"
@@ -148,7 +148,7 @@ function TrackedItemCard({ item, allSnapshots, timeframe, onTimeframeChange, onR
     <div
       className={[
         IR_CARD,
-        isDragOver ? "border-accent shadow-[0_0_0_1px_var(--accent)]" : "border-border",
+        isDragOver ? "border-accent shadow-[0_0_0_1px_var(--color-accent)]" : "border-border",
         isDragSource ? "opacity-45" : "",
       ]
         .filter(Boolean)

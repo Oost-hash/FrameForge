@@ -5,7 +5,7 @@ import ItemImg from "../ItemImg";
 import { TAURI_COMMANDS, TAURI_EVENTS } from "../constants/tauri";
 import type { WfmTopItem } from "../types/market";
 import type { Trade, TradeSession } from "../types/trades";
-import "./Reports.css";
+
 
 interface CategoryStat {
   category: string;
@@ -128,14 +128,14 @@ const RPT_TOP_PROGRESS_CLASS = "relative mt-2 h-1.5 w-[min(340px,60vw)] overflow
 const RPT_TOP_PROGRESS_FILL_CLASS = "block h-full rounded-[inherit] bg-accent transition-[width] duration-200 ease-out";
 const RPT_TOP_PROGRESS_EM_CLASS = "absolute left-0 top-2.25 text-10 not-italic text-muted";
 const RPT_TOP_REFRESHING_CLASS = "mb-2.5 text-11 text-muted";
-const RPT_TOP_SPINNER_CLASS = "inline-block size-3.5 shrink-0 animate-[rpt-spin_0.8s_linear_infinite] rounded-full border-2 border-white/15 border-t-accent";
+const RPT_TOP_SPINNER_CLASS = "inline-block size-3.5 shrink-0 animate-report-spin rounded-full border-2 border-white/15 border-t-accent";
 const RPT_TOP_WRAP_CLASS = "flex items-start gap-4";
 const RPT_RANGE_ROW_CLASS = "flex items-center gap-1.5";
 const RPT_VIEW_TOGGLE_CLASS = "mr-2 flex gap-1 border-r border-border pr-2";
 const RPT_RANGE_LABEL_CLASS = "mr-0.5 text-12 text-muted";
 const RPT_RANGE_BTN_CLASS = "cursor-pointer rounded-4 border px-2.5 py-0.75 text-12 transition-[background] duration-150";
-const RPT_RANGE_IDLE_CLASS = "border-border bg-surface text-foreground hover:bg-[var(--surface-hover)]";
-const RPT_RANGE_ACTIVE_CLASS = "border-accent bg-[var(--accent-dim)] text-accent";
+const RPT_RANGE_IDLE_CLASS = "border-border bg-surface text-foreground hover:bg-white/6";
+const RPT_RANGE_ACTIVE_CLASS = "border-accent bg-accent/15 text-accent";
 const RPT_TRADE_COUNT_CLASS = "ml-1.5 text-11 text-muted";
 const RPT_LOG_CLASS = "flex flex-col gap-2.5";
 const RPT_SESSION_CARD_CLASS = "overflow-hidden rounded-8 border border-border bg-surface";
@@ -155,7 +155,7 @@ const RPT_SESSION_EMPTY_CLASS = "text-12 text-muted";
 const RPT_SESSION_ARROW_CLASS = "shrink-0 pt-5 text-18 text-muted";
 const RPT_SUMMARY_CLASS = "flex gap-3";
 const RPT_STAT_CARD_CLASS = "flex flex-1 flex-col gap-1 rounded-6 border border-border bg-surface px-3.5 py-2.5";
-const RPT_STAT_HIGHLIGHT_CLASS = "border-accent bg-[var(--accent-dim)]";
+const RPT_STAT_HIGHLIGHT_CLASS = "border-accent bg-accent/15";
 const RPT_STAT_LABEL_CLASS = "text-11 uppercase tracking-0.04 text-muted";
 const RPT_STAT_VALUE_CLASS = "flex items-center gap-1.25 text-22 font-bold";
 const RPT_GREEN_CLASS = "text-success";
@@ -170,9 +170,9 @@ const RPT_LEGEND_LABEL_CLASS = "flex-1 truncate text-foreground";
 const RPT_LEGEND_PCT_CLASS = "shrink-0 text-11 text-muted";
 const RPT_TABLE_CLASS = "w-full table-auto border-collapse text-12";
 const RPT_TH_CLASS = "whitespace-nowrap border-b border-border px-2 py-1 font-semibold text-muted";
-const RPT_TD_CLASS = "align-middle whitespace-nowrap border-b border-border/50 px-2 py-1.25 text-foreground group-hover:bg-[var(--surface-hover)]";
+const RPT_TD_CLASS = "align-middle whitespace-nowrap border-b border-border/50 px-2 py-1.25 text-foreground group-hover:bg-white/6";
 const RPT_TD_NUM_CLASS = "text-right tabular-nums";
-const RPT_EMPTY_ROW_CLASS = "whitespace-nowrap border-b border-border/50 p-3 text-center align-middle text-muted group-hover:bg-[var(--surface-hover)]";
+const RPT_EMPTY_ROW_CLASS = "whitespace-nowrap border-b border-border/50 p-3 text-center align-middle text-muted group-hover:bg-white/6";
 const RPT_TBODY_ROW_CLASS = "group [&:last-child>td]:border-b-0";
 const RPT_DOT_CLASS = "mr-1.5 inline-block size-2 shrink-0 rounded-2";
 const RPT_EMPTY_CLASS = "flex flex-1 flex-col items-center justify-center gap-2.5 p-10 text-center";
@@ -249,7 +249,7 @@ function fmtK(n: number): string {
 }
 
 function PlatIcon({ size = 14 }: { size?: number }) {
-  return <img src="/platinum.webp" alt="" width={size} height={size} className="shrink-0 object-contain align-middle" />;
+  return <img src="/platinum.webp" alt="" width={size} height={size} className="inline-block shrink-0 object-contain align-middle" />;
 }
 
 // ── SVG Donut Chart ─────────────────────────────────────────────────────────
@@ -290,7 +290,7 @@ function DonutChart({ data }: { data: { label: string; value: number; color: str
   return (
     <svg viewBox="0 0 180 180" width={180} height={180} className="shrink-0">
       {slices.map((s, i) => (
-        <path key={i} d={s.path} fill={s.color} strokeWidth={1.5} style={{ stroke: "var(--bg)" }} />
+        <path key={i} d={s.path} fill={s.color} strokeWidth={1.5} style={{ stroke: "var(--color-background)" }} />
       ))}
       {slices.filter(s => s.pct >= 7).map((s, i) => (
         <text key={i} x={s.lx} y={s.ly} textAnchor="middle" dominantBaseline="middle"

@@ -74,7 +74,8 @@ const RL_RARITY_LABEL = "text-11 font-black leading-none tracking-[-.02em]";
 const RL_CB_CHECK = "text-9 font-black leading-none tracking-[-.1em]";
 const RL_CB_RELIC_CHECK = "text-11 font-black tracking-[-.1em] text-ducat";
 const RL_RBOX =
-  "flex flex-col items-center justify-center gap-1 px-1 py-1.5 relative border-r border-b border-r-border border-b-border overflow-hidden";
+  "flex flex-col items-center justify-center gap-1 px-1 py-1.5 relative border-r border-b border-r-border border-b-border overflow-hidden " +
+  "[&:nth-child(3n)]:border-r-0 [&:nth-child(n+4)]:border-b-0";
 const RL_RBOX_EMPTY = `${RL_RBOX} opacity-25`;
 const RL_RBOX_NAME = "w-full px-0.75 text-center text-9 leading-1.3 line-clamp-2";
 const RL_CARD_LEFT =

@@ -1,8 +1,0 @@
-/* Kept in CSS: ::-webkit pseudo-selectors have no utility equivalent. The
-   input keeps its `settings-offset-input` class solely for these two rules. */
-.settings-offset-input::-webkit-inner-spin-button,
-.settings-offset-input::-webkit-outer-spin-button { appearance: none; margin: 0; }
-
-/* Kept in CSS: descendant override of a shared class (isolate per plan). The
-   filter-presets section keeps `settings-filter-presets` solely for this rule. */
-.settings-filter-presets .inventory-presets-list { flex: 1; }

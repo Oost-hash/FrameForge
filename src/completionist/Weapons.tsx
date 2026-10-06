@@ -43,30 +43,30 @@ function effectiveCap(item: WeaponItem): number {
 const WPN_ROOT_CLASS = "flex flex-1 min-h-0 flex-col overflow-hidden bg-background text-foreground";
 const WPN_TABS_CLASS = "flex shrink-0 gap-0.5 border-b border-border px-3 pt-2";
 const WPN_TAB_CLASS = "-mb-px cursor-pointer rounded-t-6 border-0 border-b-3 px-5 py-1.5 text-13 font-medium transition-[background,color] duration-150";
-const WPN_TAB_ACTIVE_CLASS = "border-accent bg-[var(--bg-card)] text-foreground";
-const WPN_TAB_IDLE_CLASS = "border-transparent bg-transparent text-dim hover:bg-[var(--hover)] hover:text-foreground";
+const WPN_TAB_ACTIVE_CLASS = "border-accent bg-surface text-foreground";
+const WPN_TAB_IDLE_CLASS = "border-transparent bg-transparent text-muted hover:bg-white/6 hover:text-foreground";
 const WPN_TOOLBAR_CLASS = "flex shrink-0 items-center gap-3 px-3.5 pb-1.5 pt-2.5";
-const WPN_SEARCH_CLASS = "w-40 shrink-0 rounded-5 border border-border bg-[var(--bg-card)] px-2 py-1 text-12 text-foreground placeholder:text-dim focus:border-accent focus:outline-none";
+const WPN_SEARCH_CLASS = "w-40 shrink-0 rounded-5 border border-border bg-surface px-2 py-1 text-12 text-foreground placeholder:text-muted focus:border-accent focus:outline-none";
 const WPN_PROGRESS_WRAP_CLASS = "flex flex-1 items-center gap-2";
 const WPN_PROGRESS_BAR_CLASS = "h-1.5 max-w-50 flex-1 overflow-hidden rounded-3 bg-border";
 const WPN_PROGRESS_FILL_CLASS = "h-full rounded-3 bg-accent transition-[width] duration-300";
-const WPN_PROGRESS_LABEL_CLASS = "whitespace-nowrap text-12 text-dim";
+const WPN_PROGRESS_LABEL_CLASS = "whitespace-nowrap text-12 text-muted";
 const WPN_FILTER_CLASS = "cursor-pointer rounded-5 border px-2.5 py-1 text-12 transition-all duration-150";
 const WPN_FILTER_ACTIVE_CLASS = "border-accent bg-accent text-white";
-const WPN_FILTER_IDLE_CLASS = "border-border bg-transparent text-dim";
+const WPN_FILTER_IDLE_CLASS = "border-border bg-transparent text-muted";
 const WPN_BODY_CLASS = "flex-1 overflow-y-auto px-3 pb-4 pt-2";
-const WPN_HEADER_CLASS = "mb-1.5 border-b border-border pb-1.5 pt-1 text-11 font-semibold uppercase tracking-0.06 text-dim";
+const WPN_HEADER_CLASS = "mb-1.5 border-b border-border pb-1.5 pt-1 text-11 font-semibold uppercase tracking-0.06 text-muted";
 const WPN_GRID_CLASS = "grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-0.75";
-const WPN_ITEM_CLASS = "flex items-center gap-2 rounded-5 border px-2 py-1.25 transition-[background] duration-100 hover:bg-[var(--hover)]";
+const WPN_ITEM_CLASS = "flex items-center gap-2 rounded-5 border px-2 py-1.25 transition-[background] duration-100 hover:bg-white/6";
 const WPN_ITEM_MASTERED_CLASS = "border-complete/15 hover:border-complete/15";
 const WPN_ITEM_IDLE_CLASS = "border-transparent hover:border-border";
 const WPN_NAME_CLASS = "flex-1 truncate text-12";
-const WPN_MR_CLASS = "shrink-0 text-10 text-dim";
+const WPN_MR_CLASS = "shrink-0 text-10 text-muted";
 const WPN_RANK_CLASS = "min-w-9 shrink-0 rounded-4 px-1.5 py-0.5 text-center text-11 font-bold";
 const WPN_RANK_DONE_CLASS = "bg-complete/15 text-complete";
 const WPN_RANK_PARTIAL_CLASS = "bg-ducat/12 text-ducat";
-const WPN_RANK_ZERO_CLASS = "bg-rank-none/7 text-dim";
-const WPN_EMPTY_CLASS = "py-10 text-center text-14 text-dim";
+const WPN_RANK_ZERO_CLASS = "bg-rank-none/7 text-muted";
+const WPN_EMPTY_CLASS = "py-10 text-center text-14 text-muted";
 
 // ── Item row ──────────────────────────────────────────────────────────────────
 

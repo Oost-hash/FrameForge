@@ -316,7 +316,7 @@ export default function FilterPresets<M extends FilterPresetModule>({ module, fi
     <button className={`${POPUP_ICON_CLASS} hover:border-red hover:text-red`} onPointerDown={stopDrag} onClick={() => setDeleteId(preset.id)} aria-label={`Delete ${preset.name}`} title="Delete">×</button>
   </div>;
 
-  const manager = <section ref={popupRef} className={variant === "toolbar" ? "fixed z-700 flex w-77.5 max-w-[calc(100vw-16px)] flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-[0_8px_28px_rgba(0,0,0,.7)]" : "settings-filter-presets flex min-h-0 flex-1 flex-col"} style={variant === "toolbar" ? { left: position.left, top: position.top, maxHeight: position.maxHeight } : undefined} role="dialog" aria-label={`${module} filter presets`}>
+  const manager = <section ref={popupRef} className={variant === "toolbar" ? "fixed z-700 flex w-77.5 max-w-[calc(100vw-16px)] flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-[0_8px_28px_rgba(0,0,0,.7)]" : "flex min-h-0 flex-1 flex-col"} style={variant === "toolbar" ? { left: position.left, top: position.top, maxHeight: position.maxHeight } : undefined} role="dialog" aria-label={`${module} filter presets`}>
         <header className="flex items-center gap-2 border-b border-border px-2.5 py-2.25 text-xs">
           <strong className="flex-1">Filter presets</strong>
           {variant === "toolbar" && <>

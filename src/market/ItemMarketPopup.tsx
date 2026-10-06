@@ -31,7 +31,7 @@ const IMP_CHART_LABELS = "flex justify-between text-10 text-muted mt-0.5";
 const IMP_CHART_LAST = "text-accent font-semibold";
 
 const IMP_RANK_ROW =
-  "flex items-center gap-1.5 px-4 py-1.5 border-b border-b-[var(--border)] shrink-0";
+  "flex items-center gap-1.5 px-4 py-1.5 border-b border-b-[var(--color-border)] shrink-0";
 const IMP_RANK_LABEL = "text-11 text-muted";
 
 const IMP_ORDERS_WRAP =
@@ -71,14 +71,14 @@ const IMP_ACTION_BAR =
   "px-3.5 py-2.5 border-t border-t-border/50 shrink-0 bg-black/12";
 const IMP_EDIT_BAR = "flex items-center gap-1.5";
 const IMP_ACTION_SELL =
-  "text-12 font-semibold px-4 py-1.5 rounded-5 cursor-pointer border mr-2 transition-[background] duration-100 bg-success/15 border-[var(--green)] text-success hover:bg-success/28";
+  "text-12 font-semibold px-4 py-1.5 rounded-5 cursor-pointer border mr-2 transition-[background] duration-100 bg-success/15 border-[var(--color-success)] text-success hover:bg-success/28";
 const IMP_ACTION_BUY =
   "text-12 font-semibold px-4 py-1.5 rounded-5 cursor-pointer border mr-2 transition-[background] duration-100 bg-accent/15 border-accent text-accent hover:bg-accent/28";
 const IMP_EDIT_LABEL = "text-12 text-muted";
 const IMP_EDIT_INPUT =
-  "bg-[var(--bg)] border border-[var(--border)] rounded-5 text-foreground text-13 px-1.75 py-1 w-17.5 outline-none focus:border-accent";
+  "bg-[var(--color-background)] border border-[var(--color-border)] rounded-5 text-foreground text-13 px-1.75 py-1 w-17.5 outline-none focus:border-accent";
 const IMP_EDIT_INPUT_SM =
-  "bg-[var(--bg)] border border-[var(--border)] rounded-5 text-foreground text-13 px-1.75 py-1 w-12 outline-none focus:border-accent";
+  "bg-[var(--color-background)] border border-[var(--color-border)] rounded-5 text-foreground text-13 px-1.75 py-1 w-12 outline-none focus:border-accent";
 
 const IMP_CREATE_FORM = "flex flex-col gap-1.5";
 const IMP_CREATE_ROW = "flex items-center gap-2 flex-wrap";
@@ -162,12 +162,12 @@ function Sparkline({ data }: { data: WfmStatPoint[] }) {
       <svg viewBox={`0 0 ${W} ${H}`} className={IMP_CHART} preserveAspectRatio="none">
         <defs>
           <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
+            <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="var(--color-accent)" stopOpacity="0" />
           </linearGradient>
         </defs>
         <polygon points={area} fill="url(#cg)" />
-        <polyline points={polyline} fill="none" stroke="var(--accent)" strokeWidth="1.8" strokeLinejoin="round" />
+        <polyline points={polyline} fill="none" stroke="var(--color-accent)" strokeWidth="1.8" strokeLinejoin="round" />
       </svg>
       <div className={IMP_CHART_LABELS}>
         <span>{lo}p</span>

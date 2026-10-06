@@ -1,3 +1,0 @@
-/* Document context for the transparent relic-pick Tauri window.
-   Component styles moved to Tailwind utilities in RelicPickOverlay.tsx. */
-body { background: transparent !important; }

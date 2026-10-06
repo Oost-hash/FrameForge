@@ -9,17 +9,17 @@ import type { CraftingJob, QuantityMap, ShallowRecipeComponent } from "../types/
 import type { RelicOverlayPriority } from "../types/settings";
 import type { PendingRelicRewards, RelicRewardsPayload } from "../types/tauri";
 import type { InventoryUpdate } from "../types/inventory";
-import "../styles/Overlay.css";
+
 
 // ── Tailwind class constants (formerly Overlay.css) ───────────────────────────
-// Note: :root vars + body transparency stay in Overlay.css (document context).
+// Note: theme vars + body transparency stay in the Tailwind entry (document context).
 
 const OV_ROOT = "relative w-full h-full";
 const OV_ARROW =
   "absolute top-0.5 w-9 h-7 pointer-events-none opacity-65 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]";
 
 const OV_CARD =
-  "absolute top-8.5 bg-surface/82 border border-[var(--border)] rounded-8 pt-1.75 pb-1.5 px-2 flex flex-col gap-1 shadow-[0_4px_16px_rgba(0,0,0,0.55)]";
+  "absolute top-8.5 bg-surface/82 border border-[var(--color-border)] rounded-8 pt-1.75 pb-1.5 px-2 flex flex-col gap-1 shadow-[0_4px_16px_rgba(0,0,0,0.55)]";
 const OV_CARD_UNKNOWN =
   "absolute top-8.5 bg-unknown-card-bg/82 border border-unknown-card-border/60 rounded-8 pt-1.75 pb-1.5 px-2 flex flex-col gap-1 shadow-[0_4px_16px_rgba(0,0,0,0.55)]";
 
@@ -201,10 +201,10 @@ function bestPickIndex(items: RewardItem[], priority: RelicOverlayPriority): num
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 function PlatIcon({ size = 14 }: { size?: number }) {
-  return <img src="/platinum.webp" alt="p" width={size} height={size} className="shrink-0 object-contain align-middle" />;
+  return <img src="/platinum.webp" alt="p" width={size} height={size} className="inline-block shrink-0 object-contain align-middle" />;
 }
 function DucatIcon({ size = 14 }: { size?: number }) {
-  return <img src="/ducats.webp" alt="d" width={size} height={size} className="shrink-0 object-contain align-middle" />;
+  return <img src="/ducats.webp" alt="d" width={size} height={size} className="inline-block shrink-0 object-contain align-middle" />;
 }
 
 // ─── Column layout ────────────────────────────────────────────────────────────
@@ -360,8 +360,8 @@ export default function Overlay() {
   };
 
   // Force document-level transparency — only runs when this overlay window mounts,
-  // never in the main app. App.css sets background on html/#root which overrides
-  // the body-only rule in Overlay.css, so we clear it via JS here.
+  // never in the main app. The Tailwind entry sets background on html/#root which
+  // overrides the body-only rule, so we clear it via JS here.
   useEffect(() => {
     const important = (el: HTMLElement | null) => {
       if (el) el.style.setProperty('background', 'transparent', 'important');

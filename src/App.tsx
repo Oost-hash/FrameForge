@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getVersion } from "@tauri-apps/api/app";
 import { listen } from "@tauri-apps/api/event";
@@ -56,7 +56,7 @@ import { formatUnixTime } from "./lib/formatters";
 import type { CatalogItem, CraftingJob, InventoryItem } from "./types/items";
 import type { ChangeLogEntry, ModCopy } from "./types/inventory";
 import type { BlobStatusPayload, SettingsFile, SettingsPatch, WarframeCredentials, WarframeInventoryRequest, WfmCredentials, WfmSession } from "./types/tauri";
-import "./styles/App.css";
+
 
 const _winLabel = getCurrentWindow().label;
 // Support all URL formats: query string (?overlay), hash (#overlay), or window label.

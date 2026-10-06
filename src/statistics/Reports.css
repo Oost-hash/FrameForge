@@ -1,5 +1,0 @@
-/* Kept in CSS: @keyframes has no utility equivalent. The WFM top-items spinner
-   keeps its class name for this animation (animate-[rpt-spin_0.8s_linear_infinite]). */
-@keyframes rpt-spin {
-  to { transform: rotate(360deg); }
-}

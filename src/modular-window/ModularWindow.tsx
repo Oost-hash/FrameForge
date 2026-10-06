@@ -17,7 +17,7 @@ import { useWorldState } from "../worldstate";
 // ── Tailwind class constants (formerly ModularWindow.css) ─────────────────────
 
 const MW_WINDOW =
-  "relative shrink-0 flex flex-row border-l border-l-[var(--border)] bg-surface overflow-hidden min-h-0";
+  "relative shrink-0 flex flex-row border-l border-l-[var(--color-border)] bg-surface overflow-hidden min-h-0";
 const MW_WINDOW_DOCKED =
   "max-w-[min(500px,max(160px,calc(100vw_-_582px)))]";
 const MW_RESIZE =
@@ -25,7 +25,7 @@ const MW_RESIZE =
 const MW_INNER =
   "flex-1 flex flex-col overflow-y-auto overflow-x-hidden min-h-0 min-w-0";
 const MW_HEADER =
-  "flex items-center px-3 pt-2 pb-1.5 border-b border-b-[var(--border)] shrink-0";
+  "flex items-center px-3 pt-2 pb-1.5 border-b border-b-[var(--color-border)] shrink-0";
 const MW_TITLE =
   "text-11 font-bold text-muted uppercase tracking-wider flex-1";
 
@@ -43,7 +43,7 @@ const MW_ARROW_SVG = "w-2.5 h-1.5 block";
 const MW_ARROW_SVG_ITEM = "w-3.25 h-2 block";
 const MW_EMPTY =
   "px-3 py-2 text-11 text-muted text-center leading-1.4";
-const MW_DIVIDER = "h-px bg-[var(--border)] shrink-0";
+const MW_DIVIDER = "h-px bg-[var(--color-border)] shrink-0";
 
 const MW_TRACKED_LIST = "shrink-0";
 const MW_GROUP =

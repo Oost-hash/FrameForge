@@ -3,9 +3,9 @@ import ItemImg from "../ItemImg";
 import type { ViewMode } from "../types/ui";
 import { fmt, deltaClass, deltaText } from "../utils";
 import { openWiki } from "../lib/wiki";
-import "./InventoryGrid.css";
 
-// ─── Presentatie (InventoryGrid.css retains variable-backed image overrides) ──
+
+// ─── Presentatie ────────────────────────────────────────────────────────────
 
 const ITEM_GRID_CLASS: Record<ViewMode, string> = {
   cards:
@@ -21,7 +21,7 @@ const ITEM_GRID_CLASS: Record<ViewMode, string> = {
 };
 
 const INV_SKELETON =
-  "min-h-30 bg-[linear-gradient(90deg,var(--surface)_25%,rgba(255,255,255,.04)_50%,var(--surface)_75%)] bg-[length:200%_100%] animate-[skeleton-shimmer_1.5s_ease-in-out_infinite]";
+  "min-h-30 bg-[linear-gradient(90deg,var(--color-surface)_25%,rgba(255,255,255,.04)_50%,var(--color-surface)_75%)] bg-[length:200%_100%] animate-skeleton-shimmer";
 
 const EMPTY_MSG = "px-6 py-10 text-center leading-1.6 text-muted";
 
@@ -34,7 +34,8 @@ const INV_CARD_PAD_EM_TEXT = "px-[.769em] pt-[3em] pb-[.923em]";
 const INV_CARD_PAD_MOD = "px-[.923em] pt-[2.154em] pb-[.923em]";
 const INV_CARD_PAD_MOD_TEXT = "px-[.923em] pt-[3em] pb-[.923em]";
 const INV_ICON_CELL =
-  "relative flex min-w-0 cursor-pointer flex-col items-center justify-center gap-1.25 self-stretch h-19 w-19 rounded-8 border border-border bg-surface p-1.5 transition-[border-color] duration-120 hover:border-accent/50";
+  "relative flex min-w-0 cursor-pointer flex-col items-center justify-center gap-1.25 self-stretch h-19 w-19 rounded-8 border border-border bg-surface p-1.5 transition-[border-color] duration-120 hover:border-accent/50 " +
+  "[&_.img]:h-14! [&_.img]:w-14!";
 const INV_FAV_STAR =
   "absolute left-[.538em] top-[.462em] z-2 cursor-pointer border-0 bg-transparent p-0 text-[1.077em] leading-none transition-colors duration-100";
 const INV_FAV_STAR_ON = "text-ducat";
@@ -44,7 +45,10 @@ const INV_MASTERY_STAR = "text-[1.077em] leading-none text-ducat";
 const INV_MASTERY_RANK =
   "rounded-3 bg-white/6 px-[.462em] py-[.154em] text-[.846em] font-semibold text-muted";
 const INV_CARD_IMG_WRAP =
-  "relative flex h-[var(--inventory-card-image-size,56px)] w-[var(--inventory-card-image-size,56px)] shrink-0 items-center justify-center";
+  "inv-card-img-wrap relative flex h-[var(--inventory-card-image-size,56px)] w-[var(--inventory-card-image-size,56px)] shrink-0 items-center justify-center " +
+  "[&_.img]:h-[var(--inventory-card-image-size,56px)]! [&_.img]:w-[var(--inventory-card-image-size,56px)]! " +
+  "[&_.img-fallback]:h-[var(--inventory-card-image-size,56px)]! [&_.img-fallback]:w-[var(--inventory-card-image-size,56px)]! " +
+  "[&_.img-fallback]:text-[1.508em]!";
 const INV_FOUNDRY_ICON =
   "absolute right-[-.538em] top-[-.385em] text-[1em] drop-shadow-[0_0_3px_rgba(0,0,0,0.9)]";
 const INV_CARD_NAME =
@@ -56,9 +60,13 @@ const INV_CARD_NAME_MOD =
 const INV_CARD_CAT_MOD =
   "-mt-0.25 w-full overflow-hidden text-ellipsis whitespace-nowrap text-left text-[.769em] font-semibold uppercase tracking-0.04 text-muted/60";
 const INV_CARD_IMG_WRAP_MOD =
-  "inv-card-img-wrap relative flex h-[var(--inventory-mod-image-size,48px)] w-[var(--inventory-mod-image-size,48px)] shrink-0 items-center justify-center";
+  "inv-card-img-wrap relative flex h-[var(--inventory-mod-image-size,48px)] w-[var(--inventory-mod-image-size,48px)] shrink-0 items-center justify-center " +
+  "[&_.img]:h-[var(--inventory-mod-image-size,48px)]! [&_.img]:w-[var(--inventory-mod-image-size,48px)]! " +
+  "[&_.img-fallback]:h-[var(--inventory-mod-image-size,48px)]! [&_.img-fallback]:w-[var(--inventory-mod-image-size,48px)]! " +
+  "[&_.img-fallback]:text-[1.292em]!";
 const INV_MOD_TOTAL =
-  "inv-card-qty mod-total flex w-full items-center justify-between gap-[.313em] border-t border-border mt-[.462em] pt-[.385em] text-[1em] font-bold tabular-nums text-foreground";
+  "inv-card-qty mod-total flex w-full items-center justify-between gap-[.313em] border-t border-border mt-[.462em] pt-[.385em] text-[1em] font-bold tabular-nums text-foreground " +
+  "before:content-['Total'] before:text-[0.846em] before:font-semibold before:text-muted";
 const INV_ITEM_UPDATED = "item-updated text-[.846em] text-muted whitespace-nowrap";
 const INV_CARD_SIDE =
   "absolute top-[.462em] right-[.538em] z-2 flex flex-col items-end gap-[.308em]";
@@ -67,7 +75,8 @@ const INV_CARD_SIDE_ROW =
 const INV_WIKI_BTN =
   "cursor-pointer rounded-4 border border-accent/40 bg-black/40 px-[.6em] py-[.3em] text-[.769em] font-bold leading-1.3 text-wiki-link transition-[background] duration-100 hover:bg-accent/25 hover:text-wiki-link-hover";
 const INV_ROW_ICON =
-  "inv-row-icon relative flex h-[var(--inventory-list-icon-wrap-size,30px)] w-[var(--inventory-list-icon-wrap-size,30px)] shrink-0 items-center";
+  "inv-row-icon relative flex h-[var(--inventory-list-icon-wrap-size,30px)] w-[var(--inventory-list-icon-wrap-size,30px)] shrink-0 items-center " +
+  "[&_.img]:h-[var(--inventory-list-icon-size,28px)]! [&_.img]:w-[var(--inventory-list-icon-size,28px)]!";
 const INV_ROW_NAME =
   "inv-row-name min-w-0 flex-1 text-[1em] font-medium text-foreground whitespace-nowrap overflow-hidden text-ellipsis";
 const INV_ROW_CAT =
@@ -146,10 +155,10 @@ interface InventoryGridProps {
 // ─── Value + wiki helpers ─────────────────────────────────────────────────────
 
 function PlatIcon({ size = 11 }: { size?: number }) {
-  return <img src="/platinum.webp" alt="plat" width={size} height={size} className="shrink-0 object-contain" />;
+  return <img src="/platinum.webp" alt="plat" width={size} height={size} className="inline-block shrink-0 object-contain" />;
 }
 function DucatIcon({ size = 11 }: { size?: number }) {
-  return <img src="/ducats.webp" alt="ducat" width={size} height={size} className="shrink-0 object-contain" />;
+  return <img src="/ducats.webp" alt="ducat" width={size} height={size} className="inline-block shrink-0 object-contain" />;
 }
 
 function valueTitle(plat: number | null, ducats: number | null | undefined): string {
@@ -398,7 +407,7 @@ const InvCard = memo(function InvCard({
             : null}
       </div>
       {view !== "text-cards" && (
-        <div className={`inv-card-img-wrap ${INV_CARD_IMG_WRAP}`}>
+        <div className={INV_CARD_IMG_WRAP}>
           <ItemImg imageName={image_name ?? undefined} category={category} size={56} />
           {craftJobName && <span className={INV_FOUNDRY_ICON} title={`Building — ${craftJobName}`}>⚒</span>}
         </div>

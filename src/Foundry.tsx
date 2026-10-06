@@ -95,7 +95,7 @@ function effectiveMaxCap(item: CatalogItem): number | null {
   return LEVELABLE_CATS.has(item.category) ? 30 : null;
 }
 
-// ─── Tailwind class constants (converted from App.css Foundry rules) ─────────
+// ─── Tailwind class constants ──────────────────────────────────────────────
 
 const FY_ROOT = "flex flex-1 overflow-hidden min-w-0 min-h-0";
 const FY_SIDEBAR = "flex w-40 shrink-0 flex-col overflow-hidden border-r border-border min-h-0";
@@ -182,7 +182,12 @@ const FY_CTC_TAGS = "flex flex-wrap gap-0.75";
 const FY_VAULT_BADGE = "whitespace-nowrap rounded-3 px-1 py-px text-9 font-bold tracking-0.02";
 const FY_VAULT_YES = `${FY_VAULT_BADGE} border border-vaulted/35 bg-vaulted/15 text-vaulted`;
 const FY_VAULT_NO = `${FY_VAULT_BADGE} border border-mastered/30 bg-mastered/12 text-mastered`;
-const FY_RELIC_ICON_WRAP = "relic-icon-wrap relative mr-0.5 flex shrink-0 cursor-help";
+const FY_RELIC_ICON_WRAP =
+  "relative mr-0.5 flex shrink-0 cursor-help " +
+  "after:absolute after:bottom-full after:left-1/2 after:-translate-x-1/2 after:mb-1 after:z-[100] " +
+  "after:whitespace-pre after:rounded-5 after:border after:border-[#ffdc6466] after:bg-[#1a1f2e] " +
+  "after:px-1.75 after:py-1 after:text-10 after:text-[#ffdc64e6] after:pointer-events-none " +
+  "after:content-[attr(title)] after:opacity-0 hover:after:opacity-100";
 const FY_RELIC_ICON = "shrink-0 opacity-90";
 
 const FY_TAG = "inline-flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-3 text-10 font-bold cursor-default";

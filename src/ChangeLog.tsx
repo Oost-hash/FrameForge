@@ -7,7 +7,7 @@ import { openWiki, copyWikiLink } from "./lib/wiki";
 import { formatUnixTime } from "./lib/formatters";
 import type { ClockFormat } from "./types/settings";
 import type { ChangeLogEntry } from "./types/inventory";
-import "./ChangeLog.css";
+
 
 export const CHANGE_BATCH_GAP_SECONDS = 8;
 const MIN_LOG_HEIGHT = 100;
@@ -70,10 +70,10 @@ const CL_PANEL = "log-panel border-t border-border bg-surface flex flex-col shri
 const CL_PANEL_ON = "shadow-[0_-8px_24px_#0000002e]";
 const CL_HEADER = "log-header flex items-center gap-2 w-full min-h-8.5 py-1.5 px-3 bg-transparent border-b border-border text-muted cursor-pointer text-left text-11 font-semibold uppercase tracking-0.06 shrink-0 transition-[background,color] duration-150 motion-reduce:transition-none hover:bg-white/4 hover:text-foreground max-[600px]:px-2 max-[600px]:gap-1.25";
 const CL_HEADER_TITLE = "log-header-title p-0 border-0 bg-transparent text-inherit cursor-pointer [font:inherit] tracking-[inherit] uppercase hover:text-foreground hover:underline focus-visible:text-foreground focus-visible:underline focus-visible:outline-none";
-const CL_ARRIVAL = "log-header-arrival log-arrival-notice flex items-center gap-1.5 text-muted text-10 font-semibold normal-case tracking-normal whitespace-nowrap animate-[log-arrival-enter_0.18s_ease-out_both] motion-reduce:animate-none";
+const CL_ARRIVAL = "log-header-arrival log-arrival-notice flex items-center gap-1.5 text-muted text-10 font-semibold normal-case tracking-normal whitespace-nowrap animate-log-arrival motion-reduce:animate-none";
 const CL_DIVIDER = "log-status-divider text-muted text-11 font-normal";
 const CL_LAST_SCAN = "log-last-scan text-muted text-10 font-normal normal-case tracking-normal whitespace-nowrap";
-const CL_FEED = "log-feed relative z-1 self-end w-[min(680px,calc(100%_-_250px))] mr-3 overflow-hidden animate-[log-feed-cycle_4.5s_ease_both] motion-reduce:animate-none max-[600px]:mr-2 max-[480px]:hidden";
+const CL_FEED = "log-feed relative z-1 self-end w-[min(680px,calc(100%_-_250px))] mr-3 overflow-hidden animate-log-feed motion-reduce:animate-none max-[600px]:mr-2 max-[480px]:hidden";
 const CL_ROW = "inv-card inv-card-row log-item-row relative flex items-center gap-2 py-[.308em] px-3 min-h-[2.308em] w-full min-w-0 self-stretch rounded-none transition-[border-color] duration-120 max-[800px]:gap-1.25 max-[800px]:pl-2 max-[800px]:pr-2";
 const CL_ROW_LIST = "border-t border-x border-b border-t-border border-x-border border-b-border/35 bg-surface cursor-default";
 const CL_ROW_LIST_TB = "border-t-3 border-x border-b border-t-border border-x-border border-b-border/35 bg-surface cursor-default";
@@ -95,7 +95,7 @@ const CL_SEARCH = "log-search flex py-1.5 px-3 border-b border-border shrink-0";
 const CL_SEARCH_LABEL = "log-search-label sr-only";
 const CL_LIST = "log-list flex-1 min-h-0 overflow-y-auto";
 const CL_EMPTY = "log-empty block py-3 px-4 text-muted text-12";
-const CL_ARRIVAL_WRAP = "log-row-arrival-wrap grid grid-rows-[minmax(0,0fr)] overflow-hidden opacity-0 animate-[log-row-arrive_0.16s_ease-out_both] motion-reduce:animate-none motion-reduce:grid-rows-[minmax(0,1fr)] motion-reduce:opacity-100 [&>*]:min-h-7.5";
+const CL_ARRIVAL_WRAP = "log-row-arrival-wrap grid grid-rows-[minmax(0,0fr)] overflow-hidden opacity-0 animate-log-row motion-reduce:animate-none motion-reduce:grid-rows-[minmax(0,1fr)] motion-reduce:opacity-100 [&>*]:min-h-7.5";
 
 function ChangeRow({
   change, item, clockFormat, systemLocale, onItemClick, onCategoryClick, onFeedExpand, onContextMenu, timeBreak = false, feed = false,

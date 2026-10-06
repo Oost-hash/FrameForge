@@ -1,21 +1,24 @@
 @layer theme, base, components, utilities;
 
-/* Keep the existing reset while Tailwind is introduced incrementally. */
 @import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
 @import "tailwindcss/utilities.css" layer(utilities);
 
-@theme inline {
+@theme {
   /* FrameForge uses a 13px root font, so spacing must not inherit rem scaling. */
   --spacing: 4px;
-  --color-background: var(--bg);
-  --color-surface: var(--surface);
-  --color-border: var(--border);
-  --color-foreground: var(--text);
-  --color-muted: var(--muted);
-  --color-accent: var(--accent);
+
+  /* App palette — single source of truth. Utilities resolve to
+     var(--color-*), and inline styles / SVG attributes read the same names. */
+  --color-background: #0d1117;
+  --color-surface: #161b22;
+  --color-border: #30363d;
+  --color-foreground: #e6edf3;
+  --color-muted: #8b949e;
+  --color-accent: #388bfd;
+  --color-success: #3fb950;
+  --color-danger: #f85149;
   --color-ducat: #f0c040;
-  --color-success: var(--green);
-  --color-danger: var(--red);
   --color-info: #58a6ff;
   --color-warning: #d29922;
   --color-inactive: #6e7681;
@@ -90,6 +93,11 @@
   --color-rank-none: #b4b4b4;
   --color-unknown-card-bg: #1e180e;
   --color-unknown-card-border: #b48c3c;
+
+  /* Layout tokens consumed by utilities: h-(--header-h), w-[var(--sidebar-w)] */
+  --header-h: 46px;
+  --sidebar-w: 190px;
+
   --text-6: 6px;
   --text-8: 8px;
   --text-9: 9px;
@@ -132,10 +140,78 @@
   --tracking-0\.06: 0.06em;
   --tracking-0\.07: 0.07em;
   --blur-10: 10px;
-  /* --text-dim has never been defined anywhere in this repo: it was introduced
-     in v1.7.0 (Syndicates.css) as a colour intent, but no :root ever declared
-     it. var(--text-dim) is invalid at computed-value time, so every text-dim
-     utility inherits --text (#e6edf3) and renders identically to having no
-     declaration. */
-  --color-dim: var(--text-dim);
+
+  /* Animations — keyframes live with their --animate-* token so the per-feature
+     CSS files that only held @keyframes could go away. */
+  --animate-pulse-ocr: pulse-ocr 1.2s ease-in-out infinite;
+  @keyframes pulse-ocr {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .4; }
+  }
+
+  --animate-log-arrival: log-arrival-enter 0.18s ease-out both;
+  @keyframes log-arrival-enter {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  --animate-log-feed: log-feed-cycle 4.5s ease both;
+  @keyframes log-feed-cycle {
+    from { opacity: 0; }
+    4% { opacity: 1; }
+    96% { opacity: 1; }
+    to { opacity: 0; }
+  }
+
+  --animate-log-row: log-row-arrive 0.16s ease-out both;
+  @keyframes log-row-arrive {
+    from { grid-template-rows: minmax(0, 0fr); opacity: 0; }
+    to { grid-template-rows: minmax(0, 1fr); opacity: 1; }
+  }
+
+  --animate-skeleton-shimmer: skeleton-shimmer 1.5s ease-in-out infinite;
+  @keyframes skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  --animate-report-spin: rpt-spin 0.8s linear infinite;
+  @keyframes rpt-spin {
+    to { transform: rotate(360deg); }
+  }
+}
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-size: 13px;
+  }
+
+  /* Text scaling — transform on #root avoids the WebView2 scrollbar hit-test bug
+     that css zoom on html causes (scrollbar renders correctly but can't be dragged
+     to the bottom when zoom > 1). */
+  #root {
+    transform: scale(var(--ff-scale, 1));
+    transform-origin: top left;
+    width: calc(100% / var(--ff-scale, 1));
+    height: calc(100% / var(--ff-scale, 1));
+    overflow: hidden;
+  }
+
+  /* Scrollbars: no utility covers the webkit thumb hover state. */
+  ::-webkit-scrollbar       { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-muted); }
+}
+
+/* Document context for the transparent Tauri overlay windows. Every window loads
+   index.html, so Vite puts all CSS in one bundle: html and #root keep the app
+   background (Overlay.tsx clears them per window) while body stays transparent. */
+body {
+  background: transparent !important;
+  overflow: hidden;
 }

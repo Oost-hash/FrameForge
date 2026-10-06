@@ -46,10 +46,10 @@ function toggle<T>(arr: T[], val: T): T[] {
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
 function PlatIcon({ size = 14 }: { size?: number }) {
-  return <img src="/platinum.webp" alt="plat" width={size} height={size} className="shrink-0 object-contain" />;
+  return <img src="/platinum.webp" alt="plat" width={size} height={size} className="inline-block shrink-0 object-contain" />;
 }
 function DucatIcon({ size = 14 }: { size?: number }) {
-  return <img src="/ducats.webp" alt="ducat" width={size} height={size} className="shrink-0 object-contain" />;
+  return <img src="/ducats.webp" alt="ducat" width={size} height={size} className="inline-block shrink-0 object-contain" />;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -162,17 +162,17 @@ const RIV_M_INPUT   = "flex-1 w-0 bg-black/25 border border-border rounded-4 tex
 const RIV_M_NOTE    = "resize-none h-12";
 const RIV_M_TOGROW  = "mt-0.5";
 const RIV_TOG       = "inline-flex items-center gap-1.5 cursor-pointer select-none";
-const RIV_TOG_TRACK = "relative h-4.25 w-8 shrink-0 rounded-9 bg-[var(--border)] transition-[background] duration-150 peer-checked:bg-accent peer-checked:[&>span]:left-4.25";
+const RIV_TOG_TRACK = "relative h-4.25 w-8 shrink-0 rounded-9 bg-[var(--color-border)] transition-[background] duration-150 peer-checked:bg-accent peer-checked:[&>span]:left-4.25";
 const RIV_TOG_THUMB = "absolute top-0.5 left-0.5 h-3.25 w-3.25 rounded-full bg-white transition-[left] duration-150";
 const RIV_TOG_LABEL = "text-12 text-foreground min-w-11";
-const RIV_POLARITY_ICON = "size-3.5 align-middle dark:invert [html[data-theme=dark]_&]:invert [html[data-theme=light]_&]:invert-0";
+const RIV_POLARITY_ICON = "inline-block size-3.5 align-middle dark:invert [html[data-theme=dark]_&]:invert [html[data-theme=light]_&]:invert-0";
 const RIV_CARD_META = "flex gap-0 text-11 text-muted [&>span]:whitespace-nowrap [&>span+span]:before:content-['·'] [&>span+span]:before:mx-0.75";
 const RIV_M_WARN    = "text-11 text-caution bg-caution/10 border border-caution/30 rounded-4 px-2 py-1.5";
 const RIV_M_ERR     = "text-11 text-danger bg-danger/10 border border-danger/30 rounded-4 px-2 py-1.5";
 const RIV_SALE_TYPE = "flex gap-0 border border-border rounded-5 overflow-hidden";
 const RIV_SALE_BTN  = "border-0 bg-transparent py-1 px-3 text-12 cursor-pointer transition-[background,color] duration-100";
 const RIV_SALE_OFF  = `${RIV_SALE_BTN} text-muted hover:bg-white/6 hover:text-foreground`;
-const RIV_SALE_ON   = `${RIV_SALE_BTN} bg-[var(--accent)] text-white`;
+const RIV_SALE_ON   = `${RIV_SALE_BTN} bg-[var(--color-accent)] text-white`;
 const RIV_SUBMIT    = "bg-accent/15 border border-accent text-accent text-12 font-semibold py-1.75 px-3.5 rounded-5 cursor-pointer transition-[background] duration-100 hover:enabled:bg-accent/28 disabled:opacity-50 disabled:cursor-default";
 
 // ─── Set card ─────────────────────────────────────────────────────────────────

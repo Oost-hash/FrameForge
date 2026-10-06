@@ -35,7 +35,7 @@ const RA_STAT_GRID = "flex flex-wrap gap-1 shrink-0";
 const RA_STAT_BTN =
   "bg-white/5 border border-border/60 text-muted text-11 px-2.25 py-0.75 rounded-4 cursor-pointer whitespace-nowrap transition-[background,color,border-color] duration-100 hover:bg-white/10 hover:text-foreground";
 const RA_STAT_BTN_SELECTED =
-  "bg-white/5 border border-border/60 text-muted text-11 px-2.25 py-0.75 rounded-4 cursor-pointer whitespace-nowrap transition-[background,color,border-color] duration-100 hover:bg-white/10 hover:text-foreground bg-success/15! border-[var(--green)]! text-success!";
+  "bg-white/5 border border-border/60 text-muted text-11 px-2.25 py-0.75 rounded-4 cursor-pointer whitespace-nowrap transition-[background,color,border-color] duration-100 hover:bg-white/10 hover:text-foreground bg-success/15! border-[var(--color-success)]! text-success!";
 
 const RA_VERDICT = "text-16 font-bold tracking-0.01";
 const RA_STATS_BREAKDOWN = "flex flex-col gap-0.75";
@@ -129,10 +129,10 @@ const RA_ALT_LABEL =
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 function verdictColor2(v: string) {
-  if (v.startsWith("GREAT")) return "var(--green)";
+  if (v.startsWith("GREAT")) return "var(--color-success)";
   if (v.startsWith("GOOD"))  return "#a8d8a8";
   if (v.startsWith("MED"))   return "#f0c040";
-  return "var(--red)";
+  return "var(--color-danger)";
 }
 
 // All riven stats in one list — sign (+/-) is set per-roll by the user
@@ -151,17 +151,17 @@ const ALL_STATS = [
 // ── Verdict colour helper ─────────────────────────────────────────────────────
 
 function verdictColor(verdict: string): string {
-  if (verdict.startsWith("GREAT"))    return "var(--green)";
+  if (verdict.startsWith("GREAT"))    return "var(--color-success)";
   if (verdict.startsWith("GOOD"))     return "#a8d8a8";
   if (verdict.startsWith("MEDIOCRE")) return "#f0c040";
-  return "var(--red)";
+  return "var(--color-danger)";
 }
 
 // ── Stat score bar ────────────────────────────────────────────────────────────
 
 function ScoreBar({ score }: { score: number }) {
   const pct = Math.round(score * 100);
-  const color = score >= 0.8 ? "var(--green)" : score >= 0.6 ? "#a8d8a8" : score >= 0.4 ? "#f0c040" : "var(--red)";
+  const color = score >= 0.8 ? "var(--color-success)" : score >= 0.6 ? "#a8d8a8" : score >= 0.4 ? "#f0c040" : "var(--color-danger)";
   return (
     <div className="flex items-center gap-2 h-1.5 bg-white/8 rounded-3 overflow-visible relative">
       <div
