@@ -1,14 +1,13 @@
 import type { Dispatch, SetStateAction } from "react";
 import { HelpTip } from "../shared/HelpTip";
 import type { InventoryFilters } from "../types/filters";
-import SearchBar from "../shared/SearchBar";
+import { ScreenSearch } from "../shared/molecules/ScreenSearch";
 import { ViewToggle } from "../shared/ViewToggle";
 import type { ViewMode } from "../types/ui";
 import type { FilterPresetModule, FilterPresetSettings } from "../types/filterPresets";
 import FilterPresets from "../shared/FilterPresets";
 import { FilterBar, FilterChip, FilterLabel, FilterSeparator } from "../shared/ui/FilterControls";
 
-const TOOLBAR = "flex items-center gap-3 px-4 py-2.5 border-b border-border shrink-0";
 const ITEM_COUNT_LABEL = "text-muted text-11 whitespace-nowrap";
 const IMAGE_TOGGLE =
   "group/images flex items-center gap-1.25 shrink-0 text-muted cursor-pointer text-11 whitespace-nowrap hover:text-foreground";
@@ -57,16 +56,14 @@ export default function InventoryToolbar({
   const ducatRatioSortActive = sortMode === "ducat-ratio-desc" || sortMode === "ducat-ratio-asc";
   const itemCountLabel = (platinumSortActive || ducatRatioSortActive) && platinumPriceStatus !== "ready"
     ? platinumPriceStatus === "loading" ? "Loading Platinum prices…" : "Platinum prices unavailable"
-    : `${itemCount} item${itemCount !== 1 ? "s" : ""}${itemCount === 1000 ? " (capped)" : ""}`;
+    : `${itemCount} item${itemCount !== 1 ? "s" : ""}`;
   return (
     <>
-      <div className={TOOLBAR}>
-        <SearchBar
-          placeholder="Search items (comma-separated)…"
-          value={search}
-          onChange={search => onFiltersChange(previous => ({ ...previous, search }))}
-        />
-      </div>
+      <ScreenSearch
+        placeholder="Search items (comma-separated)…"
+        value={search}
+        onChange={search => onFiltersChange(previous => ({ ...previous, search }))}
+      />
       <FilterBar>
         <FilterChip active={filterOwned} onClick={() => onFiltersChange(previous => ({ ...previous, filterOwned: !previous.filterOwned }))}>Owned</FilterChip>
         <FilterChip active={filterRecent} onClick={onToggleRecent}>Changed recently</FilterChip>

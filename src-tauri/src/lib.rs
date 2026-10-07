@@ -44,6 +44,7 @@ mod pricing;
 mod refresh;
 mod relic_pick;
 mod resolver;
+mod reward_pipeline;
 mod reward_watcher;
 mod rivens;
 mod settings;
@@ -59,17 +60,6 @@ mod wfm_top;
 mod worldstate;
 
 // ─── Structs ──────────────────────────────────────────────────────────────────
-
-pub struct OcrParams<'a> {
-    pixels: &'a [u8],
-    pix_w: u32,
-    pix_h: u32,
-    game_h: u32,
-    catalog: &'a [(String, String)],
-    capture_info: &'a str,
-    hint_squad_size: Option<usize>,
-    player_names: &'a [String],
-}
 
 pub struct BlobBuildParams<'a> {
     blob: &'a memory_scanner::BlobInventory,

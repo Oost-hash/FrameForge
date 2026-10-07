@@ -3,7 +3,13 @@ import { invoke } from "@tauri-apps/api/core";
 import { HelpTip } from "./shared/HelpTip";
 import FilterPresets from "./shared/FilterPresets";
 import { SecondaryButton } from "./shared/ui/ActionButton";
-import { EmptyMessage, FilterBar, FilterChip, FilterLabel, FilterSeparator, FoundrySearch } from "./shared/ui/FilterControls";
+import { EmptyMessage, FilterBar, FilterChip, FilterLabel, FilterSeparator } from "./shared/ui/FilterControls";
+import { ScreenLayout } from "./shared/templates/ScreenLayout";
+import { CategorySidebar } from "./shared/organisms/CategorySidebar";
+import { ScreenSearch } from "./shared/molecules/ScreenSearch";
+import { Pagination } from "./shared/molecules/Pagination";
+import { usePagedItems } from "./hooks/usePagedItems";
+import { DEFAULT_LIST_PAGE_SIZE } from "./constants/settings";
 import { PREFERENCE_KEYS } from "./constants/preferences";
 import { matchesSearchTerms, splitSearchTerms } from "./lib/search";
 import { RELIC_DROP_RATES, RELIC_REFINEMENT_LABELS, RELIC_REFINEMENT_ORDER } from "./constants/relics";
@@ -26,6 +32,7 @@ interface Props {
   filterPresets: FilterPresetSettings;
   onFilterPresetsChange: Dispatch<SetStateAction<FilterPresetSettings>>;
   onOpenSettings: (module: FilterPresetModule) => void;
+  pageSize?: number;
 }
 
 // ─── Module-level constants ───────────────────────────────────────────────────
@@ -79,7 +86,7 @@ const RL_RBOX =
 const RL_RBOX_EMPTY = `${RL_RBOX} opacity-25`;
 const RL_RBOX_NAME = "w-full px-0.75 text-center text-9 leading-1.3 line-clamp-2";
 const RL_CARD_LEFT =
-  "flex flex-col gap-0.75 shrink-0 w-40 pl-3 pr-2.5 py-2.5 border-r border-r-border overflow-hidden";
+  "flex flex-col gap-0.75 shrink-0 w-32 pl-3 pr-2.5 py-2.5 border-r border-r-border overflow-hidden";
 const RL_CARD_LEFT_TEXT = "flex flex-col gap-0.75 shrink-0 w-30 p-2 border-r border-r-border overflow-hidden";
 const RL_ICON_ROW = "flex items-center gap-2 shrink-0";
 const RL_TOTAL = "text-18 font-bold text-foreground";
@@ -96,17 +103,11 @@ const RL_ROW_REFS = "shrink-0 text-10 tracking-0.02 text-muted";
 const RL_TEXT_REWARDS = "flex-1 min-w-0 px-2 py-1 flex flex-col justify-around";
 const RL_TEXT_REWARD = "text-10 whitespace-nowrap overflow-hidden text-ellipsis leading-normal";
 const RL_VAULT_BADGE = "whitespace-nowrap rounded-3 border border-vaulted/35 bg-vaulted/15 px-1 py-px text-9 font-bold tracking-0.02 text-vaulted";
-const RL_PAGINATION = "flex items-center gap-2.5 px-3.5 py-1.5 border-b border-border shrink-0";
-const RL_SUBTAB =
-  "border-0 border-b-2 bg-transparent text-12 font-medium px-3.5 pt-1 pb-1.5 cursor-pointer transition-[color]";
-const RL_SUBTAB_ON = `${RL_SUBTAB} border-b-accent text-accent hover:text-accent`;
-const RL_SUBTAB_OFF = `${RL_SUBTAB} border-b-transparent text-muted hover:text-foreground`;
-const RL_ROOT = "flex flex-col flex-1 overflow-hidden min-h-0";
-const RL_SUBTAB_BAR = "flex gap-0.5 px-3 pt-1.5 border-b border-border shrink-0";
+const RELIC_SECTIONS = ["Relics", "Planner"] as const;
 
 const RL_LIST_CLS: Record<ViewMode, string> = {
   cards:
-    "grid grid-cols-[repeat(auto-fill,minmax(420px,1fr))] gap-2 content-start py-2.5 px-3 flex-1 overflow-y-auto",
+    "grid grid-cols-[repeat(auto-fill,minmax(340px,1fr))] gap-2 content-start py-2.5 px-3 flex-1 overflow-y-auto",
   icons: "grid grid-cols-[repeat(auto-fill,76px)] gap-1.5 content-start p-2 flex-1 overflow-y-auto",
   "text-cards":
     "grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-2 content-start py-2.5 px-3 flex-1 overflow-y-auto",
@@ -810,7 +811,7 @@ function PlannerTab({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function RelicHelper({ inventory, colorblindMode = false, filters, onFiltersChange, filterPresets, onFilterPresetsChange, onOpenSettings }: Props) {
+export default function RelicHelper({ inventory, colorblindMode = false, filters, onFiltersChange, filterPresets, onFilterPresetsChange, onOpenSettings, pageSize = DEFAULT_LIST_PAGE_SIZE }: Props) {
   const { catalog } = useCatalog();
   const [plannerActive, setPlannerActive] = useState(false);
   const [relicView, setRelicView] = useState<ViewMode>(() =>
@@ -819,9 +820,7 @@ export default function RelicHelper({ inventory, colorblindMode = false, filters
   const [drops,       setDrops]       = useState<RelicDrop[]>([]);
   const [dropLoading, setDropLoading] = useState(false);
   const [dropError,   setDropError]   = useState(false);
-  const [page,        setPage]        = useState(0);
   const dropRequestRef = useRef(0);
-  const PAGE_SIZE = 30;
 
   const { search, tiers, ownership, vault, completion, sortMode, ignoreFormaKuva } = filters;
   const set = <K extends keyof RelicFilters>(k: K, v: RelicFilters[K]) => onFiltersChange({ ...filters, [k]: v });
@@ -933,23 +932,17 @@ export default function RelicHelper({ inventory, colorblindMode = false, filters
     drops.filter(d => getTotal(d) > 0).length,
   [drops, getTotal]);
 
-  useEffect(() => { setPage(0); }, [filters]);
-
-  const pagedDrops = visibleDrops.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-  const totalPages = Math.ceil(visibleDrops.length / PAGE_SIZE);
+  const { pageCount, pagedItems: pagedDrops, page, setPage } = usePagedItems(visibleDrops, pageSize, [filters]);
 
   const highlightSearchTerms = searchTerms.filter(term => term.length > 1);
   const searchMatchesReward = highlightSearchTerms.length > 0
     && drops.some(d => d.rewards.some(reward => matchesSearchTerms(highlightSearchTerms, reward.itemName ?? "")));
 
   return (
-    <div className={RL_ROOT}>
-      {/* Sub-tab bar */}
-      <div className={RL_SUBTAB_BAR}>
-        <button className={plannerActive ? RL_SUBTAB_OFF : RL_SUBTAB_ON} onClick={() => setPlannerActive(false)}>Relics</button>
-        <button className={plannerActive ? RL_SUBTAB_ON : RL_SUBTAB_OFF} onClick={() => setPlannerActive(true)}>Planner</button>
-      </div>
-
+    <ScreenLayout sidebar={
+      <CategorySidebar categories={RELIC_SECTIONS} active={plannerActive ? "Planner" : "Relics"}
+        onSelect={section => setPlannerActive(section === "Planner")} />
+    }>
       {plannerActive ? (
         <PlannerTab
           drops={drops}
@@ -958,13 +951,11 @@ export default function RelicHelper({ inventory, colorblindMode = false, filters
           inventory={inventory}
         />
       ) : (<>
-      <div className="market-header">
-        <FoundrySearch
-          className="w-55"
+        <ScreenSearch
           placeholder="Relic or item names (comma-separated)…"
-          value={search} onChange={e => set("search", e.target.value)}
+          value={search} onChange={value => set("search", value)}
         />
-        <FilterBar className="flex-1 flex-wrap border-0 p-0">
+        <FilterBar>
           {(["Lith","Meso","Neo","Axi","Requiem"] as const).map(t => (
             <FilterChip key={t} active={tiers.includes(t.toLowerCase())}
               onClick={() => set("tiers", toggle(tiers, t.toLowerCase()))}>{t}</FilterChip>
@@ -1002,21 +993,10 @@ export default function RelicHelper({ inventory, colorblindMode = false, filters
             { swatch: "rgba(240,192,64,.5)", icon: "✓✓", label: "Item complete",  desc: "Gold box — built warframe/weapon owned" },
           ]} />
         </FilterBar>
-      </div>
 
       {searchMatchesReward && (
         <div className="px-3.5 py-1 text-11 text-accent">
           Showing relics with reward drops matching one or more search terms — highlighted in blue
-        </div>
-      )}
-
-      {visibleDrops.length > PAGE_SIZE && (
-        <div className={RL_PAGINATION}>
-          <SecondaryButton disabled={page === 0} onClick={() => setPage(p => p - 1)}>← Prev</SecondaryButton>
-          <span className="text-11 text-muted">
-            {page + 1} / {totalPages} &nbsp;({visibleDrops.length} relics)
-          </span>
-          <SecondaryButton disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>Next →</SecondaryButton>
         </div>
       )}
 
@@ -1038,7 +1018,8 @@ export default function RelicHelper({ inventory, colorblindMode = false, filters
           />
         ))}
       </div>
+        <Pagination page={page} pageCount={pageCount} onPageChange={setPage} />
       </>)}
-    </div>
+    </ScreenLayout>
   );
 }

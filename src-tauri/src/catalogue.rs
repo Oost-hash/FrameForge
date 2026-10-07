@@ -618,7 +618,13 @@ pub(crate) async fn fetch_item_list(
     // active until the user manually forces a refresh.
     let has_fallback_only = state.wfcd_items.lock().map_err(|e| e.to_string())?.len() <= 15;
     let has_no_recipes = state.recipes.lock().map_err(|e| e.to_string())?.is_empty();
-    let force = force.unwrap_or(false) || has_fallback_only || has_no_recipes;
+    // relic_rewards_cache.json self-invalidates after 24h (load_initial_state in
+    // lib.rs) independently of the item/recipe caches and their ETags, so a
+    // Not-Modified response here would otherwise leave relic_rewards empty —
+    // silently zeroing every relic-pick score and OCR catalog match — until the
+    // next time an upstream source happens to change.
+    let has_no_relic_rewards = state.relic_rewards.lock().map_err(|e| e.to_string())?.is_empty();
+    let force = force.unwrap_or(false) || has_fallback_only || has_no_recipes || has_no_relic_rewards;
     let fetched = tauri::async_runtime::spawn_blocking(move || wfcd::fetch_items(None, force))
         .await
         .map_err(|e| e.to_string())??;

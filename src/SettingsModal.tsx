@@ -8,11 +8,11 @@ import FilterPresets from "./shared/FilterPresets";
 import { ActionButton, DangerButton, SecondaryButton } from "./shared/ui/ActionButton";
 import { ModalCloseButton } from "./shared/ui/ModalCloseButton";
 import { PREFERENCE_KEYS } from "./constants/preferences";
-import { CLOCK_FORMAT_OPTIONS, FOUNDRY_PAGE_SIZE_OPTIONS, RELIC_OVERLAY_PRIORITY_OPTIONS, RELIC_PICK_LINES_OPTIONS, RELIC_PICK_PRIORITY_OPTIONS } from "./constants/settings";
+import { CLOCK_FORMAT_OPTIONS, LIST_PAGE_SIZE_OPTIONS, RELIC_OVERLAY_PRIORITY_OPTIONS, RELIC_PICK_LINES_OPTIONS, RELIC_PICK_PRIORITY_OPTIONS } from "./constants/settings";
 import { TAURI_COMMANDS, TAURI_EVENTS } from "./constants/tauri";
 import type { ArchonShard, QuantityMap } from "./types/items";
 import type { ChangeLogEntry, ModCopy } from "./types/inventory";
-import type { ClockFormat, FoundryPageSize, OverlayOffsets, RelicOverlayPriority, RelicPickLines, RelicPickPriority, SettingsSnapshot } from "./types/settings";
+import type { ClockFormat, ListPageSize, OverlayOffsets, RelicOverlayPriority, RelicPickLines, RelicPickPriority, SettingsSnapshot } from "./types/settings";
 import { OVERLAY_OFFSET_LIMIT, clampOverlayOffset } from "./types/settings";
 import type { FilterPresetModule, FilterPresetSettings } from "./types/filterPresets";
 import type { FoundryFilters, InventoryFilters, MarketFilters, RelicFilters } from "./types/filters";
@@ -49,7 +49,7 @@ export interface SettingsModalProps {
   foundryFilters: FoundryFilters; setFoundryFilters: Setter<FoundryFilters>;
   marketFilters: MarketFilters; setMarketFilters: Setter<MarketFilters>;
   relicFilters: RelicFilters; setRelicFilters: Setter<RelicFilters>;
-  foundryPageSize: FoundryPageSize; setFoundryPageSize: Setter<FoundryPageSize>; settingsRef: MutableRefObject<SettingsSnapshot>; saveAllSettings: () => Promise<void>;
+  listPageSize: ListPageSize; setListPageSize: Setter<ListPageSize>; settingsRef: MutableRefObject<SettingsSnapshot>; saveAllSettings: () => Promise<void>;
   memoryScannerEnabled: boolean; setMemoryScannerEnabled: Setter<boolean>; modularPopout: boolean; setModularPopout: Setter<boolean>; overlayStatus: string; overlaysEnabled: boolean; setOverlaysEnabled: Setter<boolean>;
   overlayEnabled: boolean; setOverlayEnabled: Setter<boolean>; overlayPriority: RelicOverlayPriority; setOverlayPriority: Setter<RelicOverlayPriority>;
   overlayOffsets: OverlayOffsets; setOverlayOffsets: Setter<OverlayOffsets>;
@@ -86,7 +86,7 @@ function BulkPriceRefreshButton() {
 }
 
 export default function SettingsModal(props: SettingsModalProps) {
-  const { settingsTab, setSettingsTab, settingsFilterModule, setSettingsFilterModule, filterPresets, setFilterPresets, inventoryFilters, setInventoryFilters, foundryFilters, setFoundryFilters, marketFilters, setMarketFilters, relicFilters, setRelicFilters, foundryPageSize, setFoundryPageSize, settingsRef, saveAllSettings, memoryScannerEnabled, setMemoryScannerEnabled, modularPopout, setModularPopout, overlayStatus, overlaysEnabled, setOverlaysEnabled, overlayEnabled, setOverlayEnabled, overlayPriority, setOverlayPriority, overlayOffsets, setOverlayOffsets, rivenEnabled, setRivenEnabled, relicPickEnabled, setRelicPickEnabled, relicPickPriority, setRelicPickPriority, relicPickLines, setRelicPickLines, wfmLoggedIn, wfmInvisibleOnStart, setWfmInvisibleOnStart, wfmInvisibleOnStartRef, wfmInvisibleOnClose, setWfmInvisibleOnClose, wfmInvisibleOnCloseRef, wfmAutoInvisible, setWfmAutoInvisible, wfmAutoInvisibleMins, setWfmAutoInvisibleMins, wfmRecordSales, setWfmRecordSales, colorblindMode, setColorblindMode, textScale, setTextScale, clockFormat, setClockFormat, systemLocale, itemCount, recipeCount, handleFetch, fetching, fetchMsg, fissureNotifications, onFissureNotificationsChange, setQuantities, setApiQuantities, setApiModCopies, setScannerMods, setMasteryData, setArchonShards, setFormaData, setChangeLog, setLastChanged, setWfConnected, wfConnectedRef, setItemsRefreshKey, setClearMsg, clearMsg, blobLogEnabled, setBlobLogEnabled, blobLogSize, setBlobLogSize, companionApiEnabled, apiLogEnabled, setApiLogEnabled, apiLogSize, setApiLogSize, setShowInventoryBatchPreview, notifyTestResult, setNotifyTestResult, overlayLogCopied, setOverlayLogCopied, autoDiagEnabled, setAutoDiagEnabled, diagFolderSize, setDiagFolderSize, diagPath, diagCapturing, setDiagCapturing, setDiagPath, reloadDebugSizes, memoryProbing, setMemoryProbing, probeSize, setProbeSize, rawScanning, setRawScanning, rawScanSize, setRawScanSize, memRelicDebugRunning, setMemRelicDebugRunning, relicPickOcrResult, relicPickOcrTesting, setRelicPickOcrTesting, setRelicPickOcrResult, relicPickTestResult, relicPickTestEra, setRelicPickTestEra, setRelicPickTestResult, eeLogTail, setEeLogTail, debugCatEnabled, setDebugCatEnabled, unmatchedPathsSize, setUnmatchedPathsSize, appVersion } = props;
+  const { settingsTab, setSettingsTab, settingsFilterModule, setSettingsFilterModule, filterPresets, setFilterPresets, inventoryFilters, setInventoryFilters, foundryFilters, setFoundryFilters, marketFilters, setMarketFilters, relicFilters, setRelicFilters, listPageSize, setListPageSize, settingsRef, saveAllSettings, memoryScannerEnabled, setMemoryScannerEnabled, modularPopout, setModularPopout, overlayStatus, overlaysEnabled, setOverlaysEnabled, overlayEnabled, setOverlayEnabled, overlayPriority, setOverlayPriority, overlayOffsets, setOverlayOffsets, rivenEnabled, setRivenEnabled, relicPickEnabled, setRelicPickEnabled, relicPickPriority, setRelicPickPriority, relicPickLines, setRelicPickLines, wfmLoggedIn, wfmInvisibleOnStart, setWfmInvisibleOnStart, wfmInvisibleOnStartRef, wfmInvisibleOnClose, setWfmInvisibleOnClose, wfmInvisibleOnCloseRef, wfmAutoInvisible, setWfmAutoInvisible, wfmAutoInvisibleMins, setWfmAutoInvisibleMins, wfmRecordSales, setWfmRecordSales, colorblindMode, setColorblindMode, textScale, setTextScale, clockFormat, setClockFormat, systemLocale, itemCount, recipeCount, handleFetch, fetching, fetchMsg, fissureNotifications, onFissureNotificationsChange, setQuantities, setApiQuantities, setApiModCopies, setScannerMods, setMasteryData, setArchonShards, setFormaData, setChangeLog, setLastChanged, setWfConnected, wfConnectedRef, setItemsRefreshKey, setClearMsg, clearMsg, blobLogEnabled, setBlobLogEnabled, blobLogSize, setBlobLogSize, companionApiEnabled, apiLogEnabled, setApiLogEnabled, apiLogSize, setApiLogSize, setShowInventoryBatchPreview, notifyTestResult, setNotifyTestResult, overlayLogCopied, setOverlayLogCopied, autoDiagEnabled, setAutoDiagEnabled, diagFolderSize, setDiagFolderSize, diagPath, diagCapturing, setDiagCapturing, setDiagPath, reloadDebugSizes, memoryProbing, setMemoryProbing, probeSize, setProbeSize, rawScanning, setRawScanning, rawScanSize, setRawScanSize, memRelicDebugRunning, setMemRelicDebugRunning, relicPickOcrResult, relicPickOcrTesting, setRelicPickOcrTesting, setRelicPickOcrResult, relicPickTestResult, relicPickTestEra, setRelicPickTestEra, setRelicPickTestResult, eeLogTail, setEeLogTail, debugCatEnabled, setDebugCatEnabled, unmatchedPathsSize, setUnmatchedPathsSize, appVersion } = props;
 
   // Preview visibility is local to Settings; live game data always takes precedence.
   const [rewardShown, setRewardShown] = useState(false);
@@ -194,22 +194,22 @@ export default function SettingsModal(props: SettingsModalProps) {
               {/* ════════════ GENERAL ════════════ */}
               {settingsTab === "general" && <>
 
-                {/* Foundry */}
+                {/* Lists (Inventory / Foundry / Relics) */}
                 <div className={SECTION_CLASS}>
-                  <div className={SECTION_TITLE_CLASS}>Foundry</div>
+                  <div className={SECTION_TITLE_CLASS}>Lists</div>
                   <div className={ROW_CLASS}>
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>Items per page</span>
-                      <span className={ROW_DESC_CLASS}>How many items to show per page in the Foundry browser.</span>
+                      <span className={ROW_DESC_CLASS}>How many items to show per page in Inventory, Foundry and Relics.</span>
                     </div>
-                    <select className={SELECT_CLASS} value={foundryPageSize}
+                    <select className={SELECT_CLASS} value={listPageSize}
                       onChange={e => {
-                        const next = Number(e.target.value) as FoundryPageSize;
-                        setFoundryPageSize(next);
-                        settingsRef.current = { ...settingsRef.current, foundryPageSize: next };
+                        const next = Number(e.target.value) as ListPageSize;
+                        setListPageSize(next);
+                        settingsRef.current = { ...settingsRef.current, listPageSize: next };
                         saveAllSettings();
                       }}>
-                      {FOUNDRY_PAGE_SIZE_OPTIONS.map(size => <option key={size} value={size}>{size}</option>)}
+                      {LIST_PAGE_SIZE_OPTIONS.map(size => <option key={size} value={size}>{size}</option>)}
                     </select>
                   </div>
                 </div>

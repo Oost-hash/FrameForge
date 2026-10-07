@@ -5,17 +5,17 @@ import { TAURI_COMMANDS } from "../constants/tauri";
 import {
   CLOCK_FORMAT_OPTIONS,
   DEFAULT_CLOCK_FORMAT,
-  DEFAULT_FOUNDRY_PAGE_SIZE,
+  DEFAULT_LIST_PAGE_SIZE,
   DEFAULT_RELIC_OVERLAY_PRIORITY,
   DEFAULT_RELIC_PICK_LINES,
   DEFAULT_RELIC_PICK_PRIORITY,
   DEFAULT_RELIC_PICK_REFINEMENT,
-  FOUNDRY_PAGE_SIZE_OPTIONS,
+  LIST_PAGE_SIZE_OPTIONS,
   RELIC_PICK_LINES_OPTIONS,
   RELIC_PICK_PRIORITY_OPTIONS,
   RELIC_PICK_REFINEMENT_OPTIONS,
 } from "../constants/settings";
-import type { ClockFormat, FissureWatch, FoundryPageSize, OverlayOffsets, RelicOverlayPriority, RelicPickLines, RelicPickPriority, RelicRefinement, SettingsSnapshot } from "../types/settings";
+import type { ClockFormat, FissureWatch, ListPageSize, OverlayOffsets, RelicOverlayPriority, RelicPickLines, RelicPickPriority, RelicRefinement, SettingsSnapshot } from "../types/settings";
 import { DEFAULT_OVERLAY_OFFSETS, parseOverlayOffsets } from "../types/settings";
 import type { FilterPresetSettings } from "../types/filterPresets";
 import { parseFilterPresetSettings } from "../types/filterPresets";
@@ -36,7 +36,7 @@ interface UseSettingsReturn {
   colorblindMode: boolean;
   clockFormat: ClockFormat;
   systemLocale: string;
-  foundryPageSize: FoundryPageSize;
+  listPageSize: ListPageSize;
   relicPickEnabled: boolean;
   relicPickPriority: RelicPickPriority;
   relicPickRefinement: RelicRefinement;
@@ -63,7 +63,7 @@ interface UseSettingsReturn {
   setColorblindMode: React.Dispatch<React.SetStateAction<boolean>>;
   setClockFormat: React.Dispatch<React.SetStateAction<ClockFormat>>;
   setSystemLocale: React.Dispatch<React.SetStateAction<string>>;
-  setFoundryPageSize: React.Dispatch<React.SetStateAction<FoundryPageSize>>;
+  setListPageSize: React.Dispatch<React.SetStateAction<ListPageSize>>;
   setRelicPickEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   setRelicPickPriority: React.Dispatch<React.SetStateAction<RelicPickPriority>>;
   setRelicPickRefinement: React.Dispatch<React.SetStateAction<RelicRefinement>>;
@@ -117,7 +117,7 @@ export function useSettings(
   );
   const [clockFormat, setClockFormat] = useState<ClockFormat>(DEFAULT_CLOCK_FORMAT);
   const [systemLocale, setSystemLocale] = useState("en-US");
-  const [foundryPageSize, setFoundryPageSize] = useState<FoundryPageSize>(DEFAULT_FOUNDRY_PAGE_SIZE);
+  const [listPageSize, setListPageSize] = useState<ListPageSize>(DEFAULT_LIST_PAGE_SIZE);
   const [relicPickEnabled, setRelicPickEnabled] = useState<boolean>(true);
   const [relicPickPriority, setRelicPickPriority] = useState<RelicPickPriority>(DEFAULT_RELIC_PICK_PRIORITY);
   const [relicPickRefinement, setRelicPickRefinement] = useState<RelicRefinement>(DEFAULT_RELIC_PICK_REFINEMENT);
@@ -163,7 +163,7 @@ export function useSettings(
     relicPickPriority: DEFAULT_RELIC_PICK_PRIORITY,
     relicPickRefinement: DEFAULT_RELIC_PICK_REFINEMENT,
     relicPickLines: DEFAULT_RELIC_PICK_LINES,
-    foundryPageSize: DEFAULT_FOUNDRY_PAGE_SIZE,
+    listPageSize: DEFAULT_LIST_PAGE_SIZE,
     filterPresets: { presets: [], restorePreviousFiltersOnPresetClick: false },
   });
   const wfmInvisibleOnStartRef = useRef(false);
@@ -235,8 +235,10 @@ export function useSettings(
         if (typeof s.clockFormat === "string" && CLOCK_FORMAT_OPTIONS.includes(s.clockFormat)) {
           setClockFormat(s.clockFormat as ClockFormat);
         }
-        if (typeof s.foundryPageSize === "string" && FOUNDRY_PAGE_SIZE_OPTIONS.includes(s.foundryPageSize)) {
-          setFoundryPageSize(s.foundryPageSize);
+        // "foundryPageSize" is the pre-consolidation key; accept it as a fallback.
+        const savedPageSize = s.listPageSize ?? s.foundryPageSize;
+        if (typeof savedPageSize === "number" && (LIST_PAGE_SIZE_OPTIONS as readonly number[]).includes(savedPageSize)) {
+          setListPageSize(savedPageSize);
         }
         const relicPickEnabled = typeof s.relicPickEnabled === "boolean" ? s.relicPickEnabled : true;
         setRelicPickEnabled(relicPickEnabled);
@@ -305,7 +307,7 @@ export function useSettings(
     colorblindMode,
     clockFormat,
     systemLocale,
-    foundryPageSize,
+    listPageSize,
     relicPickEnabled,
     relicPickPriority,
     relicPickRefinement,
@@ -332,7 +334,7 @@ export function useSettings(
     setColorblindMode,
     setClockFormat,
     setSystemLocale,
-    setFoundryPageSize,
+    setListPageSize,
     setRelicPickEnabled,
     setRelicPickPriority,
     setRelicPickRefinement,

@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 use tauri::{Emitter, Manager};
@@ -7,6 +7,7 @@ use tauri::{Emitter, Manager};
 use crate::app_state::AppState;
 use crate::events;
 use crate::log_watcher;
+use crate::reward_pipeline;
 use crate::wfcd::RelicReward;
 use crate::append_to_file;
 
@@ -47,6 +48,17 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
     // Shared flag: true while the reward screen is active according to EE.log
     let reward_screen_active = Arc::new(AtomicBool::new(false));
     let reward_screen_active2 = reward_screen_active.clone();
+
+    // Monotonic counter bumped on every new trigger. The spawned OCR task
+    // captures its own value at spawn time and re-checks it (alongside
+    // `reward_screen_active`) before publishing or touching shared overlay
+    // state. A bare bool can't tell "my session is still active" apart from
+    // "a NEWER session is active" — if a stale task from a cancelled burst
+    // wakes up after a fast dismiss-then-retrigger, `reward_screen_active`
+    // may already be true again for the new session, so the bool alone would
+    // let the stale task publish its late result over the new one's.
+    let reward_session_id = Arc::new(AtomicU64::new(0));
+    let reward_session_id2 = reward_session_id.clone();
 
     // Unix-ms timestamp of the last relic-rewards emit with real items. Zero = never.
     // Written by the OCR task when it locks and emits; read by the dismiss handler to
@@ -89,6 +101,12 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
             let mut last_relic_pick_trigger: Option<std::time::Instant> = None;
             // Rolling raw log text used to reconstruct multi-read trade dialogs.
             let mut trade_buffer = String::new();
+            // Trailing partial-line buffer: a marker split across two reads by a
+            // mid-write wake-up (e.g. the dismiss line half-flushed) must never be
+            // tested half-formed by the `.contains()`/`.lines()` detectors below.
+            // Capped so a stalled or pathologically long line can't grow forever.
+            let mut line_carry = String::new();
+            const MAX_LINE_CARRY_BYTES: usize = 64 * 1024;
             use std::io::{Read, Seek, SeekFrom};
 
             log_watcher::seed_ee_log_names(&log_path, &shared_squad_names2, &ee_ocr_app);
@@ -96,7 +114,7 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
             // ── VoidProjections reward sequence state ─────────────────────────
             // The game logs squad reward info BEFORE the screen trigger fires.
             // We accumulate it across poll iterations so it's ready when OCR starts.
-            let mut vp_state = log_watcher::VoidProjectionState::default();
+            let mut vp_state = reward_pipeline::VoidProjectionState::default();
             // Cooldown: after any dismiss, block new triggers for 5 s to filter
             // stale EE.log lines that can arrive shortly after a dismiss.
             let mut last_dismiss_at: Option<std::time::Instant> = None;
@@ -139,16 +157,32 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                 }
                 let Ok(mut f) = std::fs::File::open(&log_path) else { continue };
                 let len = std::fs::metadata(&log_path).map(|m| m.len()).unwrap_or(0);
-                if len < file_pos { file_pos = 0; }
+                if len < file_pos {
+                    file_pos = 0;
+                    // Log rotated/truncated — any carried fragment is from a
+                    // different file and must not be glued onto the new one.
+                    line_carry.clear();
+                }
                 if f.seek(SeekFrom::Start(file_pos)).is_err() { continue; }
-                let mut buf = String::new();
-                if f.read_to_string(&mut buf).is_err() { continue; }
+                let mut raw = String::new();
+                if f.read_to_string(&mut raw).is_err() { continue; }
                 file_pos = len;
-                if buf.is_empty() { continue; }
+                if raw.is_empty() { continue; }
+
+                line_carry.push_str(&raw);
+                if line_carry.len() > MAX_LINE_CARRY_BYTES {
+                    let mut cut = line_carry.len() - MAX_LINE_CARRY_BYTES;
+                    while cut < line_carry.len() && !line_carry.is_char_boundary(cut) { cut += 1; }
+                    line_carry.drain(..cut);
+                }
+                // Hand the detectors below only complete lines; a line still being
+                // written by the game sits in line_carry until the next wake-up.
+                let Some(split_at) = line_carry.rfind('\n') else { continue };
+                let buf: String = line_carry.drain(..=split_at).collect();
 
                 let lower = buf.to_lowercase();
 
-                log_watcher::collect_void_projection_state(
+                reward_pipeline::collect_void_projection_state(
                     &buf,
                     &mut vp_state,
                     &shared_squad_size2,
@@ -156,7 +190,7 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                 );
 
                 // Relics are announced before the reward screen opens, narrowing OCR candidates.
-                log_watcher::collect_session_relics(&buf, &mut session_relics);
+                reward_pipeline::collect_session_relics(&buf, &mut session_relics);
 
                 // AddSquadMember, avatar changes and local login all feed the OCR filter.
                 log_watcher::collect_ee_log_names(&buf, &shared_squad_names2, &ee_ocr_app);
@@ -180,17 +214,24 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                 // the old "initialized" / "openvoidprojectionrewardscreen" lines, which
                 // fired before the cards were visible in endless missions.
                 // Matching the singular prefix catches both "Reward" and "Rewards" variants.
-                let has_trigger = lower.contains("voidprojections: getvoidprojectionreward")
-                    || vp_state.consume_sequence_completed();
+                const TRIGGER_MARKER: &str = "voidprojections: getvoidprojectionreward";
+                const DISMISS_MARKERS: [&str; 3] = [
+                    "relic reward screen shut down",
+                    "closevoidprojectionrewardscreen",
+                    "matchingservice::endsession",
+                ];
+                let trigger_marker_pos = lower.find(TRIGGER_MARKER);
+                let dismiss_marker_pos = DISMISS_MARKERS.iter().filter_map(|m| lower.find(m)).min();
+                let has_trigger = trigger_marker_pos.is_some() || vp_state.consume_sequence_completed();
 
-                let has_dismiss = log_watcher::dismiss_relic_rewards(
+                let has_dismiss = reward_pipeline::dismiss_relic_rewards(
                     &ee_ocr_app,
                     &buf,
                     &session_log_path,
                     &diag_arc,
                     &reward_screen_active2,
                     &rewards_emitted_ms_ee,
-                    log_watcher::DismissState {
+                    reward_pipeline::DismissState {
                         active_since: &mut active_since,
                         last_dismiss_at: &mut last_dismiss_at,
                         session_relics: &mut session_relics,
@@ -203,7 +244,7 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                 if active_since.is_some()
                     && lower.contains("themedprojectionmanager.lua: populateinventorygrid")
                 {
-                    log_watcher::close_reward_overlay(
+                    reward_pipeline::close_reward_overlay(
                         &ee_ocr_app,
                         &session_log_path,
                         &diag_arc,
@@ -215,18 +256,34 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                     );
                 }
 
-                // ── Trigger: skip if dismiss in same batch, screen already active,
-                //    within 60 s of last dismiss, or the memory scanner is off (this
-                //    OCR feature has always been tied to `monitor_active`) ───────────
-                let trigger_allowed = !has_dismiss
+                // ── Trigger: skip if screen already active, too soon after the last
+                //    dismiss, or the memory scanner is off (this OCR feature has
+                //    always been tied to `monitor_active`) ──────────────────────────
+                //
+                // A trigger sharing a read with a dismiss is only the stale tail of
+                // the occurrence that's closing if it textually precedes (or is) the
+                // dismiss line. Cracking relics back-to-back (e.g. Void Flood) can
+                // land a dismiss and the NEXT relic's trigger in one read, or land
+                // the trigger within a couple seconds of the previous dismiss on a
+                // separate read — both are real, new occurrences, and dropping them
+                // loses them for good since the reader has already advanced past
+                // that text. Only treat the trigger as stale when it's genuinely
+                // ambiguous (no literal marker to order it against the dismiss).
+                let trigger_is_new_after_dismiss = match (trigger_marker_pos, dismiss_marker_pos) {
+                    (Some(t), Some(d)) => t > d,
+                    _ => false,
+                };
+                let trigger_allowed = (!has_dismiss || trigger_is_new_after_dismiss)
                     && active_since.is_none()
-                    && last_dismiss_at.is_none_or(|t| t.elapsed().as_secs() >= 5)
+                    && (trigger_is_new_after_dismiss
+                        || last_dismiss_at.is_none_or(|t| t.elapsed().as_millis() >= 1000))
                     && flag.load(Ordering::SeqCst);
                 if has_trigger && trigger_allowed {
                     reward_screen_active2.store(true, Ordering::SeqCst);
                     active_since = Some(std::time::Instant::now());
+                    let my_session = reward_session_id2.fetch_add(1, Ordering::SeqCst) + 1;
 
-                    log_watcher::prepare_reward_trigger(
+                    reward_pipeline::prepare_reward_trigger(
                         &ee_ocr_app,
                         &shared_squad_names,
                         &shared_squad_size,
@@ -245,15 +302,15 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
 
                     let ts0 = chrono::Local::now().format("%H:%M:%S%.3f");
 
-                    let (filtered_cat, prefilter_log) = log_watcher::build_relic_reward_catalog(
+                    let (filtered_cat, prefilter_log) = reward_pipeline::filter_relic_reward_catalog(
                         &ee_ocr_app,
                         &session_relics,
                         &ee_catalog,
                     );
-                    log_watcher::prepare_reward_session(
+                    reward_pipeline::prepare_reward_session(
                         &session_log_path,
                         &shared_squad_names,
-                        log_watcher::RewardTrigger {
+                        reward_pipeline::RewardTrigger {
                             timestamp: &ts0.to_string(),
                             trigger_line: &trigger_line,
                             prefilter_log: &prefilter_log,
@@ -278,6 +335,7 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                     let lpath        = ee_last_path.clone();
                     let slog         = session_log_path.clone();
                     let active       = reward_screen_active2.clone();
+                    let session_counter = reward_session_id2.clone();
                     let emitted_ms   = rewards_emitted_ms_ocr.clone();
                     let squad_arc    = Arc::clone(&shared_squad_size);
                     let names_arc    = Arc::clone(&shared_squad_names);
@@ -288,7 +346,13 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                         }
                         let deadline = std::time::Instant::now()
                             + std::time::Duration::from_secs(45);
-                        log_watcher::wait_for_squad_hint(&squad_arc).await;
+                        // True while this task's trigger is still the current one — a
+                        // bare `active` bool can flip back to true for a NEWER session
+                        // before this (now-stale) task notices, so both must hold.
+                        let session_still_valid = || {
+                            active.load(Ordering::SeqCst)
+                                && session_counter.load(Ordering::SeqCst) == my_session
+                        };
 
                         // Allow the catalog to be rebuilt inside the loop — it may be empty
                         // when start_monitor fired before WFCD data finished loading.
@@ -304,21 +368,28 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                         let mut soft_complete_at: Option<usize> = None;
                         // Item count at the time soft_complete_at was set.
                         let mut soft_complete_count: usize = 0;
+                        // Set for exactly one attempt after a low-confidence, text-bearing
+                        // result, so the next attempt re-reads the same frame through
+                        // preprocessing instead of paying for a brand-new capture.
+                        let mut reuse_next_frame = false;
                         loop {
                             attempt += 1;
+                            let reuse_this_attempt = reuse_next_frame;
+                            reuse_next_frame = false;
                             // Rebuild catalog if WFCD hadn't loaded when this OCR session started.
                             // Runs only while cat is empty — once populated it stays populated.
                             if cat.is_empty() {
-                                if let Some(fallback) = log_watcher::build_fallback_reward_catalog(&app) {
+                                if let Some(fallback) = reward_pipeline::build_fallback_reward_catalog(&app) {
                                     cat = fallback;
                                 }
                             }
                             let _ = app.emit(events::FF_STATUS, "📷 OCR scanning...");
-                            let result = log_watcher::capture_reward_items(
+                            let result = reward_pipeline::capture_reward_items(
                                 &app,
                                 Arc::clone(&cat),
                                 Arc::clone(&squad_arc),
                                 Arc::clone(&names_arc),
+                                reuse_this_attempt,
                             ).await;
                             // Re-read hint for confirm_ready logic below (same mutex, post-capture value).
                             let hint_squad = squad_arc.lock().ok().and_then(|g| *g);
@@ -328,14 +399,30 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                                 // ✅ 1+ items found (solo=1, duo=2, trio=3, full squad=4)
                                 Some((complete, low_confidence, ref items, ref positions, ref dbg)) if !items.is_empty() => {
                                     no_match_streak = 0;
+                                    // Give the frame-reuse fallback exactly one shot: only
+                                    // arm it off a fresh capture, never chain reuse-of-reuse
+                                    // (preprocessing the same pixels twice yields the same
+                                    // result, so that would just burn the 45 s deadline).
+                                    if *low_confidence && !reuse_this_attempt {
+                                        reuse_next_frame = true;
+                                    }
                                     let payload = Some(serde_json::json!({
                                         "items": items, "positions": positions
                                     }));
 
+                                    // Count only catalog-matched items. A capture of the
+                                    // in-game relic-selection screen (shown for picking the
+                                    // *next* relic, which can bleed into view before this
+                                    // reward screen's EE.log dismiss line arrives) produces
+                                    // mostly unmatched "?:"-prefixed fragments — raw
+                                    // `items.len()` would let that noisier read masquerade
+                                    // as "more complete" than an earlier, clean read.
+                                    let n_confirmed = items.iter().filter(|s| !s.starts_with("?:")).count();
+
                                     let soft_retries_done = soft_complete_at
                                         .is_some_and(|sa| (attempt as usize).saturating_sub(sa) >= 3);
                                     let hint_wants_more = hint_squad
-                                        .is_some_and(|h| h > items.len());
+                                        .is_some_and(|h| h > n_confirmed);
                                     // A "complete" set of cards can still contain a low-confidence
                                     // pick (sparse OCR read let a coincidental score through) — give
                                     // it the same few extra retries as the no-squad-hint case before
@@ -345,16 +432,16 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                                         && (!*low_confidence || soft_retries_done);
 
                                     // Save best result; only emit to overlay when confirmed (LOCK).
-                                    let is_new_best = items.len() > best_item_count;
+                                    let is_new_best = n_confirmed > best_item_count;
                                     if is_new_best {
-                                        best_item_count = items.len();
+                                        best_item_count = n_confirmed;
                                         best_payload = payload.clone();
-                                        log_watcher::log_reward_best_result(
-                                            log_watcher::RewardAttempt {
+                                        reward_pipeline::log_reward_best_result(
+                                            reward_pipeline::RewardAttempt {
                                                 attempt, ts: &ts, items, dbg,
                                             },
                                             *complete, confirm_ready,
-                                            log_watcher::RewardPaths {
+                                            reward_pipeline::RewardPaths {
                                                 session_log_path: &slog,
                                                 last_path: &lpath,
                                             },
@@ -364,16 +451,17 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                                     // Stop retrying and emit ONLY when all expected cards found AND confirmed.
                                     if *complete {
                                         if confirm_ready {
-                                            // Hard cutoff: if dismiss arrived while OCR was running, drop the result.
-                                            if !active.load(Ordering::SeqCst) { break; }
+                                            // Hard cutoff: if dismiss arrived (or a newer trigger
+                                            // took over) while OCR was running, drop the result.
+                                            if !session_still_valid() { break; }
                                             if !is_new_best {
-                                                log_watcher::log_reward_confirm_no_improvement(
+                                                reward_pipeline::log_reward_confirm_no_improvement(
                                                     attempt, &ts, items, &slog,
                                                 );
                                             }
                                             let _ = append_to_file(&slog, "[STEP 3] OVERLAY OPENED\n\n");
                                             let emit_val = if best_payload.is_some() { &best_payload } else { &payload };
-                                            log_watcher::publish_relic_rewards(&app, emit_val.as_ref());
+                                            reward_pipeline::publish_relic_rewards(&app, emit_val.as_ref());
                                             emitted_ms.store(
                                                 std::time::SystemTime::now()
                                                     .duration_since(std::time::UNIX_EPOCH)
@@ -381,8 +469,13 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                                                     .unwrap_or(0),
                                                 Ordering::SeqCst,
                                             );
-                                            log_watcher::schedule_reward_diagnostic_capture(Arc::clone(&diag_arc2));
-                                            log_watcher::schedule_reward_safety_cleanup(
+                                            reward_pipeline::schedule_reward_diagnostic_capture(
+                                                Arc::clone(&diag_arc2),
+                                                active.clone(),
+                                                session_counter.clone(),
+                                                my_session,
+                                            );
+                                            reward_pipeline::schedule_reward_safety_cleanup(
                                                 app.clone(),
                                                 slog.clone(),
                                                 Arc::clone(&diag_arc2),
@@ -395,14 +488,19 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                                                 soft_complete_count = best_item_count;
                                             }
                                         }
-                                    } else if soft_complete_at.is_some() && items.len() <= soft_complete_count {
-                                        if !active.load(Ordering::SeqCst) { break; }
+                                    } else if soft_complete_at.is_some() && n_confirmed <= soft_complete_count {
+                                        if !session_still_valid() { break; }
                                         let emit_val = best_payload.clone().unwrap_or(serde_json::Value::Null);
-                                        log_watcher::publish_relic_rewards(&app, Some(&emit_val));
+                                        reward_pipeline::publish_relic_rewards(&app, Some(&emit_val));
                                         let _ = append_to_file(&slog,
                                             "[STEP 3] OVERLAY OPENED (soft-complete confirmed — no improvement)\n\n");
-                                        log_watcher::schedule_reward_diagnostic_capture(Arc::clone(&diag_arc2));
-                                        log_watcher::schedule_reward_safety_cleanup(
+                                        reward_pipeline::schedule_reward_diagnostic_capture(
+                                            Arc::clone(&diag_arc2),
+                                            active.clone(),
+                                            session_counter.clone(),
+                                            my_session,
+                                        );
+                                        reward_pipeline::schedule_reward_safety_cleanup(
                                             app.clone(),
                                             slog.clone(),
                                             Arc::clone(&diag_arc2),
@@ -415,21 +513,21 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                                 }
                                 // ⬛ Dark/blank frame — PrintWindow returned nearly-black
                                 Some((_, _, _, _, ref dbg)) if dbg.starts_with("dark-frame") => {
-                                    log_watcher::log_reward_dark_frame(&app, attempt, &ts, dbg, &slog, &lpath)
+                                    reward_pipeline::log_reward_dark_frame(&app, attempt, &ts, dbg, &slog, &lpath)
                                 }
                                 // ⬜ OCR ran but returned no text
                                 Some((_, _, _, _, ref dbg)) if dbg.starts_with("ocr-empty") => {
-                                    log_watcher::log_reward_ocr_empty(&app, attempt, &ts, dbg, &slog, &lpath)
+                                    reward_pipeline::log_reward_ocr_empty(&app, attempt, &ts, dbg, &slog, &lpath)
                                 }
                                 // ❌ Text found but no catalog match
                                 Some((_, _, ref items, _, ref dbg)) => {
-                                    log_watcher::log_reward_no_match(
+                                    reward_pipeline::log_reward_no_match(
                                         &app,
-                                        log_watcher::RewardAttempt {
+                                        reward_pipeline::RewardAttempt {
                                             attempt, ts: &ts, items, dbg,
                                         },
                                         &mut no_match_streak, &mut cat, &fallback_cat,
-                                        log_watcher::RewardPaths {
+                                        reward_pipeline::RewardPaths {
                                             session_log_path: &slog,
                                             last_path: &lpath,
                                         },
@@ -438,22 +536,50 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                                 }
                                 // ⚠️ Warframe window not found
                                 None => {
-                                    log_watcher::log_reward_capture_failed(&app, attempt, &ts, &slog, &lpath)
+                                    reward_pipeline::log_reward_capture_failed(&app, attempt, &ts, &slog, &lpath)
                                 }
                             };
 
                             if std::time::Instant::now() >= deadline {
-                                log_watcher::finalize_reward_ocr_timeout(
+                                reward_pipeline::finalize_reward_ocr_timeout(
                                     &app,
                                     best_payload,
                                     &active,
                                     &slog,
                                     &diag_arc2,
+                                    session_still_valid(),
                                 );
                                 break;
                             }
-                            if !active.load(Ordering::SeqCst) {
-                                log_watcher::log_reward_ocr_stopped(&slog);
+                            if !session_still_valid() {
+                                // `active` can go false for two different reasons, and only
+                                // one of them means this task's result is still ours to show:
+                                // the dismiss line already fired (reward screen closed before
+                                // OCR ever reached a confirmed/complete result — common on a
+                                // fast Void Flood cycle) vs. a newer trigger already took over
+                                // `active` for a different session. Only the latter is truly
+                                // stale; publishing then would stomp the newer session.
+                                let superseded = session_counter.load(Ordering::SeqCst) != my_session;
+                                if !superseded && best_payload.is_some() {
+                                    reward_pipeline::publish_relic_rewards(&app, best_payload.as_ref());
+                                    emitted_ms.store(
+                                        std::time::SystemTime::now()
+                                            .duration_since(std::time::UNIX_EPOCH)
+                                            .map(|d| d.as_millis() as u64)
+                                            .unwrap_or(0),
+                                        Ordering::SeqCst,
+                                    );
+                                    let _ = append_to_file(&slog,
+                                        "[STEP 3] OVERLAY OPENED (dismiss — salvaged best partial result)\n\n");
+                                    reward_pipeline::schedule_reward_safety_cleanup(
+                                        app.clone(),
+                                        slog.clone(),
+                                        Arc::clone(&diag_arc2),
+                                        false,
+                                    );
+                                } else {
+                                    reward_pipeline::log_reward_ocr_stopped(&slog);
+                                }
                                 break;
                             }
                             tokio::time::sleep(std::time::Duration::from_millis(sleep_ms)).await;
@@ -462,7 +588,7 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
 
                 } // end trigger block
 
-                log_watcher::auto_dismiss_relic_rewards(
+                reward_pipeline::auto_dismiss_relic_rewards(
                     &ee_ocr_app,
                     &session_log_path,
                     &diag_arc,

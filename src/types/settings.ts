@@ -5,7 +5,7 @@ export type RelicOverlayPriority = "completion" | "plat" | "ducat" | "setPlat";
 export type RelicPickPriority = "unowned" | "ducat" | "platinum";
 export type RelicRefinement = "intact" | "exceptional" | "flawless" | "radiant";
 export type RelicPickLines = "all" | "best" | "estimated";
-export type FoundryPageSize = 30 | 60 | 100;
+export type ListPageSize = number;
 
 export type FissureVariant = "normal" | "hard" | "storm";
 
@@ -52,6 +52,6 @@ export interface SettingsSnapshot {
   modularWidth: number; modularSectionOrder: string[]; modularPopout: boolean; wfmInvisibleOnStart: boolean;
   wfmInvisibleOnClose: boolean; wfmAutoInvisible: boolean; wfmAutoInvisibleMins: number; wfmRecordSales: boolean; relicPickEnabled: boolean;
   relicPickPriority: RelicPickPriority; relicPickRefinement: RelicRefinement;
-  relicPickLines: RelicPickLines; foundryPageSize: FoundryPageSize;
+  relicPickLines: RelicPickLines; listPageSize: ListPageSize;
   filterPresets: FilterPresetSettings;
 }

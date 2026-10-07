@@ -1,6 +1,6 @@
 import type {
   ClockFormat,
-  FoundryPageSize,
+  ListPageSize,
   RelicOverlayPriority,
   RelicPickLines,
   RelicPickPriority,
@@ -22,7 +22,7 @@ export const DEFAULT_RELIC_PICK_REFINEMENT: RelicRefinement = "radiant";
 export const RELIC_PICK_LINES_OPTIONS = ["all", "best", "estimated"] as const satisfies readonly RelicPickLines[];
 export const DEFAULT_RELIC_PICK_LINES: RelicPickLines = "all";
 
-export const FOUNDRY_PAGE_SIZE_OPTIONS = [30, 60, 100] as const satisfies readonly FoundryPageSize[];
-export const DEFAULT_FOUNDRY_PAGE_SIZE: FoundryPageSize = 30;
+export const LIST_PAGE_SIZE_OPTIONS = [30, 60, 100, 250, 500, 1000] as const satisfies readonly ListPageSize[];
+export const DEFAULT_LIST_PAGE_SIZE: ListPageSize = 1000;
 
 export const MODULAR_SECTION_ORDER_DEFAULT = ["tracking", "favorites", "timers", "fissures"] as const;

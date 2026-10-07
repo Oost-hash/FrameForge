@@ -14,6 +14,8 @@ import { useBulkPrices } from "./hooks/useBulkPrices";
 import { useOverlays } from "./hooks/useOverlays";
 import { useTimerPreferences } from "./hooks/useTimerPreferences";
 import { useFissureNotifications } from "./hooks/useFissureNotifications";
+import { usePagedItems } from "./hooks/usePagedItems";
+import { Pagination } from "./shared/molecules/Pagination";
 import { CATEGORIES } from "./constants/categories";
 import { APP_TITLE, IS_DEV } from "./constants/app";
 
@@ -114,7 +116,7 @@ export default function App() {
     colorblindMode, setColorblindMode,
     clockFormat, setClockFormat,
     systemLocale,
-    foundryPageSize, setFoundryPageSize,
+    listPageSize, setListPageSize,
     relicPickEnabled, setRelicPickEnabled,
     relicPickPriority, setRelicPickPriority,
     relicPickRefinement,
@@ -246,7 +248,7 @@ export default function App() {
     wfmLoggedInRef.current = loggedIn;
   }, []);
 
-  settingsRef.current = { overlaysEnabled, overlayEnabled, overlayPriority, overlayOffsets, rivenEnabled, textScale, colorblindMode, clockFormat, companionApiEnabled, memoryScannerEnabled, blobLogEnabled, apiLogEnabled, autoDiagEnabled, tracked, favorites, timerFavorites, fissureWatches, fissureNotifications, modularWidth, modularSectionOrder, modularPopout, wfmInvisibleOnStart, wfmInvisibleOnClose, wfmAutoInvisible, wfmAutoInvisibleMins, wfmRecordSales, relicPickEnabled, relicPickPriority, relicPickRefinement, relicPickLines, foundryPageSize, filterPresets };
+  settingsRef.current = { overlaysEnabled, overlayEnabled, overlayPriority, overlayOffsets, rivenEnabled, textScale, colorblindMode, clockFormat, companionApiEnabled, memoryScannerEnabled, blobLogEnabled, apiLogEnabled, autoDiagEnabled, tracked, favorites, timerFavorites, fissureWatches, fissureNotifications, modularWidth, modularSectionOrder, modularPopout, wfmInvisibleOnStart, wfmInvisibleOnClose, wfmAutoInvisible, wfmAutoInvisibleMins, wfmRecordSales, relicPickEnabled, relicPickPriority, relicPickRefinement, relicPickLines, listPageSize, filterPresets };
 
   // ── Debug data sizes — reload when the Debugging settings tab opens ─────────
   const reloadDebugSizes = useCallback(() => {
@@ -580,8 +582,10 @@ export default function App() {
       if (activeSortMode === "qty-asc")   return a.qty - b.qty || a.name.localeCompare(b.name);
       return b.qty - a.qty || a.name.localeCompare(b.name);
     });
-    return out.slice(0, 1000);
+    return out;
   }, [catalog, inventory, inventoryFilters, bulkPrices, isDucatRatioSort, isDucatSort, isPlatinumSort, needsPlatinumPrices, platinumPriceStatus, lastChanged, modCopiesMap]);
+
+  const inventoryPaging = usePagedItems(visibleItems, listPageSize, [inventoryFilters]);
 
   const resetInventoryFilters = ({
     recent,
@@ -744,7 +748,7 @@ export default function App() {
         </div>
       </header>
 
-      <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} {...{ settingsTab, setSettingsTab, settingsFilterModule, setSettingsFilterModule, filterPresets, setFilterPresets, inventoryFilters, setInventoryFilters, foundryFilters, setFoundryFilters, marketFilters, setMarketFilters, relicFilters, setRelicFilters, foundryPageSize, setFoundryPageSize, settingsRef, saveAllSettings, memoryScannerEnabled, setMemoryScannerEnabled, modularPopout, setModularPopout, overlayStatus, overlaysEnabled, setOverlaysEnabled, overlayEnabled, setOverlayEnabled, overlayPriority, setOverlayPriority, overlayOffsets, setOverlayOffsets, rivenEnabled, setRivenEnabled, relicPickEnabled, setRelicPickEnabled, relicPickPriority, setRelicPickPriority, relicPickLines, setRelicPickLines, wfmLoggedIn, wfmInvisibleOnStart, setWfmInvisibleOnStart, wfmInvisibleOnStartRef, wfmInvisibleOnClose, setWfmInvisibleOnClose, wfmInvisibleOnCloseRef, wfmAutoInvisible, setWfmAutoInvisible, wfmAutoInvisibleMins, setWfmAutoInvisibleMins, wfmRecordSales, setWfmRecordSales, colorblindMode, setColorblindMode, textScale, setTextScale, clockFormat, setClockFormat, systemLocale, itemCount, recipeCount, handleFetch, fetching, fetchMsg, fissureNotifications, onFissureNotificationsChange: setFissureNotifications, setQuantities, setApiQuantities, setApiModCopies, setScannerMods, setMasteryData, setArchonShards, setFormaData, setChangeLog, setLastChanged, setWfConnected, wfConnectedRef, setItemsRefreshKey, setClearMsg, clearMsg, blobLogEnabled, setBlobLogEnabled, blobLogSize, setBlobLogSize, companionApiEnabled, apiLogEnabled, setApiLogEnabled, apiLogSize, setApiLogSize, setShowInventoryBatchPreview, notifyTestResult, setNotifyTestResult, overlayLogCopied, setOverlayLogCopied, autoDiagEnabled, setAutoDiagEnabled, diagFolderSize, setDiagFolderSize, diagPath, diagCapturing, setDiagCapturing, setDiagPath, reloadDebugSizes, memoryProbing, setMemoryProbing, probeSize, setProbeSize, rawScanning, setRawScanning, rawScanSize, setRawScanSize, memRelicDebugRunning, setMemRelicDebugRunning, relicPickOcrResult, relicPickOcrTesting, setRelicPickOcrTesting, setRelicPickOcrResult, relicPickTestResult, relicPickTestEra, setRelicPickTestEra, setRelicPickTestResult, eeLogTail, setEeLogTail, debugCatEnabled, setDebugCatEnabled, unmatchedPathsSize, setUnmatchedPathsSize, appVersion }} />
+      <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} {...{ settingsTab, setSettingsTab, settingsFilterModule, setSettingsFilterModule, filterPresets, setFilterPresets, inventoryFilters, setInventoryFilters, foundryFilters, setFoundryFilters, marketFilters, setMarketFilters, relicFilters, setRelicFilters, listPageSize, setListPageSize, settingsRef, saveAllSettings, memoryScannerEnabled, setMemoryScannerEnabled, modularPopout, setModularPopout, overlayStatus, overlaysEnabled, setOverlaysEnabled, overlayEnabled, setOverlayEnabled, overlayPriority, setOverlayPriority, overlayOffsets, setOverlayOffsets, rivenEnabled, setRivenEnabled, relicPickEnabled, setRelicPickEnabled, relicPickPriority, setRelicPickPriority, relicPickLines, setRelicPickLines, wfmLoggedIn, wfmInvisibleOnStart, setWfmInvisibleOnStart, wfmInvisibleOnStartRef, wfmInvisibleOnClose, setWfmInvisibleOnClose, wfmInvisibleOnCloseRef, wfmAutoInvisible, setWfmAutoInvisible, wfmAutoInvisibleMins, setWfmAutoInvisibleMins, wfmRecordSales, setWfmRecordSales, colorblindMode, setColorblindMode, textScale, setTextScale, clockFormat, setClockFormat, systemLocale, itemCount, recipeCount, handleFetch, fetching, fetchMsg, fissureNotifications, onFissureNotificationsChange: setFissureNotifications, setQuantities, setApiQuantities, setApiModCopies, setScannerMods, setMasteryData, setArchonShards, setFormaData, setChangeLog, setLastChanged, setWfConnected, wfConnectedRef, setItemsRefreshKey, setClearMsg, clearMsg, blobLogEnabled, setBlobLogEnabled, blobLogSize, setBlobLogSize, companionApiEnabled, apiLogEnabled, setApiLogEnabled, apiLogSize, setApiLogSize, setShowInventoryBatchPreview, notifyTestResult, setNotifyTestResult, overlayLogCopied, setOverlayLogCopied, autoDiagEnabled, setAutoDiagEnabled, diagFolderSize, setDiagFolderSize, diagPath, diagCapturing, setDiagCapturing, setDiagPath, reloadDebugSizes, memoryProbing, setMemoryProbing, probeSize, setProbeSize, rawScanning, setRawScanning, rawScanSize, setRawScanSize, memRelicDebugRunning, setMemRelicDebugRunning, relicPickOcrResult, relicPickOcrTesting, setRelicPickOcrTesting, setRelicPickOcrResult, relicPickTestResult, relicPickTestEra, setRelicPickTestEra, setRelicPickTestResult, eeLogTail, setEeLogTail, debugCatEnabled, setDebugCatEnabled, unmatchedPathsSize, setUnmatchedPathsSize, appVersion }} />
 
       {showInventoryBatchPreview && <InventoryBatchPreview onClose={closeInventoryBatchPreview} />}
 
@@ -797,7 +801,7 @@ export default function App() {
               />
 
               <InventoryGrid
-                items={visibleItems}
+                items={inventoryPaging.pagedItems}
                 loading={!inventoryReady}
                 monitoring={monitoring}
                 view={inventoryView}
@@ -813,6 +817,7 @@ export default function App() {
                 onToggleFavorite={toggleFavorite}
                 onContextMenu={handleInventoryContextMenu}
               />
+              <Pagination page={inventoryPaging.page} pageCount={inventoryPaging.pageCount} onPageChange={inventoryPaging.setPage} />
 
             </div>
           </>
@@ -825,7 +830,7 @@ export default function App() {
         {visitedModules.has("foundry") && (
         <KeepMountedWhenHidden active={activeModule === "foundry"}>
           <ErrorBoundary>
-            <Foundry inventory={inventory} refreshKey={itemsRefreshKey} crafting={crafting} filters={foundryFilters} onFiltersChange={setFoundryFilters} filterPresets={filterPresets} onFilterPresetsChange={setFilterPresets} onOpenSettings={openFilterSettings} colorblindMode={colorblindMode} subsummedWarframes={subsummedWarframes} tracked={tracked} onTrackToggle={toggleTracked} pageSize={foundryPageSize} />
+            <Foundry inventory={inventory} refreshKey={itemsRefreshKey} crafting={crafting} filters={foundryFilters} onFiltersChange={setFoundryFilters} filterPresets={filterPresets} onFilterPresetsChange={setFilterPresets} onOpenSettings={openFilterSettings} colorblindMode={colorblindMode} subsummedWarframes={subsummedWarframes} tracked={tracked} onTrackToggle={toggleTracked} pageSize={listPageSize} />
           </ErrorBoundary>
         </KeepMountedWhenHidden>
         )}
@@ -841,7 +846,7 @@ export default function App() {
         {visitedModules.has("relics") && (
         <KeepMountedWhenHidden active={activeModule === "relics"}>
           <ErrorBoundary>
-            <RelicHelper inventory={inventory} filters={relicFilters} onFiltersChange={setRelicFilters} filterPresets={filterPresets} onFilterPresetsChange={setFilterPresets} onOpenSettings={openFilterSettings} colorblindMode={colorblindMode} />
+            <RelicHelper inventory={inventory} filters={relicFilters} onFiltersChange={setRelicFilters} filterPresets={filterPresets} onFilterPresetsChange={setFilterPresets} onOpenSettings={openFilterSettings} colorblindMode={colorblindMode} pageSize={listPageSize} />
           </ErrorBoundary>
         </KeepMountedWhenHidden>
         )}

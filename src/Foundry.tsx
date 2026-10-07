@@ -2,11 +2,15 @@ import { useState, useEffect, useMemo, useCallback, memo, startTransition, useRe
 import { invoke } from "@tauri-apps/api/core";
 import ItemImg from "./ItemImg";
 import { HelpTip } from "./shared/HelpTip";
-import { SecondaryButton } from "./shared/ui/ActionButton";
-import { CategoryButton, CAT_COUNT, CAT_TOTAL } from "./shared/ui/CategoryButton";
 import { ModalCloseButton } from "./shared/ui/ModalCloseButton";
-import { EmptyMessage, FilterBar, FilterChip, FilterSeparator, FoundrySearch } from "./shared/ui/FilterControls";
+import { EmptyMessage, FilterBar, FilterChip, FilterSeparator } from "./shared/ui/FilterControls";
 import FilterPresets from "./shared/FilterPresets";
+import { ScreenLayout } from "./shared/templates/ScreenLayout";
+import { CategorySidebar } from "./shared/organisms/CategorySidebar";
+import { ScreenSearch } from "./shared/molecules/ScreenSearch";
+import { Pagination } from "./shared/molecules/Pagination";
+import { usePagedItems } from "./hooks/usePagedItems";
+import { DEFAULT_LIST_PAGE_SIZE } from "./constants/settings";
 import { PREFERENCE_KEYS } from "./constants/preferences";
 import { matchesSearchTerms, splitSearchTerms } from "./lib/search";
 import { WARFRAME_WIKI_BASE } from "./constants/urls";
@@ -97,13 +101,6 @@ function effectiveMaxCap(item: CatalogItem): number | null {
 
 // ─── Tailwind class constants ──────────────────────────────────────────────
 
-const FY_ROOT = "flex flex-1 overflow-hidden min-w-0 min-h-0";
-const FY_SIDEBAR = "flex w-40 shrink-0 flex-col overflow-hidden border-r border-border min-h-0";
-const FY_SIDEBAR_CAT = "text-12! px-2.5! min-w-0";
-const FY_CAT_LABEL = "overflow-hidden text-ellipsis whitespace-nowrap min-w-0";
-const FY_SEARCH_WRAP = "px-2 pt-1.5 pb-1 shrink-0";
-const FY_MAIN = "flex flex-1 flex-col overflow-hidden border-r border-border min-w-0 min-h-0";
-
 const FY_GRID_SHELL = "flex-1 min-h-0 overflow-y-auto overflow-x-hidden content-start";
 const FY_GRID = `${FY_GRID_SHELL} grid gap-1.5 p-2 grid-cols-[repeat(auto-fill,minmax(min(200px,100%),1fr))]`;
 const FY_GRID_ICONS = `${FY_GRID_SHELL} grid gap-1.5 p-2 grid-cols-[repeat(auto-fill,88px)]`;
@@ -116,9 +113,6 @@ function craftGridClass(view: ViewMode): string {
   if (view === "text-cards") return FY_GRID_TEXT;
   return FY_GRID;
 }
-
-const FY_PAGINATION = "flex items-center justify-center gap-2.5 px-2 py-2.5";
-const FY_PG_LABEL = "min-w-20 text-center text-12 text-muted";
 
 const FY_CARD_SHELL = "relative grid h-42 min-w-50 cursor-pointer rounded-8 border transition-colors grid-cols-[88px_1fr] grid-rows-[96px_24px_24px_24px]";
 const FY_CARD = `${FY_CARD_SHELL} border-border bg-surface hover:border-accent/50 hover:z-5`;
@@ -682,13 +676,12 @@ const CRAFT_CATEGORIES = [
   "Companions", "Archwing", "Operator Weapons", "Parts", "Blueprints", "Miscellaneous",
 ];
 
-export default function Foundry({ inventory, refreshKey, crafting, subsummedWarframes = new Set(), tracked, onTrackToggle, pageSize = 30, filters, onFiltersChange, filterPresets, onFilterPresetsChange, onOpenSettings }: Props) {
+export default function Foundry({ inventory, refreshKey, crafting, subsummedWarframes = new Set(), tracked, onTrackToggle, pageSize = DEFAULT_LIST_PAGE_SIZE, filters, onFiltersChange, filterPresets, onFilterPresetsChange, onOpenSettings }: Props) {
   const { catalog, relicDropMap } = useCatalog();
   const [craftable, setCraftable] = useState<CatalogItem[]>([]);
   const [recipes, setRecipes]     = useState<Map<string, RecipeComponent[]>>(new Map());
   const [modalItem, setModalItem] = useState<CatalogItem | null>(null);
   const [inputSearch, setInputSearch] = useState(filters.search);
-  const [page, setPage] = useState(0);
   const [craftView, setCraftView] = useState<ViewMode>(() =>
     (localStorage.getItem(PREFERENCE_KEYS.FOUNDRY_VIEW) as ViewMode | null) ?? "cards"
   );
@@ -770,17 +763,12 @@ export default function Foundry({ inventory, refreshKey, crafting, subsummedWarf
       filterReady ? recipes : null,
   ]);
 
-  // Reset to page 1 when the user changes a filter, search, or category —
-  // but NOT when inventory or recipes update in the background.
-  // Without this guard, every 10-second scan resets the page mid-browse.
-  useEffect(() => { setPage(0); }, [ // eslint-disable-line
+  // Page resets on filter/search/category changes, not on background inventory or recipe updates.
+  const { page, pageCount, pagedItems, setPage } = usePagedItems(visible, pageSize, [
     activeCat, search, filterPrime, filterNonPrime, filterVaulted, filterUnvaulted,
     filterMastered, filterUnmastered, filterOwned, filterUnowned, filterReady, filterLvlCap, ignoreFormaKuva,
-    craftable, pageSize,
+    craftable,
   ]);
-  const PAGE_SIZE = pageSize;
-  const pageCount = Math.ceil(visible.length / PAGE_SIZE);
-  const pagedItems = useMemo(() => visible.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE), [visible, page, PAGE_SIZE]);
 
   // Only fetch recipes for cards on the current page; the previous full-catalog
   // request retained every recipe while this page was hidden.
@@ -838,8 +826,7 @@ export default function Foundry({ inventory, refreshKey, crafting, subsummedWarf
   }, [modalItem]);
 
   return (
-    <div className={FY_ROOT}>
-
+    <>
       {/* ── Modal overlay ── */}
       {modalItem && (
         <RecipeModal
@@ -853,25 +840,12 @@ export default function Foundry({ inventory, refreshKey, crafting, subsummedWarf
         />
       )}
 
-      {/* ── Col 1: Category sidebar ── */}
-      <div className={FY_SIDEBAR}>
-        <div className={FY_SEARCH_WRAP}>
-          <FoundrySearch placeholder="Search (comma-separated)…" value={inputSearch}
-            onChange={e => setInputSearch(e.target.value)} />
-        </div>
-        {CRAFT_CATEGORIES.map(cat => (
-          <CategoryButton key={cat} active={activeCat === cat} label={cat}
-            className={FY_SIDEBAR_CAT} labelClassName={FY_CAT_LABEL}
-            onClick={() => onFiltersChange({ ...filters, activeCat: cat, search: "" })}>
-            {categoryCounts[cat] ? (
-              <span className={CAT_COUNT}><span className={CAT_TOTAL}>{categoryCounts[cat]}</span></span>
-            ) : null}
-          </CategoryButton>
-        ))}
-      </div>
+      <ScreenLayout sidebar={
+        <CategorySidebar categories={CRAFT_CATEGORIES} active={activeCat} counts={categoryCounts}
+          onSelect={cat => onFiltersChange({ ...filters, activeCat: cat, search: "" })} />
+      }>
+        <ScreenSearch placeholder="Search (comma-separated)…" value={inputSearch} onChange={setInputSearch} />
 
-      {/* ── Col 2: Card grid ── */}
-      <div className={FY_MAIN}>
         <FilterBar>
           <FilterChip active={filterPrime} onClick={() => set("filterPrime", !filterPrime)}>Prime</FilterChip>
           <FilterChip active={filterNonPrime} onClick={() => set("filterNonPrime", !filterNonPrime)}>Non-Prime</FilterChip>
@@ -925,15 +899,8 @@ export default function Foundry({ inventory, refreshKey, crafting, subsummedWarf
             />
           ))}
         </div>
-        {pageCount > 1 && (
-          <div className={FY_PAGINATION}>
-            <SecondaryButton disabled={page === 0} onClick={() => setPage(p => p - 1)}>← Prev</SecondaryButton>
-            <span className={FY_PG_LABEL}>Page {page + 1} of {pageCount}</span>
-            <SecondaryButton disabled={page >= pageCount - 1} onClick={() => setPage(p => p + 1)}>Next →</SecondaryButton>
-          </div>
-        )}
-      </div>
-
-    </div>
+        <Pagination page={page} pageCount={pageCount} onPageChange={setPage} />
+      </ScreenLayout>
+    </>
   );
 }
