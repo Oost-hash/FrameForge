@@ -143,7 +143,13 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
             loop {
                 // While a reward screen is up, poll much more often so the closing
                 // line is picked up quickly. The 20 s auto-dismiss still applies.
-                let reward_active = reward_screen_active2.load(Ordering::SeqCst);
+                // Also switch to fast polling as soon as relics are known (well
+                // before the trigger line itself): this moves the up-to-500ms
+                // idle-detection tax to a moment nobody's watching the overlay for,
+                // so the actual "VoidProjections: GetVoidProjectionReward" line is
+                // caught within ~50ms instead of up to 500ms late.
+                let reward_active = reward_screen_active2.load(Ordering::SeqCst)
+                    || !session_relics.is_empty();
                 let idle_wait_ms: u32 = if reward_active { 50 } else { 500 };
                 if use_notify {
                     use windows_sys::Win32::System::Threading::WaitForSingleObject;
