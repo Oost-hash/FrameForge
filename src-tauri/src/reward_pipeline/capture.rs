@@ -2,9 +2,10 @@
 
 use tauri::Manager;
 
+use super::events::{self, AttemptDiag};
+use super::RewardDiagnosticSession;
 use crate::app_state::AppState;
 use crate::diagnostics::write_bmp;
-use super::events::{self, AttemptDiag};
 
 pub(crate) type RewardOcrResult = (bool, bool, Vec<String>, Vec<f32>, AttemptDiag);
 
@@ -34,7 +35,14 @@ pub(crate) async fn capture_reward_items(
     tauri::async_runtime::spawn_blocking(move || {
         let (pixels, width, capture_height, game_height, capture_info, preprocess_text_pass) =
             if let Some((cached_pixels, cached_w, cached_h)) = cached_frame {
-                (cached_pixels, cached_w, cached_h, cached_h, "reused last frame (preprocessed)".to_string(), true)
+                (
+                    cached_pixels,
+                    cached_w,
+                    cached_h,
+                    cached_h,
+                    "reused last frame (preprocessed)".to_string(),
+                    true,
+                )
             } else {
                 let (pixels, width, capture_height, game_height, capture_info) =
                     crate::ocr::capture_warframe_reward_area()?;
@@ -42,10 +50,20 @@ pub(crate) async fn capture_reward_items(
                 if let Ok(mut cached) = frame.lock() {
                     *cached = Some((pixels.clone(), width, capture_height));
                 }
-                (pixels, width, capture_height, game_height, capture_info, false)
+                (
+                    pixels,
+                    width,
+                    capture_height,
+                    game_height,
+                    capture_info,
+                    false,
+                )
             };
         let hint = squad_hint.lock().map(|hint| *hint).unwrap_or_default();
-        let player_names = squad_names.lock().map(|names| names.clone()).unwrap_or_default();
+        let player_names = squad_names
+            .lock()
+            .map(|names| names.clone())
+            .unwrap_or_default();
         Some(super::extract_reward_items_twophase(super::OcrParams {
             pixels: &pixels,
             pix_w: width,
@@ -74,29 +92,33 @@ pub(crate) async fn capture_reward_items(
 /// capture once the session that scheduled it is no longer current avoids
 /// saving that misleading frame.
 pub(crate) fn schedule_reward_diagnostic_capture(
-    diag_dir: std::sync::Arc<std::sync::Mutex<Option<std::path::PathBuf>>>,
+    session: Option<std::sync::Arc<RewardDiagnosticSession>>,
     active: std::sync::Arc<std::sync::atomic::AtomicBool>,
     session_counter: std::sync::Arc<std::sync::atomic::AtomicU64>,
     my_session: u64,
-    session_log_path: std::path::PathBuf,
 ) {
-    if !crate::diagnostics::ocr_pipeline_diagnostics_enabled() {
-        return;
-    }
-    let folder = diag_dir.lock().ok().and_then(|guard| guard.clone());
-    if let Some(folder) = folder {
+    if let Some(session) = session {
         tauri::async_runtime::spawn(async move {
             tokio::time::sleep(std::time::Duration::from_millis(4000)).await;
             use std::sync::atomic::Ordering;
-            if !active.load(Ordering::SeqCst) || session_counter.load(Ordering::SeqCst) != my_session {
+            if !active.load(Ordering::SeqCst)
+                || session_counter.load(Ordering::SeqCst) != my_session
+            {
                 return;
             }
             if !crate::diagnostics::ocr_pipeline_diagnostics_enabled() {
                 return;
             }
+            let artifact_session = session.clone();
             let written = tauri::async_runtime::spawn_blocking(move || {
                 if let Some((pixels, width, height)) = crate::ocr::capture_desktop_for_diag() {
-                    write_bmp(&folder.join("desktop_after_publish.bmp"), &pixels, width, height).is_ok()
+                    write_bmp(
+                        &artifact_session.artifact_path("desktop_after_publish.bmp"),
+                        &pixels,
+                        width,
+                        height,
+                    )
+                    .is_ok()
                 } else {
                     false
                 }
@@ -107,7 +129,7 @@ pub(crate) fn schedule_reward_diagnostic_capture(
                 // Name-and-shame the file in the event stream: desktop_after_publish.bmp is a
                 // delayed *desktop* capture taken after publish (overlay included) —
                 // it is not the frame the OCR scored (that's ocr_frame.bmp).
-                events::log(&session_log_path, &serde_json::json!({
+                session.log(&serde_json::json!({
                     "t": events::now_ts(),
                     "event": "artifact",
                     "file": "desktop_after_publish.bmp",

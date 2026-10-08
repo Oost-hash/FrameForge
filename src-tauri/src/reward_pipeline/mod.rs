@@ -6,19 +6,17 @@ mod capture;
 mod diagnostics;
 mod events;
 mod matching;
-mod policy;
 mod publish;
 mod recognize;
 mod trigger;
 
 pub(crate) use capture::{capture_reward_items, schedule_reward_diagnostic_capture};
-pub(crate) use diagnostics::{log_attempt, no_match_tick};
-pub(crate) use events::{log as log_event, now_ts, AttemptEvent, PrevBest};
-pub(crate) use policy::RewardPaths;
+pub(crate) use diagnostics::{log_attempt, no_match_tick, RewardDiagnosticSession};
+pub(crate) use events::{now_ts, AttemptEvent, PrevBest};
 pub(crate) use publish::{
     auto_dismiss_relic_rewards, close_reward_overlay, dismiss_relic_rewards,
-    finalize_reward_ocr_timeout, publish_relic_rewards, schedule_reward_safety_cleanup,
-    CloseState, DismissState,
+    finalize_reward_ocr_timeout, publish_relic_rewards, schedule_reward_safety_cleanup, CloseState,
+    DismissState,
 };
 pub(crate) use recognize::extract_reward_items_twophase;
 pub(crate) use trigger::{

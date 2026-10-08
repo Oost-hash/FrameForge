@@ -8,23 +8,6 @@
 
 use serde::Serialize;
 
-use std::path::Path;
-
-/// Serialize an event to one JSONL line (trailing newline included).
-pub(crate) fn line(event: &impl Serialize) -> String {
-    let mut line = serde_json::to_string(event).unwrap_or_default();
-    line.push('\n');
-    line
-}
-
-/// Append one event object as a single JSONL line.
-pub(crate) fn log(path: &Path, event: &impl Serialize) {
-    if !crate::diagnostics::ocr_pipeline_diagnostics_enabled() {
-        return;
-    }
-    let _ = crate::append_to_file(path, &line(event));
-}
-
 /// Local wall-clock timestamp `HH:MM:SS.mmm` used as the `t` field.
 pub(crate) fn now_ts() -> String {
     chrono::Local::now().format("%H:%M:%S%.3f").to_string()
@@ -141,7 +124,12 @@ impl AttemptDiag {
             capture,
             note: None,
             ocr: None,
-            bars: BarsDiag { ok: false, y: None, segments: 0, note: "not evaluated".into() },
+            bars: BarsDiag {
+                ok: false,
+                y: None,
+                segments: 0,
+                note: "not evaluated".into(),
+            },
             cols_source: "none".into(),
             cols: 0,
             hint_size: None,

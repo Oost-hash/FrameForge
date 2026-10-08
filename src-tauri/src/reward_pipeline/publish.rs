@@ -4,8 +4,8 @@
 use std::sync::atomic::Ordering;
 use tauri::{Emitter, Manager};
 
+use super::RewardDiagnosticSession;
 use crate::app_state::AppState;
-use crate::diagnostics::append_to_diag;
 use crate::events;
 
 /// Mutable reward-screen watch state owned by the EE.log reader loop.
@@ -28,12 +28,15 @@ pub(crate) struct CloseState<'a> {
 pub(crate) fn apply_reward_inventory_update(
     app: &tauri::AppHandle,
     store_path: String,
-    session_log_path: &std::path::Path,
+    session: Option<&std::sync::Arc<RewardDiagnosticSession>>,
 ) {
     let inv_path = crate::worldstate::store_to_unique(&store_path);
     let state: tauri::State<AppState> = app.state();
     let (old_qty, new_qty) = {
-        let mut quantities = state.current_quantities.lock().unwrap_or_else(|e| e.into_inner());
+        let mut quantities = state
+            .current_quantities
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let old = *quantities.get(&inv_path).unwrap_or(&0);
         let new = old + 1;
         quantities.insert(inv_path.clone(), new);
@@ -53,7 +56,10 @@ pub(crate) fn apply_reward_inventory_update(
             timestamp, item_name, old_qty, new_qty
         );
     }
-    let _ = app.emit(events::INVENTORY_REWARD, serde_json::json!({ "path": inv_path, "qty": new_qty }));
+    let _ = app.emit(
+        events::INVENTORY_REWARD,
+        serde_json::json!({ "path": inv_path, "qty": new_qty }),
+    );
     let event = serde_json::json!({
         "t": super::events::now_ts(),
         "event": "inventory_reward",
@@ -62,15 +68,16 @@ pub(crate) fn apply_reward_inventory_update(
         "qty": [old_qty, new_qty],
         "source": "ee_log",
     });
-    append_to_diag(session_log_path, &super::events::line(&event));
+    if let Some(session) = session {
+        session.log(&event);
+    }
 }
 
 /// Handle an EE.log reward-screen dismissal and schedule the overlay cleanup.
 pub(crate) fn dismiss_relic_rewards(
     app: &tauri::AppHandle,
     text: &str,
-    session_log_path: &std::path::Path,
-    diag_dir: &std::sync::Arc<std::sync::Mutex<Option<std::path::PathBuf>>>,
+    session: Option<std::sync::Arc<RewardDiagnosticSession>>,
     reward_screen_active: &std::sync::Arc<std::sync::atomic::AtomicBool>,
     rewards_emitted_ms: &std::sync::Arc<std::sync::atomic::AtomicU64>,
     state: DismissState<'_>,
@@ -90,7 +97,8 @@ pub(crate) fn dismiss_relic_rewards(
         return false;
     }
 
-    let dismiss_line = text.lines()
+    let dismiss_line = text
+        .lines()
         .find(|line| {
             let line = line.to_lowercase();
             line.contains("relic reward screen shut down")
@@ -107,13 +115,8 @@ pub(crate) fn dismiss_relic_rewards(
         "line": dismiss_line,
         "open_for_s": elapsed,
     });
-    append_to_diag(session_log_path, &super::events::line(&event));
-    if let Ok(mut guard) = diag_dir.lock() {
-        if let Some(folder) = guard.take() {
-            if crate::diagnostics::ocr_pipeline_diagnostics_enabled() {
-                let _ = std::fs::copy(session_log_path, folder.join("ocr_session_log.jsonl"));
-            }
-        }
+    if let Some(session) = &session {
+        session.log(&event);
     }
     reward_screen_active.store(false, Ordering::SeqCst);
     *active_since = None;
@@ -122,7 +125,7 @@ pub(crate) fn dismiss_relic_rewards(
         session_relics.clear();
     }
     if let Some(store_path) = projection_state.take_own_item() {
-        apply_reward_inventory_update(app, store_path, session_log_path);
+        apply_reward_inventory_update(app, store_path, session.as_ref());
     }
 
     const MIN_DISPLAY_MS: u64 = 5_000;
@@ -149,14 +152,18 @@ pub(crate) fn dismiss_relic_rewards(
             return;
         }
         if let Some(window) = dismiss_app.get_webview_window("relic-overlay") {
-            let _ = window.set_position(tauri::Position::Physical(
-                tauri::PhysicalPosition { x: 0, y: -3000 },
-            ));
+            let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
+                x: 0,
+                y: -3000,
+            }));
         }
         if let Ok(mut rewards) = dismiss_app.state::<AppState>().pending_relic_rewards.lock() {
             *rewards = None;
         }
         let _ = dismiss_app.emit(events::RELIC_REWARDS, serde_json::Value::Null);
+        if let Some(session) = session {
+            session.finish("ee_log_dismiss");
+        }
     });
     true
 }
@@ -164,8 +171,7 @@ pub(crate) fn dismiss_relic_rewards(
 /// Dismiss a reward overlay that remained active beyond its maximum window.
 pub(crate) fn auto_dismiss_relic_rewards(
     app: &tauri::AppHandle,
-    session_log_path: &std::path::Path,
-    diag_dir: &std::sync::Arc<std::sync::Mutex<Option<std::path::PathBuf>>>,
+    session: Option<std::sync::Arc<RewardDiagnosticSession>>,
     reward_screen_active: &std::sync::Arc<std::sync::atomic::AtomicBool>,
     active_since: &mut Option<std::time::Instant>,
     last_dismiss_at: &mut Option<std::time::Instant>,
@@ -177,8 +183,7 @@ pub(crate) fn auto_dismiss_relic_rewards(
     }
     close_reward_overlay(
         app,
-        session_log_path,
-        diag_dir,
+        session,
         CloseState {
             reward_screen_active,
             active_since,
@@ -194,8 +199,7 @@ pub(crate) fn auto_dismiss_relic_rewards(
 /// its "shut down" line hasn't reached EE.log yet). Skips the 5 s minimum display.
 pub(crate) fn close_reward_overlay(
     app: &tauri::AppHandle,
-    session_log_path: &std::path::Path,
-    diag_dir: &std::sync::Arc<std::sync::Mutex<Option<std::path::PathBuf>>>,
+    session: Option<std::sync::Arc<RewardDiagnosticSession>>,
     state: CloseState<'_>,
     reason: &str,
 ) {
@@ -212,22 +216,19 @@ pub(crate) fn close_reward_overlay(
         "reason": reason,
         "open_for_s": open_for,
     });
-    append_to_diag(session_log_path, &super::events::line(&event));
-    if let Ok(mut guard) = diag_dir.lock() {
-        if let Some(folder) = guard.take() {
-            if crate::diagnostics::ocr_pipeline_diagnostics_enabled() {
-                let _ = std::fs::copy(session_log_path, folder.join("ocr_session_log.jsonl"));
-            }
-        }
+    if let Some(session) = &session {
+        session.log(&event);
+        session.finish(reason);
     }
     reward_screen_active.store(false, Ordering::SeqCst);
     *active_since = None;
     *last_dismiss_at = Some(std::time::Instant::now());
     rewards_emitted_ms.store(0, Ordering::SeqCst);
     if let Some(window) = app.get_webview_window("relic-overlay") {
-        let _ = window.set_position(tauri::Position::Physical(
-            tauri::PhysicalPosition { x: 0, y: -3000 },
-        ));
+        let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
+            x: 0,
+            y: -3000,
+        }));
     }
     if let Ok(mut rewards) = app.state::<AppState>().pending_relic_rewards.lock() {
         *rewards = None;
@@ -238,11 +239,9 @@ pub(crate) fn close_reward_overlay(
 /// Schedule the final cleanup when the normal EE.log dismissal never arrives.
 pub(crate) fn schedule_reward_safety_cleanup(
     app: tauri::AppHandle,
-    session_log_path: std::path::PathBuf,
-    diag_dir: std::sync::Arc<std::sync::Mutex<Option<std::path::PathBuf>>>,
+    session: Option<std::sync::Arc<RewardDiagnosticSession>>,
     session_counter: std::sync::Arc<std::sync::atomic::AtomicU64>,
     session_id: u64,
-    also_write_diagnostics: bool,
 ) {
     tauri::async_runtime::spawn(async move {
         tokio::time::sleep(std::time::Duration::from_secs(20)).await;
@@ -254,38 +253,31 @@ pub(crate) fn schedule_reward_safety_cleanup(
         }
         let _ = app.emit(events::RELIC_REWARDS, serde_json::Value::Null);
         if let Some(window) = app.get_webview_window("relic-overlay") {
-            let _ = window.set_position(tauri::Position::Physical(
-                tauri::PhysicalPosition { x: 0, y: -3000 },
-            ));
+            let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
+                x: 0,
+                y: -3000,
+            }));
         }
         let event = serde_json::json!({
             "t": super::events::now_ts(),
             "event": "dismiss",
             "reason": "auto_20s_safety",
         });
-        let line = super::events::line(&event);
-        if also_write_diagnostics {
-            append_to_diag(&session_log_path, &line);
-        } else {
-            super::events::log(&session_log_path, &event);
-        }
-        if let Ok(mut guard) = diag_dir.lock() {
-            if let Some(folder) = guard.take() {
-                if crate::diagnostics::ocr_pipeline_diagnostics_enabled() {
-                    let _ = std::fs::copy(&session_log_path, folder.join("ocr_session_log.jsonl"));
-                }
-            }
+        if let Some(session) = session {
+            session.log(&event);
+            session.finish("auto_20s_safety");
         }
     });
 }
 
 /// Store the payload for a late overlay mount, then notify the frontend.
-pub(crate) fn publish_relic_rewards(
-    app: &tauri::AppHandle,
-    payload: Option<&serde_json::Value>,
-) {
+pub(crate) fn publish_relic_rewards(app: &tauri::AppHandle, payload: Option<&serde_json::Value>) {
     if payload.is_some_and(|payload| !payload.is_null())
-        && !app.state::<AppState>().overlays_enabled.load(Ordering::SeqCst) {
+        && !app
+            .state::<AppState>()
+            .overlays_enabled
+            .load(Ordering::SeqCst)
+    {
         return;
     }
     if let Some(payload) = payload.filter(|payload| !payload.is_null()) {
@@ -296,8 +288,7 @@ pub(crate) fn publish_relic_rewards(
     let _ = app.emit(events::RELIC_REWARDS, payload);
 }
 
-/// Emit the best partial result after OCR timed out, hide the overlay, and
-/// persist the session log to the diagnostic folder.
+/// Emit the best partial result after OCR timed out and hide the overlay.
 ///
 /// `session_valid` is false when a newer trigger has already taken over the
 /// shared `reward_screen_active` flag by the time this stale task's 45 s
@@ -312,19 +303,26 @@ pub(crate) fn finalize_reward_ocr_timeout(
     app: &tauri::AppHandle,
     best_payload: Option<serde_json::Value>,
     active: &std::sync::atomic::AtomicBool,
-    session_log_path: &std::path::Path,
-    diag_dir: &std::sync::Arc<std::sync::Mutex<Option<std::path::PathBuf>>>,
+    session: Option<std::sync::Arc<RewardDiagnosticSession>>,
     session_valid: bool,
     timeout_info: &serde_json::Value,
 ) {
     let mut event = timeout_info.clone();
-    let obj = event.as_object_mut().expect("timeout_info must be an object");
+    let obj = event
+        .as_object_mut()
+        .expect("timeout_info must be an object");
     obj.insert("t".into(), serde_json::json!(super::events::now_ts()));
     obj.insert("event".into(), serde_json::json!("timeout"));
     obj.insert("stale".into(), serde_json::json!(!session_valid));
     if !session_valid {
-        obj.insert("reason".into(), serde_json::json!("superseded_by_newer_trigger"));
-        super::events::log(session_log_path, &event);
+        obj.insert(
+            "reason".into(),
+            serde_json::json!("superseded_by_newer_trigger"),
+        );
+        if let Some(session) = &session {
+            session.log(&event);
+            session.finish("superseded_by_newer_trigger");
+        }
         return;
     }
     let emit_val = if active.load(Ordering::SeqCst) {
@@ -332,12 +330,15 @@ pub(crate) fn finalize_reward_ocr_timeout(
     } else {
         serde_json::Value::Null
     };
-    let published = emit_val.as_object()
+    let published = emit_val
+        .as_object()
         .and_then(|o| o.get("items"))
         .is_some_and(|items| !items.is_null());
     obj.insert("published".into(), serde_json::json!(published));
     obj.insert("reason".into(), serde_json::json!("deadline_45s"));
-    super::events::log(session_log_path, &event);
+    if let Some(session) = &session {
+        session.log(&event);
+    }
     publish_relic_rewards(app, Some(&emit_val));
     if let Some(win) = app.get_webview_window("relic-overlay") {
         let _ = win.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
@@ -346,11 +347,7 @@ pub(crate) fn finalize_reward_ocr_timeout(
         }));
     }
     active.store(false, Ordering::SeqCst);
-    if let Ok(mut g) = diag_dir.lock() {
-        if let Some(folder) = g.take() {
-            if crate::diagnostics::ocr_pipeline_diagnostics_enabled() {
-                let _ = std::fs::copy(session_log_path, folder.join("ocr_session_log.jsonl"));
-            }
-        }
+    if let Some(session) = session {
+        session.finish("deadline_45s");
     }
 }

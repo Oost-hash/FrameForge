@@ -2,8 +2,8 @@
 //! reward handshake, and catalog prefiltering for a new reward session.
 
 use tauri::Manager;
-use tracing::warn;
 
+use super::RewardDiagnosticSession;
 use crate::app_state::AppState;
 
 /// The trigger line that opened a reward session plus its catalog prefilter summary.
@@ -67,7 +67,7 @@ pub(crate) fn collect_void_projection_state(
     text: &str,
     state: &mut VoidProjectionState,
     squad_hint: &std::sync::Arc<std::sync::Mutex<SquadHint>>,
-    session_log_path: &std::path::Path,
+    session: Option<&std::sync::Arc<RewardDiagnosticSession>>,
 ) {
     for line in text.lines() {
         let lower = line.to_lowercase();
@@ -80,14 +80,16 @@ pub(crate) fn collect_void_projection_state(
                 *hint = SquadHint::default();
             }
             if previous.is_some() {
-                super::events::log(session_log_path, &serde_json::json!({
-                    "t": super::events::now_ts(),
-                    "event": "hint",
-                    "source": "none",
-                    "size": serde_json::Value::Null,
-                    "prev": previous,
-                    "reason": "new_voidprojections_sequence",
-                }));
+                if let Some(session) = session {
+                    session.log(&serde_json::json!({
+                        "t": super::events::now_ts(),
+                        "event": "hint",
+                        "source": "none",
+                        "size": serde_json::Value::Null,
+                        "prev": previous,
+                        "reason": "new_voidprojections_sequence",
+                    }));
+                }
             }
         }
         if lower.contains("gets reward /lotus/") {
@@ -109,7 +111,8 @@ pub(crate) fn collect_void_projection_state(
                 }
                 state.in_sequence = false;
                 state.sequence_completed = true;
-                super::events::log(session_log_path, &serde_json::json!({
+                if let Some(session) = session {
+                    session.log(&serde_json::json!({
                     "t": super::events::now_ts(),
                     "event": "hint",
                     "source": "ee_handshake",
@@ -118,6 +121,7 @@ pub(crate) fn collect_void_projection_state(
                     "own_item": if state.own_item.is_empty() { serde_json::Value::Null } else { state.own_item.clone().into() },
                     "other_ids": state.other_ids.len(),
                 }));
+                }
             }
         }
     }
@@ -132,16 +136,24 @@ pub(crate) fn filter_relic_reward_catalog(
     if session_relics.is_empty() {
         return (
             std::sync::Arc::clone(full_catalog),
-            "  No relics collected — using full catalog (FrameForge started mid-mission?)".to_string(),
+            "  No relics collected — using full catalog (FrameForge started mid-mission?)"
+                .to_string(),
         );
     }
     let mut rewards: Vec<(String, String)> = {
         let state = app.state::<AppState>();
-        let reward_map = state.relic_rewards.lock().unwrap_or_else(|e| e.into_inner());
+        let reward_map = state
+            .relic_rewards
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         session_relics
             .iter()
             .filter_map(|path| reward_map.get(path.as_str()))
-            .flat_map(|rewards| rewards.iter().map(|reward| (reward.unique_name.clone(), reward.name.clone())))
+            .flat_map(|rewards| {
+                rewards
+                    .iter()
+                    .map(|reward| (reward.unique_name.clone(), reward.name.clone()))
+            })
             .filter(|(_, name)| !name.is_empty())
             .collect()
     };
@@ -160,7 +172,10 @@ pub(crate) fn filter_relic_reward_catalog(
     let sample = &names[..names.len().min(8)];
     let log = format!(
         "  {} relic(s) → {} rewards (direct from Relics.json)\n  Relics: {:?}\n  Rewards: {:?}",
-        session_relics.len(), rewards.len(), session_relics, sample
+        session_relics.len(),
+        rewards.len(),
+        session_relics,
+        sample
     );
     (std::sync::Arc::new(rewards), log)
 }
@@ -174,10 +189,22 @@ pub(crate) fn build_fallback_reward_catalog(
     if items.is_empty() {
         return None;
     }
-    let blueprints = state.blueprint_to_result.lock().unwrap_or_else(|e| e.into_inner());
+    let blueprints = state
+        .blueprint_to_result
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     let excluded = [
-        "Warframes", "Primary", "Secondary", "Melee", "Companion", "Sentinels", "Archwing",
-        "Arch-Gun", "Arch-Melee", "Pets", "Robotic",
+        "Warframes",
+        "Primary",
+        "Secondary",
+        "Melee",
+        "Companion",
+        "Sentinels",
+        "Archwing",
+        "Arch-Gun",
+        "Arch-Melee",
+        "Pets",
+        "Robotic",
     ];
     let mut catalog: Vec<(String, String)> = items
         .iter()
@@ -203,31 +230,24 @@ pub(crate) fn build_fallback_reward_catalog(
     (!catalog.is_empty()).then(|| std::sync::Arc::new(catalog))
 }
 
-/// Start the diagnostic files for a relic-reward OCR session.
-///
-/// Writes the single `session_start` line that (re)initializes the JSONL
-/// session log — this truncates any previous session's events.
+/// Start the diagnostic directory and direct JSONL log for one relic-reward session.
 pub(crate) fn prepare_reward_session(
-    session_log_path: &std::path::Path,
+    session_id: u64,
     squad_names: &std::sync::Arc<std::sync::Mutex<Vec<String>>>,
     trigger: RewardTrigger<'_>,
     auto_capture_dir: &std::path::Path,
-    diag_dir: &std::sync::Arc<std::sync::Mutex<Option<std::path::PathBuf>>>,
-    last_found_path: &std::path::Path,
-) {
-    if !crate::diagnostics::ocr_pipeline_diagnostics_enabled() {
-        if let Ok(mut guard) = diag_dir.lock() {
-            *guard = None;
-        }
-        return;
-    }
+) -> Option<std::sync::Arc<RewardDiagnosticSession>> {
+    let session = RewardDiagnosticSession::begin(auto_capture_dir, session_id)?;
     let RewardTrigger {
         timestamp,
         trigger_line,
         prefilter_log,
         catalog_len,
     } = trigger;
-    let names = squad_names.lock().map(|names| names.clone()).unwrap_or_default();
+    let names = squad_names
+        .lock()
+        .map(|names| names.clone())
+        .unwrap_or_default();
     let prefilter: Vec<&str> = prefilter_log
         .lines()
         .map(str::trim)
@@ -240,23 +260,10 @@ pub(crate) fn prepare_reward_session(
         "prefilter": prefilter,
         "catalog": catalog_len,
         "players": names,
-        "log_path": session_log_path.display().to_string(),
+        "log_path": session.log_path().display().to_string(),
     });
-    if let Err(error) = std::fs::write(
-        session_log_path,
-        format!("{}\n", serde_json::to_string(&event).unwrap_or_default()),
-    ) {
-        warn!(error = %error, "session log write failed");
-    }
-    let run_dir = auto_capture_dir.join(chrono::Local::now().format("%Y-%m-%d_%H-%M-%S").to_string());
-    let _ = std::fs::create_dir_all(&run_dir);
-    if let Ok(mut guard) = diag_dir.lock() {
-        *guard = Some(run_dir);
-    }
-    let _ = std::fs::write(
-        last_found_path,
-        format!("=== {} ===\nEE.log trigger fired\n{}\n", timestamp, trigger_line),
-    );
+    session.log(&event);
+    Some(session)
 }
 
 /// Prepare OCR hints immediately when a relic reward screen is triggered.
@@ -295,7 +302,7 @@ pub(crate) fn prepare_reward_trigger(
 pub(crate) fn log_session_hint(
     squad_hint: &std::sync::Arc<std::sync::Mutex<SquadHint>>,
     session_relics: &[String],
-    session_log_path: &std::path::Path,
+    session: Option<&std::sync::Arc<RewardDiagnosticSession>>,
 ) {
     let hint = squad_hint.lock().map(|hint| *hint).unwrap_or_default();
     let source = match hint.source {
@@ -304,13 +311,15 @@ pub(crate) fn log_session_hint(
         0 => "none",
         _ => "unknown",
     };
-    super::events::log(session_log_path, &serde_json::json!({
-        "t": super::events::now_ts(),
-        "event": "hint",
-        "source": source,
-        "size": hint.size,
-        "session_relics": session_relics.len(),
-        "note": (source == "relic_guess")
-            .then(|| format!("min(session_relics={}, 4)", session_relics.len())),
-    }));
+    if let Some(session) = session {
+        session.log(&serde_json::json!({
+            "t": super::events::now_ts(),
+            "event": "hint",
+            "source": source,
+            "size": hint.size,
+            "session_relics": session_relics.len(),
+            "note": (source == "relic_guess")
+                .then(|| format!("min(session_relics={}, 4)", session_relics.len())),
+        }));
+    }
 }
