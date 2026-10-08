@@ -7,6 +7,17 @@ use crate::append_to_file;
 
 type MemoryPattern = (&'static str, &'static [u8], usize, usize, u64, u64);
 
+static OCR_PIPELINE_DIAGNOSTICS_ENABLED: AtomicBool = AtomicBool::new(false);
+
+pub(crate) fn ocr_pipeline_diagnostics_enabled() -> bool {
+    OCR_PIPELINE_DIAGNOSTICS_ENABLED.load(Ordering::Relaxed)
+}
+
+#[tauri::command]
+pub(crate) fn set_ocr_pipeline_diagnostics(enabled: bool) {
+    OCR_PIPELINE_DIAGNOSTICS_ENABLED.store(enabled, Ordering::Relaxed);
+}
+
 #[tauri::command]
 pub(crate) fn get_app_version(app: tauri::AppHandle) -> String {
     // Use the Tauri runtime version — same source the updater plugin uses for comparison.
@@ -166,8 +177,11 @@ pub(crate) fn clear_cache(state: State<AppState>) -> Result<(), String> {
 
 /// Append text to both the global overlay session log and the per-session diagnostic file.
 /// The diagnostic target is found by picking the most recently modified folder under
-/// %TEMP%\frameforge\diagnostics\ that contains an ocr_session_log.txt.
+/// %TEMP%\frameforge\diagnostics\ that contains an ocr_session_log.jsonl.
 pub(crate) fn append_to_diag(global_log: &std::path::Path, text: &str) {
+    if !ocr_pipeline_diagnostics_enabled() {
+        return;
+    }
     let _ = append_to_file(global_log, text);
     let diag_base = std::env::temp_dir().join("frameforge").join("diagnostics");
     if let Ok(entries) = std::fs::read_dir(&diag_base) {
@@ -177,7 +191,7 @@ pub(crate) fn append_to_diag(global_log: &std::path::Path, text: &str) {
             .collect();
         folders.sort();
         if let Some(latest) = folders.last() {
-            let diag_log = latest.join("ocr_session_log.txt");
+            let diag_log = latest.join("ocr_session_log.jsonl");
             if diag_log.exists() {
                 let _ = append_to_file(&diag_log, text);
             }
@@ -196,16 +210,27 @@ pub(crate) fn get_riven_session_log() -> String {
 /// Read the current overlay session log.
 #[tauri::command]
 pub(crate) fn get_overlay_session_log() -> String {
-    let path = std::env::temp_dir().join("frameforge_overlay_session.txt");
+    let path = std::env::temp_dir().join("frameforge_overlay_session.jsonl");
     std::fs::read_to_string(&path).unwrap_or_else(|_| "(no session log yet — trigger a Void Fissure first)".into())
 }
 
 /// Frontend tracing — App.tsx and Overlay.tsx call this to write diagnostic
 /// lines into the same session log that gets copied to the diagnostics folder.
+/// Logged as `{"event":"fe"}` JSONL so the log stays one consistent stream.
 #[tauri::command]
 pub(crate) fn log_relic_fe(msg: String) {
-    let path = std::env::temp_dir().join("frameforge_overlay_session.txt");
-    let _ = append_to_file(&path, &format!("[FE] {}\n", msg));
+    if !ocr_pipeline_diagnostics_enabled() {
+        return;
+    }
+    let path = std::env::temp_dir().join("frameforge_overlay_session.jsonl");
+    let event = serde_json::json!({
+        "t": chrono::Local::now().format("%H:%M:%S%.3f").to_string(),
+        "event": "fe",
+        "msg": msg,
+    });
+    let mut line = serde_json::to_string(&event).unwrap_or_default();
+    line.push('\n');
+    let _ = append_to_file(&path, &line);
 }
 
 /// Force-set the relic-overlay window to HWND_TOPMOST via SetWindowPos.
@@ -459,47 +484,6 @@ pub(crate) fn write_bmp(path: &std::path::Path, bgra: &[u8], w: u32, h: u32) -> 
         if padding > 0 { f.write_all(&pad[..padding])?; }
     }
     Ok(())
-}
-
-/// Capture a diagnostic bundle: scan log + screenshot of the full Warframe window
-/// (including any overlay on top via GDI desktop BitBlt / DXGI fallback).
-/// Saves everything to %TEMP%\frameforge\diagnostics\<timestamp>\ and
-/// returns the folder path so the frontend can show it.
-#[tauri::command]
-pub(crate) async fn save_auto_diag_capture(state: State<'_, AppState>) -> Result<String, String> {
-    // Reuse the frame already captured by the OCR pipeline — no second GPU readback,
-    // so no GetDIBits stall that used to freeze the whole PC during fissure VFX.
-    let frame = state.last_ocr_frame.lock()
-        .ok()
-        .and_then(|g| g.clone());
-    let auto_capture_dir = state.auto_capture_dir.clone();
-
-    tauri::async_runtime::spawn_blocking(move || {
-        let ts = chrono::Local::now().format("%Y-%m-%d_%H-%M-%S").to_string();
-        let folder = auto_capture_dir.join(&ts);
-        std::fs::create_dir_all(&folder).map_err(|e| e.to_string())?;
-
-        let session_log = std::env::temp_dir().join("frameforge_overlay_session.txt");
-        if session_log.exists() {
-            let _ = std::fs::copy(&session_log, folder.join("ocr_session_log.txt"));
-        }
-
-        match frame {
-            Some((pixels, w, h)) => {
-                let _ = write_bmp(&folder.join("screenshot.bmp"), &pixels, w, h);
-            }
-            None => {
-                let _ = std::fs::write(
-                    folder.join("screenshot_note.txt"),
-                    "No OCR frame captured yet — trigger a Void Fissure first.",
-                );
-            }
-        }
-
-        Ok(folder.to_string_lossy().into_owned())
-    })
-    .await
-    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]

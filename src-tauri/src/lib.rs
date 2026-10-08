@@ -664,7 +664,7 @@ pub fn run() {
             relic_pick::move_overlay_offscreen,
             diagnostics::get_diag_folder_size,
             diagnostics::clear_diag_folder,
-            diagnostics::save_auto_diag_capture,
+            diagnostics::set_ocr_pipeline_diagnostics,
             diagnostics::capture_diagnostics,
             image_cache::get_img_cache_dir,
             image_cache::prewarm_image_cache,

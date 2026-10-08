@@ -7,7 +7,6 @@ use tauri::{Emitter, Manager};
 use crate::app_state::AppState;
 use crate::diagnostics::append_to_diag;
 use crate::events;
-use crate::append_to_file;
 
 /// Mutable reward-screen watch state owned by the EE.log reader loop.
 pub(crate) struct DismissState<'a> {
@@ -15,6 +14,13 @@ pub(crate) struct DismissState<'a> {
     pub(crate) last_dismiss_at: &'a mut Option<std::time::Instant>,
     pub(crate) session_relics: &'a mut Vec<String>,
     pub(crate) projection_state: &'a mut super::VoidProjectionState,
+}
+
+pub(crate) struct CloseState<'a> {
+    pub(crate) reward_screen_active: &'a std::sync::Arc<std::sync::atomic::AtomicBool>,
+    pub(crate) active_since: &'a mut Option<std::time::Instant>,
+    pub(crate) last_dismiss_at: &'a mut Option<std::time::Instant>,
+    pub(crate) rewards_emitted_ms: &'a std::sync::Arc<std::sync::atomic::AtomicU64>,
 }
 
 /// Apply the local player's EE.log reward before the next memory scan completes.
@@ -47,16 +53,15 @@ pub(crate) fn apply_reward_inventory_update(
         );
     }
     let _ = app.emit(events::INVENTORY_REWARD, serde_json::json!({ "path": inv_path, "qty": new_qty }));
-    append_to_diag(
-        session_log_path,
-        &format!(
-            "[REWARD] Inventory updated from EE.log\n\\
-             ├─ Store path : {}\n\\
-             ├─ Inv path   : {}\n\\
-             └─ Qty        : {} → {}\n\n",
-            store_path, inv_path, old_qty, new_qty
-        ),
-    );
+    let event = serde_json::json!({
+        "t": super::events::now_ts(),
+        "event": "inventory_reward",
+        "store_path": store_path,
+        "inv_path": inv_path,
+        "qty": [old_qty, new_qty],
+        "source": "ee_log",
+    });
+    append_to_diag(session_log_path, &super::events::line(&event));
 }
 
 /// Handle an EE.log reward-screen dismissal and schedule the overlay cleanup.
@@ -93,21 +98,19 @@ pub(crate) fn dismiss_relic_rewards(
         .unwrap_or("<unknown dismiss line>")
         .trim();
     let elapsed = active_since.map(|time| time.elapsed().as_secs_f64());
-    append_to_diag(
-        session_log_path,
-        &format!(
-            "[STEP 4] DISMISS\n\\
-             ├─ Time     : {}\n\\
-             ├─ Line     : \"{}\"\n\\
-             └─ Open for : {}\n\n",
-            chrono::Local::now().format("%H:%M:%S%.3f"),
-            dismiss_line,
-            elapsed.map(|seconds| format!("{seconds:.1}s")).unwrap_or_else(|| "(unknown)".to_string()),
-        ),
-    );
+    let event = serde_json::json!({
+        "t": super::events::now_ts(),
+        "event": "dismiss",
+        "reason": "ee_log",
+        "line": dismiss_line,
+        "open_for_s": elapsed,
+    });
+    append_to_diag(session_log_path, &super::events::line(&event));
     if let Ok(mut guard) = diag_dir.lock() {
         if let Some(folder) = guard.take() {
-            let _ = std::fs::copy(session_log_path, folder.join("ocr_session_log.txt"));
+            if crate::diagnostics::ocr_pipeline_diagnostics_enabled() {
+                let _ = std::fs::copy(session_log_path, folder.join("ocr_session_log.jsonl"));
+            }
         }
     }
     reward_screen_active.store(false, Ordering::SeqCst);
@@ -169,10 +172,12 @@ pub(crate) fn auto_dismiss_relic_rewards(
         app,
         session_log_path,
         diag_dir,
-        reward_screen_active,
-        active_since,
-        last_dismiss_at,
-        rewards_emitted_ms,
+        CloseState {
+            reward_screen_active,
+            active_since,
+            last_dismiss_at,
+            rewards_emitted_ms,
+        },
         "AUTO-DISMISS (20s timeout)",
     );
 }
@@ -184,25 +189,28 @@ pub(crate) fn close_reward_overlay(
     app: &tauri::AppHandle,
     session_log_path: &std::path::Path,
     diag_dir: &std::sync::Arc<std::sync::Mutex<Option<std::path::PathBuf>>>,
-    reward_screen_active: &std::sync::Arc<std::sync::atomic::AtomicBool>,
-    active_since: &mut Option<std::time::Instant>,
-    last_dismiss_at: &mut Option<std::time::Instant>,
-    rewards_emitted_ms: &std::sync::Arc<std::sync::atomic::AtomicU64>,
+    state: CloseState<'_>,
     reason: &str,
 ) {
+    let CloseState {
+        reward_screen_active,
+        active_since,
+        last_dismiss_at,
+        rewards_emitted_ms,
+    } = state;
     let open_for = active_since.map(|since| since.elapsed().as_secs_f64());
-    append_to_diag(
-        session_log_path,
-        &format!(
-            "[STEP 4] {}\n├─ Time     : {}\n└─ Open for : {}\n\n",
-            reason,
-            chrono::Local::now().format("%H:%M:%S%.3f"),
-            open_for.map(|seconds| format!("{seconds:.1}s")).unwrap_or_else(|| "(unknown)".to_string()),
-        ),
-    );
+    let event = serde_json::json!({
+        "t": super::events::now_ts(),
+        "event": "dismiss",
+        "reason": reason,
+        "open_for_s": open_for,
+    });
+    append_to_diag(session_log_path, &super::events::line(&event));
     if let Ok(mut guard) = diag_dir.lock() {
         if let Some(folder) = guard.take() {
-            let _ = std::fs::copy(session_log_path, folder.join("ocr_session_log.txt"));
+            if crate::diagnostics::ocr_pipeline_diagnostics_enabled() {
+                let _ = std::fs::copy(session_log_path, folder.join("ocr_session_log.jsonl"));
+            }
         }
     }
     reward_screen_active.store(false, Ordering::SeqCst);
@@ -238,14 +246,22 @@ pub(crate) fn schedule_reward_safety_cleanup(
                 tauri::PhysicalPosition { x: 0, y: -3000 },
             ));
         }
+        let event = serde_json::json!({
+            "t": super::events::now_ts(),
+            "event": "dismiss",
+            "reason": "auto_20s_safety",
+        });
+        let line = super::events::line(&event);
         if also_write_diagnostics {
-            append_to_diag(&session_log_path, "[STEP 4] AUTO-DISMISS (20s safety fallback)\n\n");
+            append_to_diag(&session_log_path, &line);
         } else {
-            let _ = append_to_file(&session_log_path, "[STEP 4] AUTO-DISMISS (20s safety fallback)\n\n");
+            super::events::log(&session_log_path, &event);
         }
         if let Ok(mut guard) = diag_dir.lock() {
             if let Some(folder) = guard.take() {
-                let _ = std::fs::copy(&session_log_path, folder.join("ocr_session_log.txt"));
+                if crate::diagnostics::ocr_pipeline_diagnostics_enabled() {
+                    let _ = std::fs::copy(&session_log_path, folder.join("ocr_session_log.jsonl"));
+                }
             }
         }
     });
@@ -277,6 +293,9 @@ pub(crate) fn publish_relic_rewards(
 /// action below is skipped — touching the active flag, overlay position or
 /// pending payload here would stomp on the newer session instead of just
 /// cleaning up this one.
+///
+/// `timeout_info` carries attempt context from the retry loop (`attempt`,
+/// `best_from`, `after_ms`); it is merged into the `timeout` event.
 pub(crate) fn finalize_reward_ocr_timeout(
     app: &tauri::AppHandle,
     best_payload: Option<serde_json::Value>,
@@ -284,12 +303,16 @@ pub(crate) fn finalize_reward_ocr_timeout(
     session_log_path: &std::path::Path,
     diag_dir: &std::sync::Arc<std::sync::Mutex<Option<std::path::PathBuf>>>,
     session_valid: bool,
+    timeout_info: &serde_json::Value,
 ) {
+    let mut event = timeout_info.clone();
+    let obj = event.as_object_mut().expect("timeout_info must be an object");
+    obj.insert("t".into(), serde_json::json!(super::events::now_ts()));
+    obj.insert("event".into(), serde_json::json!("timeout"));
+    obj.insert("stale".into(), serde_json::json!(!session_valid));
     if !session_valid {
-        let _ = append_to_file(
-            session_log_path,
-            "[STEP 2] OCR TIMEOUT — stale session, dropping result (newer trigger took over)\n\n",
-        );
+        obj.insert("reason".into(), serde_json::json!("superseded_by_newer_trigger"));
+        super::events::log(session_log_path, &event);
         return;
     }
     let emit_val = if active.load(Ordering::SeqCst) {
@@ -297,11 +320,13 @@ pub(crate) fn finalize_reward_ocr_timeout(
     } else {
         serde_json::Value::Null
     };
+    let published = emit_val.as_object()
+        .and_then(|o| o.get("items"))
+        .is_some_and(|items| !items.is_null());
+    obj.insert("published".into(), serde_json::json!(published));
+    obj.insert("reason".into(), serde_json::json!("deadline_45s"));
+    super::events::log(session_log_path, &event);
     publish_relic_rewards(app, Some(&emit_val));
-    let _ = append_to_file(
-        session_log_path,
-        "[STEP 2] OCR TIMEOUT — 45 seconds elapsed, emitting best result\n\n",
-    );
     if let Some(win) = app.get_webview_window("relic-overlay") {
         let _ = win.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
             x: 0,
@@ -311,7 +336,9 @@ pub(crate) fn finalize_reward_ocr_timeout(
     active.store(false, Ordering::SeqCst);
     if let Ok(mut g) = diag_dir.lock() {
         if let Some(folder) = g.take() {
-            let _ = std::fs::copy(session_log_path, folder.join("ocr_session_log.txt"));
+            if crate::diagnostics::ocr_pipeline_diagnostics_enabled() {
+                let _ = std::fs::copy(session_log_path, folder.join("ocr_session_log.jsonl"));
+            }
         }
     }
 }

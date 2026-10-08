@@ -5,7 +5,6 @@ use tauri::Manager;
 use tracing::warn;
 
 use crate::app_state::AppState;
-use crate::append_to_file;
 
 /// The trigger line that opened a reward session plus its catalog prefilter summary.
 pub(crate) struct RewardTrigger<'a> {
@@ -53,20 +52,38 @@ impl VoidProjectionState {
 }
 
 /// Update the VoidProjections reward-handshake state from newly appended EE.log lines.
+///
+/// `hint_source` tracks where the current `squad_size` value came from
+/// (0 = none, 1 = relic-count guess, 2 = this handshake) so attempt logs can
+/// label the hint honestly.
 pub(crate) fn collect_void_projection_state(
     text: &str,
     state: &mut VoidProjectionState,
     squad_size: &std::sync::Arc<std::sync::Mutex<Option<usize>>>,
+    hint_source: &std::sync::Arc<std::sync::atomic::AtomicU8>,
     session_log_path: &std::path::Path,
 ) {
+    use std::sync::atomic::Ordering;
     for line in text.lines() {
         let lower = line.to_lowercase();
         if lower.contains("voidprojections: getvoidprojectionreward") {
             state.in_sequence = true;
             state.other_ids.clear();
             state.own_item.clear();
+            let previous = squad_size.lock().ok().and_then(|size| *size);
             if let Ok(mut size) = squad_size.lock() {
                 *size = None;
+            }
+            hint_source.store(0, Ordering::Relaxed);
+            if previous.is_some() {
+                super::events::log(session_log_path, &serde_json::json!({
+                    "t": super::events::now_ts(),
+                    "event": "hint",
+                    "source": "none",
+                    "size": serde_json::Value::Null,
+                    "prev": previous,
+                    "reason": "new_voidprojections_sequence",
+                }));
             }
         }
         if lower.contains("gets reward /lotus/") {
@@ -81,23 +98,22 @@ pub(crate) fn collect_void_projection_state(
                 }
             } else if lower.contains("has reward info for all players now") {
                 let squad = (1 + state.other_ids.len()).clamp(1, 4);
+                let previous = squad_size.lock().ok().and_then(|size| *size);
                 if let Ok(mut size) = squad_size.lock() {
                     *size = Some(squad);
                 }
+                hint_source.store(2, Ordering::Relaxed);
                 state.in_sequence = false;
                 state.sequence_completed = true;
-                let _ = append_to_file(
-                    session_log_path,
-                    &format!(
-                        "[EE.log] VoidProjections squad\n\\
-                         ├─ Local item : {}\n\\
-                         ├─ Other players (unique IDs) : {}\n\\
-                         └─ Squad size : {} total\n\n",
-                        if state.own_item.is_empty() { "(not found)" } else { &state.own_item },
-                        state.other_ids.len(),
-                        squad,
-                    ),
-                );
+                super::events::log(session_log_path, &serde_json::json!({
+                    "t": super::events::now_ts(),
+                    "event": "hint",
+                    "source": "ee_handshake",
+                    "size": squad,
+                    "prev": previous,
+                    "own_item": if state.own_item.is_empty() { serde_json::Value::Null } else { state.own_item.clone().into() },
+                    "other_ids": state.other_ids.len(),
+                }));
             }
         }
     }
@@ -184,6 +200,9 @@ pub(crate) fn build_fallback_reward_catalog(
 }
 
 /// Start the diagnostic files for a relic-reward OCR session.
+///
+/// Writes the single `session_start` line that (re)initializes the JSONL
+/// session log — this truncates any previous session's events.
 pub(crate) fn prepare_reward_session(
     session_log_path: &std::path::Path,
     squad_names: &std::sync::Arc<std::sync::Mutex<Vec<String>>>,
@@ -192,6 +211,12 @@ pub(crate) fn prepare_reward_session(
     diag_dir: &std::sync::Arc<std::sync::Mutex<Option<std::path::PathBuf>>>,
     last_found_path: &std::path::Path,
 ) {
+    if !crate::diagnostics::ocr_pipeline_diagnostics_enabled() {
+        if let Ok(mut guard) = diag_dir.lock() {
+            *guard = None;
+        }
+        return;
+    }
     let RewardTrigger {
         timestamp,
         trigger_line,
@@ -199,33 +224,23 @@ pub(crate) fn prepare_reward_session(
         catalog_len,
     } = trigger;
     let names = squad_names.lock().map(|names| names.clone()).unwrap_or_default();
-    let known_names = if names.is_empty() {
-        "  (none — names not yet seen in EE.log)".to_string()
-    } else {
-        names.iter().map(|name| format!("  • {name}")).collect::<Vec<_>>().join("\n")
-    };
+    let prefilter: Vec<&str> = prefilter_log
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .collect();
+    let event = serde_json::json!({
+        "t": timestamp,
+        "event": "session_start",
+        "trigger_line": trigger_line,
+        "prefilter": prefilter,
+        "catalog": catalog_len,
+        "players": names,
+        "log_path": session_log_path.display().to_string(),
+    });
     if let Err(error) = std::fs::write(
         session_log_path,
-        format!(
-            "══════════════════════════════════════════════\n\\
-             RELIC OVERLAY SESSION — {}\n\\
-             ═════════════════════════════════════════════\n\\
-             Log path  : {}\n\n\\
-             [KNOWN PLAYERS — OCR username filter]\n\\
-             {}\n\n\\
-             [STEP 1] EE.log TRIGGER\n\\
-             ├─ Time     : {}\n\\
-             ├─ Line     : \"{}\"\n\\
-             ├─ Prefilter: {}\n\\
-             └─ Catalog  : {} items\n\n",
-            timestamp,
-            session_log_path.display(),
-            known_names,
-            timestamp,
-            trigger_line,
-            prefilter_log,
-            catalog_len,
-        ),
+        format!("{}\n", serde_json::to_string(&event).unwrap_or_default()),
     ) {
         warn!(error = %error, "session log write failed");
     }
@@ -241,10 +256,15 @@ pub(crate) fn prepare_reward_session(
 }
 
 /// Prepare OCR hints immediately when a relic reward screen is triggered.
+///
+/// The squad-size guess derived from the session relic count is marked as a
+/// guess in `hint_source` (1) — it is only a stand-in until the EE.log
+/// VoidProjections handshake (2) arrives.
 pub(crate) fn prepare_reward_trigger(
     app: &tauri::AppHandle,
     squad_names: &std::sync::Arc<std::sync::Mutex<Vec<String>>>,
     squad_size: &std::sync::Arc<std::sync::Mutex<Option<usize>>>,
+    hint_source: &std::sync::Arc<std::sync::atomic::AtomicU8>,
     session_relics: &[String],
 ) {
     if let Ok(local_player) = app.state::<AppState>().local_player_name.lock() {
@@ -261,7 +281,35 @@ pub(crate) fn prepare_reward_trigger(
         if let Ok(mut hint) = squad_size.lock() {
             if hint.is_none() {
                 *hint = Some(relic_hint);
+                hint_source.store(1, std::sync::atomic::Ordering::Relaxed);
             }
         }
     }
+}
+
+/// Record the squad-size hint in effect when the session started, including
+/// where it came from — a relic-count guess is never an EE.log fact.
+pub(crate) fn log_session_hint(
+    squad_size: &std::sync::Arc<std::sync::Mutex<Option<usize>>>,
+    hint_source: &std::sync::Arc<std::sync::atomic::AtomicU8>,
+    session_relics: &[String],
+    session_log_path: &std::path::Path,
+) {
+    use std::sync::atomic::Ordering;
+    let size = squad_size.lock().ok().and_then(|hint| *hint);
+    let source = match hint_source.load(Ordering::Relaxed) {
+        1 => "relic_guess",
+        2 => "ee_handshake",
+        0 => "none",
+        _ => "unknown",
+    };
+    super::events::log(session_log_path, &serde_json::json!({
+        "t": super::events::now_ts(),
+        "event": "hint",
+        "source": source,
+        "size": size,
+        "session_relics": session_relics.len(),
+        "note": (source == "relic_guess")
+            .then(|| format!("min(session_relics={}, 4)", session_relics.len())),
+    }));
 }

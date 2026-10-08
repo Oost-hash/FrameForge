@@ -1,127 +1,47 @@
-//! Session-log diagnostics for the OCR retry loop: dark-frame/empty-OCR/no-match
-//! logging and the per-attempt best-result summary, preserving the 100/300/500/700ms
-//! retry backoff values and the 3-attempt full-catalog expansion.
+//! JSONL attempt logging for the OCR retry loop: one event line per run, the
+//! moment it happens — no prose, no tree glyphs, no summaries. The retry
+//! backoff values (400/500/700 ms) and the 3-attempt full-catalog expansion
+//! stay in the retry loop; this module records their outcomes.
 
 use tauri::{Emitter, Manager};
 
 use crate::app_state::AppState;
 use crate::diagnostics::write_bmp;
-use crate::events;
-use crate::append_to_file;
 
-use super::policy::{RewardAttempt, RewardPaths};
+use super::events::{self, AttemptEvent};
+use super::policy::RewardPaths;
 
-/// Log that the OCR loop was stopped by an external dismiss signal.
-pub(crate) fn log_reward_ocr_stopped(session_log_path: &std::path::Path) {
-    let _ = append_to_file(
-        session_log_path,
-        "[STEP 2] OCR STOPPED — dismiss signal received\n\n",
-    );
-}
-
-pub(crate) fn log_reward_dark_frame(
+/// Append one attempt event to the session log (JSONL) and mirror the same
+/// line to the last-result file, then surface the failure kind to the UI.
+pub(crate) fn log_attempt(
     app: &tauri::AppHandle,
-    attempt: u32,
-    ts: &str,
-    dbg: &str,
-    session_log_path: &std::path::Path,
-    last_path: &std::path::Path,
-) -> u64 {
-    let entry = format!(
-        "[STEP 2] OCR ATTEMPT #{}\n\
-         ├─ Time     : {}\n\
-         └─ RESULT   : {} → PrintWindow returned dark image\n\
-            Check %TEMP%\\frameforge_capture_debug.bmp\n\
-            Fix: switch Warframe to Borderless Windowed mode\n\
-            Retrying in 100ms…\n\n",
-        attempt, ts, dbg
-    );
-    let _ = append_to_file(session_log_path, &entry);
-    let _ = std::fs::write(last_path, format!("=== {} ===\n{} — retrying\n", ts, dbg));
-    let _ = app.emit(events::FF_STATUS, format!("⬛ {}", dbg));
-    100
-}
-
-pub(crate) fn log_reward_ocr_empty(
-    app: &tauri::AppHandle,
-    attempt: u32,
-    ts: &str,
-    dbg: &str,
-    session_log_path: &std::path::Path,
-    last_path: &std::path::Path,
-) -> u64 {
-    let entry = format!(
-        "[STEP 2] OCR ATTEMPT #{}\n\
-         ├─ Time     : {}\n\
-         └─ RESULT   : {} → image has content but OCR found no text\n\
-            Check %TEMP%\\frameforge_capture_debug.bmp\n\
-            Retrying in 300ms…\n\n",
-        attempt, ts, dbg
-    );
-    let _ = append_to_file(session_log_path, &entry);
-    let _ = std::fs::write(last_path, format!("=== {} ===\n{} — retrying\n", ts, dbg));
-    let _ = app.emit(events::FF_STATUS, format!("⬜ {}", dbg));
-    300
-}
-
-pub(crate) fn log_reward_capture_failed(
-    app: &tauri::AppHandle,
-    attempt: u32,
-    ts: &str,
-    session_log_path: &std::path::Path,
-    last_path: &std::path::Path,
-) -> u64 {
-    let entry = format!(
-        "[STEP 2] OCR ATTEMPT #{}\n\
-         ├─ Time     : {}\n\
-         └─ RESULT   : capture failed — Warframe window not found\n\
-            Retrying in 500ms…\n\n",
-        attempt, ts
-    );
-    let _ = append_to_file(session_log_path, &entry);
-    let _ = std::fs::write(last_path, format!("=== {} ===\nCapture failed (window not found?)\n", ts));
-    let _ = app.emit(events::FF_STATUS, "⚠️ Capture failed");
-    500
-}
-
-pub(crate) fn log_reward_no_match(
-    app: &tauri::AppHandle,
-    attempt_info: RewardAttempt<'_>,
-    no_match_streak: &mut u32,
-    cat: &mut std::sync::Arc<Vec<(String, String)>>,
-    fallback_cat: &std::sync::Arc<Vec<(String, String)>>,
     paths: RewardPaths<'_>,
+    event: &AttemptEvent,
     diag_dir: &std::sync::Arc<std::sync::Mutex<Option<std::path::PathBuf>>>,
-) -> u64 {
-    let RewardAttempt { attempt, ts, items, dbg } = attempt_info;
-    let RewardPaths { session_log_path, last_path } = paths;
-    *no_match_streak += 1;
-    let expanded = if *no_match_streak == 3 && cat.len() < fallback_cat.len() {
-        *cat = std::sync::Arc::clone(fallback_cat);
-        true
-    } else {
-        false
+) {
+    let diagnostics_enabled = crate::diagnostics::ocr_pipeline_diagnostics_enabled();
+    events::log(paths.session_log_path, event);
+    if diagnostics_enabled {
+        if let Ok(line) = serde_json::to_string(event) {
+            let _ = std::fs::write(paths.last_path, format!("{line}\n"));
+        }
+    }
+
+    let status = match event.result {
+        "dark_frame" => Some("⬛ Dark frame (PrintWindow) — retrying".to_string()),
+        "ocr_empty" => Some("⬜ OCR found no text — retrying".to_string()),
+        "ocr_error" => Some("⚠️ OCR engine error — retrying".to_string()),
+        "capture_failed" => Some("⚠️ Capture failed".to_string()),
+        "no_match" => Some("❌ No catalog match, retrying...".to_string()),
+        _ => None,
     };
-    let cur_cat_len = cat.len();
-    let expand_note = if expanded {
-        format!(" [expanded to full catalog: {}]", cur_cat_len)
-    } else {
-        String::new()
-    };
-    let entry = format!(
-        "[STEP 2] OCR ATTEMPT #{}\n\
-         ├─ Time     : {}\n\
-         {}\n\
-         └─ RESULT   : no catalog match (catalog={}){}\u{2192} retrying in 700ms\n\n",
-        attempt, ts, dbg, cur_cat_len, expand_note
-    );
-    let _ = append_to_file(session_log_path, &entry);
-    let _ = std::fs::write(
-        last_path,
-        format!("=== {} ===\nno match (catalog={}): {:?}\n{}\n", ts, cur_cat_len, items, dbg),
-    );
-    let _ = app.emit(events::FF_STATUS, "❌ No catalog match, retrying...");
-    if attempt == 1 {
+    if let Some(status) = status {
+        let _ = app.emit(crate::events::FF_STATUS, status);
+    }
+
+    // First-attempt no-match: keep a frame snapshot for debugging — this read
+    // proved the reward screen was visible but nothing matched it.
+    if diagnostics_enabled && event.result == "no_match" && event.n == 1 {
         let frame = app.state::<AppState>().last_ocr_frame.lock()
             .ok().and_then(|g| g.clone());
         let diag_snap = diag_dir.lock().ok().and_then(|g| g.clone());
@@ -129,61 +49,21 @@ pub(crate) fn log_reward_no_match(
             let _ = write_bmp(&folder.join("screenshot.bmp"), &px, w, h);
         }
     }
-    700
 }
 
-pub(crate) fn log_reward_best_result(
-    attempt_info: RewardAttempt<'_>,
-    complete: bool,
-    confirm_ready: bool,
-    paths: RewardPaths<'_>,
-) {
-    let RewardAttempt { attempt, ts, items, dbg } = attempt_info;
-    let RewardPaths { session_log_path, last_path } = paths;
-    let label = if complete && confirm_ready { "✅" } else { "⚡" };
-    let status_label = if complete && confirm_ready {
-        "locked"
-    } else if complete {
-        "soft-complete, waiting for EE hint"
+/// Advance the no-match streak; on the 3rd consecutive strike the catalog
+/// expands to the full item list. Returns true when this tick expanded it, so
+/// the caller can record `catalog_expanded` on the attempt event.
+pub(crate) fn no_match_tick(
+    streak: &mut u32,
+    cat: &mut std::sync::Arc<Vec<(String, String)>>,
+    fallback_cat: &std::sync::Arc<Vec<(String, String)>>,
+) -> bool {
+    *streak += 1;
+    if *streak == 3 && cat.len() < fallback_cat.len() {
+        *cat = std::sync::Arc::clone(fallback_cat);
+        true
     } else {
-        "waiting"
-    };
-    let _ = crate::append_to_file(
-        session_log_path,
-        &format!("{} {} items ({})", label, items.len(), status_label),
-    );
-    let result_label = if complete && confirm_ready {
-        "LOCKED & emitting"
-    } else if complete {
-        "soft-complete, retrying (waiting for EE hint)"
-    } else {
-        "saved, retrying"
-    };
-    let session_entry = format!(
-        "[STEP 2] OCR ATTEMPT #{}\n\
-         ├─ Time     : {}\n\
-         {}\n\
-         └─ RESULT   : {} items found \u{2192} {}\n\
-         \u{2514}\u{2500} Items    : {:?}\n\n",
-        attempt, ts, dbg, items.len(), result_label, items,
-    );
-    let _ = append_to_file(session_log_path, &session_entry);
-    let _ = std::fs::write(last_path, format!("=== {} ===\nItems: {:?}\n{}\n", ts, items, dbg));
-}
-
-pub(crate) fn log_reward_confirm_no_improvement(
-    attempt: u32,
-    ts: &str,
-    items: &[String],
-    session_log_path: &std::path::Path,
-) {
-    let _ = crate::append_to_file(
-        session_log_path,
-        &format!(
-            "[STEP 2] OCR ATTEMPT #{} (confirm)\n\
-             \u{251c}\u{2500} Time     : {}\n\
-             \u{2514}\u{2500} {} items \u{2014} same as before, confirmed\n\n",
-            attempt, ts, items.len()
-        ),
-    );
+        false
+    }
 }

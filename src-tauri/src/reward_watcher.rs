@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering};
 use std::sync::{Arc, Mutex};
 
 use tauri::{Emitter, Manager};
@@ -8,8 +8,8 @@ use crate::app_state::AppState;
 use crate::events;
 use crate::log_watcher;
 use crate::reward_pipeline;
+use crate::reward_pipeline::AttemptEvent;
 use crate::wfcd::RelicReward;
-use crate::append_to_file;
 
 /// Shared state for the reward watcher thread.
 pub(crate) struct RewardWatcherDeps {
@@ -77,6 +77,12 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
         Arc::new(Mutex::new(None));
     let shared_squad_size2 = Arc::clone(&shared_squad_size);
 
+    // Provenance of shared_squad_size: 0 = none, 1 = relic-count guess,
+    // 2 = EE.log VoidProjections handshake — carried into each attempt's event
+    // so a guess is never reported as an EE.log fact.
+    let shared_hint_source: Arc<AtomicU8> = Arc::new(AtomicU8::new(0));
+    let shared_hint_source_ee = Arc::clone(&shared_hint_source);
+
     // Squad member names collected from EE.log "AddSquadMember:" lines.
     // Passed to OCR so it can reject any text that fuzzy-matches a player name.
     let shared_squad_names: Arc<Mutex<Vec<String>>> =
@@ -86,7 +92,7 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
     let ee_ocr_app   = app.clone();
     let ee_catalog   = Arc::clone(&catalog_pairs);
     let ee_last_path = last_found_path.clone();
-    let session_log_path = std::env::temp_dir().join("frameforge_overlay_session.txt");
+    let session_log_path = std::env::temp_dir().join("frameforge_overlay_session.jsonl");
     let ee_auto_capture_dir = auto_capture_dir.clone();
 
     if let Some(log_path) = ee_log_path {
@@ -192,6 +198,7 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                     &buf,
                     &mut vp_state,
                     &shared_squad_size2,
+                    &shared_hint_source_ee,
                     &session_log_path,
                 );
 
@@ -254,10 +261,12 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                         &ee_ocr_app,
                         &session_log_path,
                         &diag_arc,
-                        &reward_screen_active2,
-                        &mut active_since,
-                        &mut last_dismiss_at,
-                        &rewards_emitted_ms_ee,
+                        reward_pipeline::CloseState {
+                            reward_screen_active: &reward_screen_active2,
+                            active_since: &mut active_since,
+                            last_dismiss_at: &mut last_dismiss_at,
+                            rewards_emitted_ms: &rewards_emitted_ms_ee,
+                        },
                         "PICK SCREEN OPENED (reward screen closed)",
                     );
                 }
@@ -288,11 +297,13 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                     reward_screen_active2.store(true, Ordering::SeqCst);
                     active_since = Some(std::time::Instant::now());
                     let my_session = reward_session_id2.fetch_add(1, Ordering::SeqCst) + 1;
+                    let trigger_at = std::time::Instant::now();
 
                     reward_pipeline::prepare_reward_trigger(
                         &ee_ocr_app,
                         &shared_squad_names,
                         &shared_squad_size,
+                        &shared_hint_source,
                         &session_relics,
                     );
 
@@ -326,6 +337,12 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                         &diag_arc,
                         &ee_last_path,
                     );
+                    reward_pipeline::log_session_hint(
+                        &shared_squad_size,
+                        &shared_hint_source,
+                        &session_relics,
+                        &session_log_path,
+                    );
 
                     if ee_ocr_app.state::<AppState>().overlays_enabled.load(Ordering::SeqCst) {
                         let _ = ee_ocr_app.emit(events::FF_STATUS, "🔍 Relic reward screen detected");
@@ -344,6 +361,7 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                     let session_counter = reward_session_id2.clone();
                     let emitted_ms   = rewards_emitted_ms_ocr.clone();
                     let squad_arc    = Arc::clone(&shared_squad_size);
+                    let hint_arc     = Arc::clone(&shared_hint_source);
                     let names_arc    = Arc::clone(&shared_squad_names);
                     let diag_arc2    = Arc::clone(&diag_arc);
                     tauri::async_runtime::spawn(async move {
@@ -366,6 +384,7 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                         let mut no_match_streak = 0u32;
                         let mut attempt = 0u32;
                         let mut best_item_count = 0usize;
+                        let mut best_attempt = 0u32;
                         let mut best_payload: Option<serde_json::Value> = None; // locked when complete
                         // When no EE squad hint is available, the first "complete" result may
                         // undercount cards (e.g. dark text hides a 2-line item name).
@@ -395,15 +414,22 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                                 Arc::clone(&cat),
                                 Arc::clone(&squad_arc),
                                 Arc::clone(&names_arc),
+                                Arc::clone(&hint_arc),
                                 reuse_this_attempt,
                             ).await;
                             // Re-read hint for confirm_ready logic below (same mutex, post-capture value).
                             let hint_squad = squad_arc.lock().ok().and_then(|g| *g);
 
-                            let ts = chrono::Local::now().format("%H:%M:%S%.3f").to_string();
+                            let ts = reward_pipeline::now_ts();
+                            let after_ms = trigger_at.elapsed().as_millis() as u64;
+                            let mode = if reuse_this_attempt { "reuse" } else { "fresh" };
+                            let paths = reward_pipeline::RewardPaths {
+                                session_log_path: &slog,
+                                last_path: &lpath,
+                            };
                             let sleep_ms = match &result {
                                 // ✅ 1+ items found (solo=1, duo=2, trio=3, full squad=4)
-                                Some((complete, low_confidence, ref items, ref positions, ref dbg)) if !items.is_empty() => {
+                                Some((complete, low_confidence, ref items, ref positions, ref diag)) if !items.is_empty() => {
                                     no_match_streak = 0;
                                     // Give the frame-reuse fallback exactly one shot: only
                                     // arm it off a fresh capture, never chain reuse-of-reuse
@@ -439,19 +465,67 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
 
                                     // Save best result; only emit to overlay when confirmed (LOCK).
                                     let is_new_best = n_confirmed > best_item_count;
+                                    // Honest blocker: why this result is not locking yet (the
+                                    // old status line blamed "EE hint" even when a low-confidence
+                                    // column was the real reason).
+                                    let blocker = if *complete && confirm_ready {
+                                        None
+                                    } else if hint_wants_more {
+                                        Some(format!("hint_wants_more: hint {hint_squad:?} > {n_confirmed} confirmed"))
+                                    } else if *low_confidence && !soft_retries_done {
+                                        Some("low_confidence".to_string())
+                                    } else if hint_squad.is_none() && !soft_retries_done {
+                                        Some("hint_none".to_string())
+                                    } else {
+                                        Some("soft_retries_pending".to_string())
+                                    };
+                                    let prev_best = (!is_new_best && best_attempt > 0)
+                                        .then_some(reward_pipeline::PrevBest { n: best_attempt, confirmed: best_item_count });
+                                    let event = AttemptEvent {
+                                        t: ts.clone(),
+                                        event: "attempt",
+                                        n: attempt,
+                                        mode,
+                                        result: if is_new_best { "best" }
+                                                else if *complete && confirm_ready { "confirm" }
+                                                else { "no_improvement" },
+                                        after_ms,
+                                        retry_ms: Some(400),
+                                        items: items.clone(),
+                                        confirmed: n_confirmed,
+                                        unknown: items.len().saturating_sub(n_confirmed),
+                                        complete: *complete,
+                                        low_confidence: *low_confidence,
+                                        blocker,
+                                        best: is_new_best,
+                                        prev_best,
+                                        catalog_expanded: None,
+                                        diag: Some(diag.clone()),
+                                    };
+                                    reward_pipeline::log_attempt(&app, paths, &event, &diag_arc2);
+
                                     if is_new_best {
                                         best_item_count = n_confirmed;
                                         best_payload = payload.clone();
-                                        reward_pipeline::log_reward_best_result(
-                                            reward_pipeline::RewardAttempt {
-                                                attempt, ts: &ts, items, dbg,
-                                            },
-                                            *complete, confirm_ready,
-                                            reward_pipeline::RewardPaths {
-                                                session_log_path: &slog,
-                                                last_path: &lpath,
-                                            },
-                                        );
+                                        best_attempt = attempt;
+                                        // Persist the exact frame the best payload was scored
+                                        // from (a reuse attempt keeps its original capture).
+                                        let folder = diag_arc2.lock().ok().and_then(|g| g.clone());
+                                        let frame = app.state::<AppState>().last_ocr_frame.lock()
+                                            .ok().and_then(|g| g.clone());
+                                        if crate::diagnostics::ocr_pipeline_diagnostics_enabled() {
+                                            if let (Some(folder), Some((px, w, h))) = (folder, frame) {
+                                                if crate::diagnostics::write_bmp(&folder.join("ocr_frame.bmp"), &px, w, h).is_ok() {
+                                                    reward_pipeline::log_event(&slog, &serde_json::json!({
+                                                        "t": reward_pipeline::now_ts(),
+                                                        "event": "artifact",
+                                                        "file": "ocr_frame.bmp",
+                                                        "kind": "ocr_frame",
+                                                        "attempt": attempt,
+                                                    }));
+                                                }
+                                            }
+                                        }
                                     }
 
                                     // Stop retrying and emit ONLY when all expected cards found AND confirmed.
@@ -460,13 +534,16 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                                             // Hard cutoff: if dismiss arrived (or a newer trigger
                                             // took over) while OCR was running, drop the result.
                                             if !session_still_valid() { break; }
-                                            if !is_new_best {
-                                                reward_pipeline::log_reward_confirm_no_improvement(
-                                                    attempt, &ts, items, &slog,
-                                                );
-                                            }
-                                            let _ = append_to_file(&slog, "[STEP 3] OVERLAY OPENED\n\n");
                                             let emit_val = if best_payload.is_some() { &best_payload } else { &payload };
+                                            reward_pipeline::log_event(&slog, &serde_json::json!({
+                                                "t": reward_pipeline::now_ts(),
+                                                "event": "publish",
+                                                "attempt": attempt,
+                                                "best_from": best_attempt,
+                                                "reason": "all_confirmed",
+                                                "after_ms": after_ms,
+                                                "payload": emit_val,
+                                            }));
                                             reward_pipeline::publish_relic_rewards(&app, emit_val.as_ref());
                                             emitted_ms.store(
                                                 std::time::SystemTime::now()
@@ -480,6 +557,7 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                                                 active.clone(),
                                                 session_counter.clone(),
                                                 my_session,
+                                                slog.clone(),
                                             );
                                             reward_pipeline::schedule_reward_safety_cleanup(
                                                 app.clone(),
@@ -497,14 +575,22 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                                     } else if soft_complete_at.is_some() && n_confirmed <= soft_complete_count {
                                         if !session_still_valid() { break; }
                                         let emit_val = best_payload.clone().unwrap_or(serde_json::Value::Null);
+                                        reward_pipeline::log_event(&slog, &serde_json::json!({
+                                            "t": reward_pipeline::now_ts(),
+                                            "event": "publish",
+                                            "attempt": attempt,
+                                            "best_from": best_attempt,
+                                            "reason": "soft_complete_no_improvement",
+                                            "after_ms": after_ms,
+                                            "payload": emit_val,
+                                        }));
                                         reward_pipeline::publish_relic_rewards(&app, Some(&emit_val));
-                                        let _ = append_to_file(&slog,
-                                            "[STEP 3] OVERLAY OPENED (soft-complete confirmed — no improvement)\n\n");
                                         reward_pipeline::schedule_reward_diagnostic_capture(
                                             Arc::clone(&diag_arc2),
                                             active.clone(),
                                             session_counter.clone(),
                                             my_session,
+                                            slog.clone(),
                                         );
                                         reward_pipeline::schedule_reward_safety_cleanup(
                                             app.clone(),
@@ -517,32 +603,66 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                                     // Partial result (or soft-complete pending confirmation) — retry
                                     400u64
                                 }
-                                // ⬛ Dark/blank frame — PrintWindow returned nearly-black
-                                Some((_, _, _, _, ref dbg)) if dbg.starts_with("dark-frame") => {
-                                    reward_pipeline::log_reward_dark_frame(&app, attempt, &ts, dbg, &slog, &lpath)
-                                }
-                                // ⬜ OCR ran but returned no text
-                                Some((_, _, _, _, ref dbg)) if dbg.starts_with("ocr-empty") => {
-                                    reward_pipeline::log_reward_ocr_empty(&app, attempt, &ts, dbg, &slog, &lpath)
-                                }
-                                // ❌ Text found but no catalog match
-                                Some((_, _, ref items, _, ref dbg)) => {
-                                    reward_pipeline::log_reward_no_match(
-                                        &app,
-                                        reward_pipeline::RewardAttempt {
-                                            attempt, ts: &ts, items, dbg,
-                                        },
-                                        &mut no_match_streak, &mut cat, &fallback_cat,
-                                        reward_pipeline::RewardPaths {
-                                            session_log_path: &slog,
-                                            last_path: &lpath,
-                                        },
-                                        &diag_arc2,
-                                    )
+                                // No items this run: dark frame, empty OCR, OCR engine error,
+                                // relic-select bleed-through, or a genuine no-match. These all
+                                // used to fall through to the no-match arm (the old dark/empty
+                                // guards could never match their prefix), so the streak, the
+                                // 3-strike catalog expansion and the 700 ms backoff apply
+                                // exactly as before — only the `result` label now reports
+                                // what actually happened.
+                                Some((_, low_confidence, ref items, _, ref diag)) => {
+                                    let result_kind = match diag.capture_kind {
+                                        "dark_frame" | "ocr_empty" | "ocr_error"
+                                        | "relic_select" | "unsupported" => diag.capture_kind,
+                                        _ => "no_match",
+                                    };
+                                    let expanded = reward_pipeline::no_match_tick(
+                                        &mut no_match_streak, &mut cat, &fallback_cat);
+                                    let event = AttemptEvent {
+                                        t: ts.clone(),
+                                        event: "attempt",
+                                        n: attempt,
+                                        mode,
+                                        result: result_kind,
+                                        after_ms,
+                                        retry_ms: Some(700),
+                                        items: items.clone(),
+                                        confirmed: 0,
+                                        unknown: items.len(),
+                                        complete: false,
+                                        low_confidence: *low_confidence,
+                                        blocker: None,
+                                        best: false,
+                                        prev_best: None,
+                                        catalog_expanded: Some(expanded),
+                                        diag: Some(diag.clone()),
+                                    };
+                                    reward_pipeline::log_attempt(&app, paths, &event, &diag_arc2);
+                                    700u64
                                 }
                                 // ⚠️ Warframe window not found
                                 None => {
-                                    reward_pipeline::log_reward_capture_failed(&app, attempt, &ts, &slog, &lpath)
+                                    let event = AttemptEvent {
+                                        t: ts.clone(),
+                                        event: "attempt",
+                                        n: attempt,
+                                        mode,
+                                        result: "capture_failed",
+                                        after_ms,
+                                        retry_ms: Some(500),
+                                        items: Vec::new(),
+                                        confirmed: 0,
+                                        unknown: 0,
+                                        complete: false,
+                                        low_confidence: false,
+                                        blocker: None,
+                                        best: false,
+                                        prev_best: None,
+                                        catalog_expanded: None,
+                                        diag: None,
+                                    };
+                                    reward_pipeline::log_attempt(&app, paths, &event, &diag_arc2);
+                                    500u64
                                 }
                             };
 
@@ -554,6 +674,11 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                                     &slog,
                                     &diag_arc2,
                                     session_still_valid(),
+                                    &serde_json::json!({
+                                        "attempt": attempt,
+                                        "best_from": best_attempt,
+                                        "after_ms": after_ms,
+                                    }),
                                 );
                                 break;
                             }
@@ -567,6 +692,15 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                                 // stale; publishing then would stomp the newer session.
                                 let superseded = session_counter.load(Ordering::SeqCst) != my_session;
                                 if !superseded && best_payload.is_some() {
+                                    reward_pipeline::log_event(&slog, &serde_json::json!({
+                                        "t": reward_pipeline::now_ts(),
+                                        "event": "publish",
+                                        "attempt": attempt,
+                                        "best_from": best_attempt,
+                                        "reason": "dismiss_salvage",
+                                        "after_ms": after_ms,
+                                        "payload": best_payload.clone(),
+                                    }));
                                     reward_pipeline::publish_relic_rewards(&app, best_payload.as_ref());
                                     emitted_ms.store(
                                         std::time::SystemTime::now()
@@ -575,16 +709,23 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                                             .unwrap_or(0),
                                         Ordering::SeqCst,
                                     );
-                                    let _ = append_to_file(&slog,
-                                        "[STEP 3] OVERLAY OPENED (dismiss — salvaged best partial result)\n\n");
                                     reward_pipeline::schedule_reward_safety_cleanup(
                                         app.clone(),
                                         slog.clone(),
                                         Arc::clone(&diag_arc2),
                                         false,
                                     );
-                                } else {
-                                    reward_pipeline::log_reward_ocr_stopped(&slog);
+                                } else if !superseded {
+                                    // Dismissed before anything was lockable. When superseded,
+                                    // a newer session owns the log file — appending here would
+                                    // corrupt its events.
+                                    reward_pipeline::log_event(&slog, &serde_json::json!({
+                                        "t": reward_pipeline::now_ts(),
+                                        "event": "stop",
+                                        "reason": "dismissed_before_lock",
+                                        "after_ms": after_ms,
+                                        "attempts": attempt,
+                                    }));
                                 }
                                 break;
                             }
