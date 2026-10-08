@@ -888,7 +888,7 @@ export default function SettingsModal(props: SettingsModalProps) {
                     {/* OCR pipeline diagnostics */}
                     <div className={ROW_INFO_CLASS}>
                       <span className={ROW_LABEL_CLASS}>OCR pipeline diagnostics</span>
-                      <span className={ROW_DESC_CLASS}>Record JSONL events and BMP captures for relic reward OCR sessions. Disabled by default.</span>
+                      <span className={ROW_DESC_CLASS}>Record JSONL events and BMP captures for relic reward OCR sessions. Captures can include game imagery and player names. Disabled by default.</span>
                     </div>
                     <SecondaryButton onClick={() => invoke("open_debug_folder", { which: "diag" }).catch(() => {})}>Go To Folder</SecondaryButton>
                     <SecondaryButton

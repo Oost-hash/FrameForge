@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 use tauri::{Emitter, Manager};
@@ -69,19 +69,11 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
     let rewards_emitted_ms_ocr  = rewards_emitted_ms.clone();
     let rewards_emitted_ms_ee   = rewards_emitted_ms.clone();
 
-    // Shared squad size: updated by EE.log watcher when VoidProjections sequence
-    // completes, read by OCR loop for each attempt. This lets late-arriving squad
-    // data (VoidProjections often arrives 1-2 s after the screen opens) inform
-    // subsequent OCR retries so the card count is always correct.
-    let shared_squad_size: Arc<Mutex<Option<usize>>> =
-        Arc::new(Mutex::new(None));
-    let shared_squad_size2 = Arc::clone(&shared_squad_size);
-
-    // Provenance of shared_squad_size: 0 = none, 1 = relic-count guess,
-    // 2 = EE.log VoidProjections handshake — carried into each attempt's event
-    // so a guess is never reported as an EE.log fact.
-    let shared_hint_source: Arc<AtomicU8> = Arc::new(AtomicU8::new(0));
-    let shared_hint_source_ee = Arc::clone(&shared_hint_source);
+    // The EE.log watcher updates this between OCR attempts. Keep the size and
+    // its provenance together so each attempt snapshots a consistent hint.
+    let shared_squad_hint: Arc<Mutex<reward_pipeline::SquadHint>> =
+        Arc::new(Mutex::new(reward_pipeline::SquadHint::default()));
+    let shared_squad_hint_ee = Arc::clone(&shared_squad_hint);
 
     // Squad member names collected from EE.log "AddSquadMember:" lines.
     // Passed to OCR so it can reject any text that fuzzy-matches a player name.
@@ -197,8 +189,7 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                 reward_pipeline::collect_void_projection_state(
                     &buf,
                     &mut vp_state,
-                    &shared_squad_size2,
-                    &shared_hint_source_ee,
+                    &shared_squad_hint_ee,
                     &session_log_path,
                 );
 
@@ -249,6 +240,7 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                         last_dismiss_at: &mut last_dismiss_at,
                         session_relics: &mut session_relics,
                         projection_state: &mut vp_state,
+                        session_counter: &reward_session_id2,
                     },
                 );
 
@@ -302,8 +294,7 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                     reward_pipeline::prepare_reward_trigger(
                         &ee_ocr_app,
                         &shared_squad_names,
-                        &shared_squad_size,
-                        &shared_hint_source,
+                        &shared_squad_hint,
                         &session_relics,
                     );
 
@@ -338,8 +329,7 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                         &ee_last_path,
                     );
                     reward_pipeline::log_session_hint(
-                        &shared_squad_size,
-                        &shared_hint_source,
+                        &shared_squad_hint,
                         &session_relics,
                         &session_log_path,
                     );
@@ -360,8 +350,7 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                     let active       = reward_screen_active2.clone();
                     let session_counter = reward_session_id2.clone();
                     let emitted_ms   = rewards_emitted_ms_ocr.clone();
-                    let squad_arc    = Arc::clone(&shared_squad_size);
-                    let hint_arc     = Arc::clone(&shared_hint_source);
+                    let squad_hint_arc = Arc::clone(&shared_squad_hint);
                     let names_arc    = Arc::clone(&shared_squad_names);
                     let diag_arc2    = Arc::clone(&diag_arc);
                     tauri::async_runtime::spawn(async move {
@@ -412,13 +401,12 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                             let result = reward_pipeline::capture_reward_items(
                                 &app,
                                 Arc::clone(&cat),
-                                Arc::clone(&squad_arc),
+                                Arc::clone(&squad_hint_arc),
                                 Arc::clone(&names_arc),
-                                Arc::clone(&hint_arc),
                                 reuse_this_attempt,
                             ).await;
                             // Re-read hint for confirm_ready logic below (same mutex, post-capture value).
-                            let hint_squad = squad_arc.lock().ok().and_then(|g| *g);
+                            let hint_squad = squad_hint_arc.lock().ok().and_then(|hint| hint.size);
 
                             let ts = reward_pipeline::now_ts();
                             let after_ms = trigger_at.elapsed().as_millis() as u64;
@@ -515,11 +503,12 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                                             .ok().and_then(|g| g.clone());
                                         if crate::diagnostics::ocr_pipeline_diagnostics_enabled() {
                                             if let (Some(folder), Some((px, w, h))) = (folder, frame) {
-                                                if crate::diagnostics::write_bmp(&folder.join("ocr_frame.bmp"), &px, w, h).is_ok() {
+                                                let file_name = format!("ocr_best_attempt_{attempt}.bmp");
+                                                if crate::diagnostics::write_bmp(&folder.join(&file_name), &px, w, h).is_ok() {
                                                     reward_pipeline::log_event(&slog, &serde_json::json!({
                                                         "t": reward_pipeline::now_ts(),
                                                         "event": "artifact",
-                                                        "file": "ocr_frame.bmp",
+                                                        "file": file_name,
                                                         "kind": "ocr_frame",
                                                         "attempt": attempt,
                                                     }));
@@ -563,6 +552,8 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                                                 app.clone(),
                                                 slog.clone(),
                                                 Arc::clone(&diag_arc2),
+                                                session_counter.clone(),
+                                                my_session,
                                                 true,
                                             );
                                             break;
@@ -596,6 +587,8 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                                             app.clone(),
                                             slog.clone(),
                                             Arc::clone(&diag_arc2),
+                                            session_counter.clone(),
+                                            my_session,
                                             false,
                                         );
                                         break;
@@ -713,6 +706,8 @@ pub(crate) fn spawn_reward_watcher_thread(deps: RewardWatcherDeps) {
                                         app.clone(),
                                         slog.clone(),
                                         Arc::clone(&diag_arc2),
+                                        session_counter.clone(),
+                                        my_session,
                                         false,
                                     );
                                 } else if !superseded {

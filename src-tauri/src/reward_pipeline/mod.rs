@@ -24,7 +24,7 @@ pub(crate) use recognize::extract_reward_items_twophase;
 pub(crate) use trigger::{
     build_fallback_reward_catalog, collect_session_relics, collect_void_projection_state,
     filter_relic_reward_catalog, log_session_hint, prepare_reward_session, prepare_reward_trigger,
-    RewardTrigger, VoidProjectionState,
+    RewardTrigger, SquadHint, VoidProjectionState,
 };
 
 pub struct OcrParams<'a> {

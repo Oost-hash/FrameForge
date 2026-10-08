@@ -360,14 +360,29 @@ fn dir_size_bytes(dir: &std::path::Path) -> u64 {
     }).sum()
 }
 
+fn overlay_session_log_path() -> std::path::PathBuf {
+    std::env::temp_dir().join("frameforge_overlay_session.jsonl")
+}
 
-/// Return the total size of %TEMP%\frameforge\diagnostics\ in bytes.
+fn reward_diagnostic_temp_paths() -> [std::path::PathBuf; 3] {
+    let temp_dir = std::env::temp_dir();
+    [
+        overlay_session_log_path(),
+        temp_dir.join("frameforge_capture_debug.bmp"),
+        temp_dir.join("frameforge_last_reward.txt"),
+    ]
+}
+
+/// Return the total size of relic-reward diagnostics, including legacy temp files.
 #[tauri::command]
 pub(crate) fn get_diag_folder_size(state: State<AppState>) -> u64 {
     dir_size_bytes(&state.auto_capture_dir)
+        + reward_diagnostic_temp_paths().iter()
+            .map(|path| std::fs::metadata(path).map(|metadata| metadata.len()).unwrap_or(0))
+            .sum::<u64>()
 }
 
-/// Delete all timestamped capture folders inside the auto-capture directory.
+/// Delete all relic-reward diagnostics, including legacy temp files.
 /// Returns the size after deletion (always 0 on success).
 #[tauri::command]
 pub(crate) fn clear_diag_folder(state: State<AppState>) -> u64 {
@@ -378,6 +393,9 @@ pub(crate) fn clear_diag_folder(state: State<AppState>) -> u64 {
             if p.is_dir() { let _ = std::fs::remove_dir_all(&p); }
             else          { let _ = std::fs::remove_file(&p); }
         }
+    }
+    for path in reward_diagnostic_temp_paths() {
+        let _ = std::fs::remove_file(path);
     }
     0
 }

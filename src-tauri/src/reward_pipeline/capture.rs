@@ -21,19 +21,16 @@ pub(crate) type RewardOcrResult = (bool, bool, Vec<String>, Vec<f32>, AttemptDia
 pub(crate) async fn capture_reward_items(
     app: &tauri::AppHandle,
     catalog: std::sync::Arc<Vec<(String, String)>>,
-    squad_size: std::sync::Arc<std::sync::Mutex<Option<usize>>>,
+    squad_hint: std::sync::Arc<std::sync::Mutex<super::SquadHint>>,
     squad_names: std::sync::Arc<std::sync::Mutex<Vec<String>>>,
-    hint_source: std::sync::Arc<std::sync::atomic::AtomicU8>,
     reuse_last_frame: bool,
 ) -> Option<RewardOcrResult> {
-    use std::sync::atomic::Ordering;
     let frame = std::sync::Arc::clone(&app.state::<AppState>().last_ocr_frame);
     let cached_frame = if reuse_last_frame {
         frame.lock().ok().and_then(|guard| guard.clone())
     } else {
         None
     };
-    let hint_source = hint_source.load(Ordering::Relaxed);
     tauri::async_runtime::spawn_blocking(move || {
         let (pixels, width, capture_height, game_height, capture_info, preprocess_text_pass) =
             if let Some((cached_pixels, cached_w, cached_h)) = cached_frame {
@@ -47,7 +44,7 @@ pub(crate) async fn capture_reward_items(
                 }
                 (pixels, width, capture_height, game_height, capture_info, false)
             };
-        let hint_squad_size = squad_size.lock().ok().and_then(|hint| *hint);
+        let hint = squad_hint.lock().map(|hint| *hint).unwrap_or_default();
         let player_names = squad_names.lock().map(|names| names.clone()).unwrap_or_default();
         Some(super::extract_reward_items_twophase(super::OcrParams {
             pixels: &pixels,
@@ -56,8 +53,8 @@ pub(crate) async fn capture_reward_items(
             game_h: game_height,
             catalog: &catalog,
             capture_info: &capture_info,
-            hint_squad_size,
-            hint_source,
+            hint_squad_size: hint.size,
+            hint_source: hint.source,
             player_names: &player_names,
             preprocess_text_pass,
         }))
@@ -99,7 +96,7 @@ pub(crate) fn schedule_reward_diagnostic_capture(
             }
             let written = tauri::async_runtime::spawn_blocking(move || {
                 if let Some((pixels, width, height)) = crate::ocr::capture_desktop_for_diag() {
-                    write_bmp(&folder.join("screenshot.bmp"), &pixels, width, height).is_ok()
+                    write_bmp(&folder.join("desktop_after_publish.bmp"), &pixels, width, height).is_ok()
                 } else {
                     false
                 }
@@ -107,13 +104,13 @@ pub(crate) fn schedule_reward_diagnostic_capture(
             .await
             .unwrap_or(false);
             if written {
-                // Name-and-shame the file in the event stream: screenshot.bmp is a
+                // Name-and-shame the file in the event stream: desktop_after_publish.bmp is a
                 // delayed *desktop* capture taken after publish (overlay included) —
                 // it is not the frame the OCR scored (that's ocr_frame.bmp).
                 events::log(&session_log_path, &serde_json::json!({
                     "t": events::now_ts(),
                     "event": "artifact",
-                    "file": "screenshot.bmp",
+                    "file": "desktop_after_publish.bmp",
                     "kind": "desktop_after_publish",
                     "note": "+4s delayed desktop capture, includes overlay — NOT the OCR frame",
                 }));

@@ -39,14 +39,23 @@ pub(crate) fn log_attempt(
         let _ = app.emit(crate::events::FF_STATUS, status);
     }
 
-    // First-attempt no-match: keep a frame snapshot for debugging — this read
-    // proved the reward screen was visible but nothing matched it.
-    if diagnostics_enabled && event.result == "no_match" && event.n == 1 {
+    // Keep the first failed OCR frame so its filename states exactly why it was
+    // recorded; later desktop captures cannot overwrite it.
+    if diagnostics_enabled && event.n == 1 {
+        let Some(file_name) = (match event.result {
+            "no_match" => Some("ocr_no_match_attempt_1.bmp"),
+            "dark_frame" => Some("ocr_dark_frame_attempt_1.bmp"),
+            "ocr_empty" => Some("ocr_empty_attempt_1.bmp"),
+            "ocr_error" => Some("ocr_error_attempt_1.bmp"),
+            _ => None,
+        }) else {
+            return;
+        };
         let frame = app.state::<AppState>().last_ocr_frame.lock()
             .ok().and_then(|g| g.clone());
         let diag_snap = diag_dir.lock().ok().and_then(|g| g.clone());
         if let (Some((px, w, h)), Some(folder)) = (frame, diag_snap) {
-            let _ = write_bmp(&folder.join("screenshot.bmp"), &px, w, h);
+            let _ = write_bmp(&folder.join(file_name), &px, w, h);
         }
     }
 }

@@ -14,6 +14,14 @@ pub(crate) struct RewardTrigger<'a> {
     pub(crate) catalog_len: usize,
 }
 
+/// The latest expected card count and the evidence that supplied it.
+#[derive(Clone, Copy, Default)]
+pub(crate) struct SquadHint {
+    pub(crate) size: Option<usize>,
+    /// 0 = none, 1 = relic-count guess, 2 = EE.log handshake.
+    pub(crate) source: u8,
+}
+
 pub(crate) fn collect_session_relics(text: &str, session_relics: &mut Vec<String>) {
     for line in text.lines() {
         if line.contains("Resource load completed")
@@ -53,28 +61,24 @@ impl VoidProjectionState {
 
 /// Update the VoidProjections reward-handshake state from newly appended EE.log lines.
 ///
-/// `hint_source` tracks where the current `squad_size` value came from
-/// (0 = none, 1 = relic-count guess, 2 = this handshake) so attempt logs can
-/// label the hint honestly.
+/// `squad_hint` keeps the current size and its source under one lock so attempt
+/// logs cannot report a value with stale provenance.
 pub(crate) fn collect_void_projection_state(
     text: &str,
     state: &mut VoidProjectionState,
-    squad_size: &std::sync::Arc<std::sync::Mutex<Option<usize>>>,
-    hint_source: &std::sync::Arc<std::sync::atomic::AtomicU8>,
+    squad_hint: &std::sync::Arc<std::sync::Mutex<SquadHint>>,
     session_log_path: &std::path::Path,
 ) {
-    use std::sync::atomic::Ordering;
     for line in text.lines() {
         let lower = line.to_lowercase();
         if lower.contains("voidprojections: getvoidprojectionreward") {
             state.in_sequence = true;
             state.other_ids.clear();
             state.own_item.clear();
-            let previous = squad_size.lock().ok().and_then(|size| *size);
-            if let Ok(mut size) = squad_size.lock() {
-                *size = None;
+            let previous = squad_hint.lock().ok().and_then(|hint| hint.size);
+            if let Ok(mut hint) = squad_hint.lock() {
+                *hint = SquadHint::default();
             }
-            hint_source.store(0, Ordering::Relaxed);
             if previous.is_some() {
                 super::events::log(session_log_path, &serde_json::json!({
                     "t": super::events::now_ts(),
@@ -98,11 +102,11 @@ pub(crate) fn collect_void_projection_state(
                 }
             } else if lower.contains("has reward info for all players now") {
                 let squad = (1 + state.other_ids.len()).clamp(1, 4);
-                let previous = squad_size.lock().ok().and_then(|size| *size);
-                if let Ok(mut size) = squad_size.lock() {
-                    *size = Some(squad);
+                let previous = squad_hint.lock().ok().and_then(|hint| hint.size);
+                if let Ok(mut hint) = squad_hint.lock() {
+                    hint.size = Some(squad);
+                    hint.source = 2;
                 }
-                hint_source.store(2, Ordering::Relaxed);
                 state.in_sequence = false;
                 state.sequence_completed = true;
                 super::events::log(session_log_path, &serde_json::json!({
@@ -258,13 +262,12 @@ pub(crate) fn prepare_reward_session(
 /// Prepare OCR hints immediately when a relic reward screen is triggered.
 ///
 /// The squad-size guess derived from the session relic count is marked as a
-/// guess in `hint_source` (1) — it is only a stand-in until the EE.log
-/// VoidProjections handshake (2) arrives.
+/// guess (1) — it is only a stand-in until the EE.log VoidProjections handshake
+/// (2) arrives.
 pub(crate) fn prepare_reward_trigger(
     app: &tauri::AppHandle,
     squad_names: &std::sync::Arc<std::sync::Mutex<Vec<String>>>,
-    squad_size: &std::sync::Arc<std::sync::Mutex<Option<usize>>>,
-    hint_source: &std::sync::Arc<std::sync::atomic::AtomicU8>,
+    squad_hint: &std::sync::Arc<std::sync::Mutex<SquadHint>>,
     session_relics: &[String],
 ) {
     if let Ok(local_player) = app.state::<AppState>().local_player_name.lock() {
@@ -278,10 +281,10 @@ pub(crate) fn prepare_reward_trigger(
     }
     let relic_hint = session_relics.len().min(4);
     if relic_hint >= 1 {
-        if let Ok(mut hint) = squad_size.lock() {
-            if hint.is_none() {
-                *hint = Some(relic_hint);
-                hint_source.store(1, std::sync::atomic::Ordering::Relaxed);
+        if let Ok(mut hint) = squad_hint.lock() {
+            if hint.size.is_none() {
+                hint.size = Some(relic_hint);
+                hint.source = 1;
             }
         }
     }
@@ -290,14 +293,12 @@ pub(crate) fn prepare_reward_trigger(
 /// Record the squad-size hint in effect when the session started, including
 /// where it came from — a relic-count guess is never an EE.log fact.
 pub(crate) fn log_session_hint(
-    squad_size: &std::sync::Arc<std::sync::Mutex<Option<usize>>>,
-    hint_source: &std::sync::Arc<std::sync::atomic::AtomicU8>,
+    squad_hint: &std::sync::Arc<std::sync::Mutex<SquadHint>>,
     session_relics: &[String],
     session_log_path: &std::path::Path,
 ) {
-    use std::sync::atomic::Ordering;
-    let size = squad_size.lock().ok().and_then(|hint| *hint);
-    let source = match hint_source.load(Ordering::Relaxed) {
+    let hint = squad_hint.lock().map(|hint| *hint).unwrap_or_default();
+    let source = match hint.source {
         1 => "relic_guess",
         2 => "ee_handshake",
         0 => "none",
@@ -307,7 +308,7 @@ pub(crate) fn log_session_hint(
         "t": super::events::now_ts(),
         "event": "hint",
         "source": source,
-        "size": size,
+        "size": hint.size,
         "session_relics": session_relics.len(),
         "note": (source == "relic_guess")
             .then(|| format!("min(session_relics={}, 4)", session_relics.len())),

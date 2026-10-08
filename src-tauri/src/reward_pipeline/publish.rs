@@ -14,6 +14,7 @@ pub(crate) struct DismissState<'a> {
     pub(crate) last_dismiss_at: &'a mut Option<std::time::Instant>,
     pub(crate) session_relics: &'a mut Vec<String>,
     pub(crate) projection_state: &'a mut super::VoidProjectionState,
+    pub(crate) session_counter: &'a std::sync::Arc<std::sync::atomic::AtomicU64>,
 }
 
 pub(crate) struct CloseState<'a> {
@@ -79,6 +80,7 @@ pub(crate) fn dismiss_relic_rewards(
         last_dismiss_at,
         session_relics,
         projection_state,
+        session_counter,
     } = state;
     let lower = text.to_lowercase();
     let is_dismiss = lower.contains("relic reward screen shut down")
@@ -137,9 +139,14 @@ pub(crate) fn dismiss_relic_rewards(
     rewards_emitted_ms.store(0, Ordering::SeqCst);
 
     let dismiss_app = app.clone();
+    let dismiss_session = session_counter.load(Ordering::SeqCst);
+    let dismiss_counter = std::sync::Arc::clone(session_counter);
     std::thread::spawn(move || {
         if delay_ms > 0 {
             std::thread::sleep(std::time::Duration::from_millis(delay_ms));
+        }
+        if dismiss_counter.load(Ordering::SeqCst) != dismiss_session {
+            return;
         }
         if let Some(window) = dismiss_app.get_webview_window("relic-overlay") {
             let _ = window.set_position(tauri::Position::Physical(
@@ -233,10 +240,15 @@ pub(crate) fn schedule_reward_safety_cleanup(
     app: tauri::AppHandle,
     session_log_path: std::path::PathBuf,
     diag_dir: std::sync::Arc<std::sync::Mutex<Option<std::path::PathBuf>>>,
+    session_counter: std::sync::Arc<std::sync::atomic::AtomicU64>,
+    session_id: u64,
     also_write_diagnostics: bool,
 ) {
     tauri::async_runtime::spawn(async move {
         tokio::time::sleep(std::time::Duration::from_secs(20)).await;
+        if session_counter.load(Ordering::SeqCst) != session_id {
+            return;
+        }
         if let Ok(mut rewards) = app.state::<AppState>().pending_relic_rewards.lock() {
             *rewards = None;
         }

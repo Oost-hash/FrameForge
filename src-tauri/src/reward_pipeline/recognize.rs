@@ -37,6 +37,15 @@ enum IconType {
     Unknown,
 }
 
+#[derive(Clone, Copy)]
+enum OcrLineSkip {
+    TopHud,
+    BelowBar,
+    PlayerName,
+    UiBadge,
+    EndlessBonus,
+}
+
 /// Scan the captured image for the coloured rarity bars below each reward card.
 /// Returns (card_x_centers, bar_y_frac) where centers are fractions of image width.
 fn find_rarity_bars(pixels: &[u8], pix_w: u32, pix_h: u32) -> (Option<(Vec<f32>, f32)>, String) {
@@ -326,6 +335,21 @@ fn match_reward_items(
         !meaningful.is_empty()
             && meaningful.iter().all(|w| BADGE_WORDS.contains(&w.to_lowercase().as_str()))
     };
+    let line_skip = |text: &str, y: f32| -> Option<OcrLineSkip> {
+        if y < 0.10 {
+            Some(OcrLineSkip::TopHud)
+        } else if y >= ocr_y_max {
+            Some(OcrLineSkip::BelowBar)
+        } else if is_player_name(text) {
+            Some(OcrLineSkip::PlayerName)
+        } else if is_ui_badge(text) {
+            Some(OcrLineSkip::UiBadge)
+        } else {
+            let text = text.to_lowercase();
+            (text.contains("booster") || text.contains("relic opened") || text.contains("endless bonus"))
+                .then_some(OcrLineSkip::EndlessBonus)
+        }
+    };
 
     let raw_norm = normalise(raw_full);
     let is_prime_like = |w: &str| -> bool {
@@ -342,9 +366,9 @@ fn match_reward_items(
     let prime_count = raw_norm.split_whitespace().filter(|&w| is_prime_like(w)).count();
     let forma_count  = raw_norm.split_whitespace().filter(|&w| is_forma_like(w)).count();
 
-    // Title lines that survive the y/badge/player-name filters, by x-position.
+    // Title lines that are eligible for card matching, by x-position.
     let title_xs: Vec<f32> = ocr_lines.iter()
-        .filter(|(t, _, y)| t.trim().len() >= 3 && *y >= 0.10 && *y < ocr_y_max && !is_player_name(t) && !is_ui_badge(t))
+        .filter(|(t, _, y)| t.trim().len() >= 3 && line_skip(t, *y).is_none())
         .map(|(_, x, _)| *x)
         .collect();
     let title_cluster_centers = cluster_x_centers(title_xs, 0.10);
@@ -372,19 +396,13 @@ fn match_reward_items(
 
     let raw_ocr_lines: Vec<OcrLineDiag> = ocr_lines.iter().enumerate()
         .map(|(i, (text, x, y))| {
-            let tl = text.to_lowercase();
-            let skip = if *y < 0.10 {
-                Some(format!("y={y:.2} < 0.10 top-HUD cutoff"))
-            } else if *y >= ocr_y_max {
-                Some(format!("y={y:.2} >= {ocr_y_max:.2} below-bar cutoff"))
-            } else if is_player_name(text) {
-                Some("player name".into())
-            } else if is_ui_badge(text) {
-                Some("UI badge".into())
-            } else if tl.contains("booster") || tl.contains("relic opened") || tl.contains("endless bonus") {
-                Some("endless bonus UI".into())
-            } else {
-                None
+            let skip = match line_skip(text, *y) {
+                Some(OcrLineSkip::TopHud) => Some(format!("y={y:.2} < 0.10 top-HUD cutoff")),
+                Some(OcrLineSkip::BelowBar) => Some(format!("y={y:.2} >= {ocr_y_max:.2} below-bar cutoff")),
+                Some(OcrLineSkip::PlayerName) => Some("player name".into()),
+                Some(OcrLineSkip::UiBadge) => Some("UI badge".into()),
+                Some(OcrLineSkip::EndlessBonus) => Some("endless bonus UI".into()),
+                None => None,
             };
             OcrLineDiag {
                 i,
@@ -401,7 +419,7 @@ fn match_reward_items(
         let mut cols: Vec<(Vec<String>, f32)> =
             active_centers.iter().map(|&cx| (Vec::new(), cx)).collect();
         for (text, x, y) in ocr_lines {
-            if *y < 0.10 || *y >= ocr_y_max || is_player_name(text) || is_ui_badge(text) { continue; }
+            if line_skip(text, *y).is_some() { continue; }
             let idx = active_centers.iter().enumerate()
                 .min_by(|(_, a), (_, b)| {
                     (x - *a).abs().partial_cmp(&(x - *b).abs())
@@ -622,7 +640,7 @@ fn match_reward_items(
     if items.len() < fill_limit {
         let all_words = build_word_set(
             &ocr_lines.iter()
-                .filter(|(_, _, y)| *y >= 0.10 && *y < ocr_y_max)
+                .filter(|(text, _, y)| line_skip(text, *y).is_none())
                 .map(|(t, _, _)| t.clone())
                 .collect::<Vec<_>>()
         );
@@ -787,23 +805,12 @@ pub(crate) fn extract_reward_items_twophase(
                 diag.note = Some(e.to_string());
                 return (false, false, vec![], vec![], diag);
             }
-        };
+    };
     if raw_full.len() < 4 {
-        let diagnostics_enabled = crate::diagnostics::ocr_pipeline_diagnostics_enabled();
-        if diagnostics_enabled {
-            let _ = std::fs::write(
-                std::env::temp_dir().join("frameforge_capture_debug.bmp"),
-                crate::ocr::to_bmp(pixels, pix_w, pix_h),
-            );
-        }
         let avg = crate::ocr::avg_brightness(pixels);
         let kind = if avg < 30 { "dark_frame" } else { "ocr_empty" };
         let mut diag = AttemptDiag::capture_only(kind, capture_info.to_string());
-        diag.note = Some(if diagnostics_enabled {
-            format!("avg brightness {avg:.1}; debug bmp saved to %TEMP%\\frameforge_capture_debug.bmp")
-        } else {
-            format!("avg brightness {avg:.1}")
-        });
+        diag.note = Some(format!("avg brightness {avg:.1}"));
         return (false, false, vec![], vec![], diag);
     }
 
